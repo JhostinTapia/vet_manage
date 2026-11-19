@@ -66,6 +66,14 @@ model User {
   createdRoles      Role[]        @relation("RoleCreatedBy")
   assignedUserRoles UserRole[]    @relation("UserRoleAssignedBy")
 
+  // agendamiento de Citas
+  horariosBase            HorarioBase[]    @relation("HorarioBaseVeterinario")
+  bloqueosVeterinario     BloqueoHorario[] @relation("BloqueoHorarioVeterinario")
+  bloqueosRegistrados     BloqueoHorario[] @relation("BloqueoHorarioRegistradoPor")
+  bloqueosEliminados      BloqueoHorario[] @relation("BloqueoHorarioEliminadoPor")
+  citasComoVeterinario    Cita[]           @relation("CitaVeterinario")
+  citasRegistradas        Cita[]           @relation("CitaRegistradaPor")
+
   @@index([status])
   @@map("users")
 }

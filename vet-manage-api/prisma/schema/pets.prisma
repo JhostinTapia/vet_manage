@@ -63,6 +63,9 @@ model Patient {
   createdAt          DateTime           @default(now()) @map("created_at")
   updatedAt          DateTime           @updatedAt @map("updated_at")
 
+  // Agendamiento de Citas
+  citas Cita[]
+
   @@index([clientId])
   @@index([status])
   @@map("patients")
