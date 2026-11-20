@@ -11,7 +11,17 @@ export type Rate = {
   sucursal: { id: string; nombre: string; estado: boolean };
 };
 
+export type RateService = {
+  id: string;
+  nombre: string;
+  duracionMaximaMin: number;
+  estado: boolean;
+};
+
 export const ratesApi = {
+  listServices() {
+    return getJson<RateService[]>('/scheduling/rates/services');
+  },
   list(servicioId?: string, sucursalId?: string) {
     const query = new URLSearchParams();
     if (servicioId) query.set('servicioId', servicioId);
@@ -28,6 +38,12 @@ export const ratesApi = {
   deactivateService(id: string) {
     return patchJson<{ id: string; nombre: string; estado: boolean }, Record<string, never>>(
       `/scheduling/rates/services/${id}/deactivate`,
+      {},
+    );
+  },
+  activateService(id: string) {
+    return patchJson<{ id: string; nombre: string; estado: boolean }, Record<string, never>>(
+      `/scheduling/rates/services/${id}/activate`,
       {},
     );
   },

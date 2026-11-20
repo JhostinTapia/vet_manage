@@ -1,81 +1,107 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import { ApiError } from '../../../infrastructure/api/http-client';
 import { useAuth } from '../../auth/auth-context';
 import { schedulingApi } from '../services/scheduling-api';
-import type { Branch, ClinicService } from '../types';
-import { ratesApi, type Rate } from './rates-api';
+import type { Branch } from '../types';
+import { ratesApi, type Rate, type RateService } from './rates-api';
 
 export const INVALID_RATE_MESSAGE = 'Ingrese un importe mayor a cero con hasta dos decimales';
 export const REQUIRED_RATE_MESSAGE = 'El campo tarifa es obligatorio';
 export const FORBIDDEN_RATE_MESSAGE = 'No tiene permisos para esta acción';
+
+function globalErrorMessage(cause: unknown, fallback: string) {
+  if (cause instanceof ApiError && cause.status === 403) return FORBIDDEN_RATE_MESSAGE;
+  if (cause instanceof ApiError && cause.status >= 500) return cause.message || fallback;
+  if (cause instanceof TypeError) return fallback;
+  return '';
+}
+
+function operationErrorMessage(cause: unknown, fallback: string) {
+  return cause instanceof Error ? cause.message : fallback;
+}
 
 export function RatesPage() {
   const { hasPermission } = useAuth();
   const canRead = hasPermission('rates:read');
   const canManage = hasPermission('rates:manage');
   const [branches, setBranches] = useState<Branch[]>([]);
-  const [services, setServices] = useState<ClinicService[]>([]);
+  const [services, setServices] = useState<RateService[]>([]);
   const [rates, setRates] = useState<Rate[]>([]);
   const [branchId, setBranchId] = useState('');
   const [serviceId, setServiceId] = useState('');
   const [amount, setAmount] = useState('');
-  const [error, setError] = useState('');
+  const amountInput = useRef<HTMLInputElement>(null);
+  const [amountError, setAmountError] = useState('');
+  const [globalError, setGlobalError] = useState('');
+  const [operationError, setOperationError] = useState('');
   const [message, setMessage] = useState('');
+  const [updatingServiceId, setUpdatingServiceId] = useState('');
 
   useEffect(() => {
     if (!canRead) return;
-    void Promise.all([schedulingApi.listBranches(), schedulingApi.listServices(), ratesApi.list()])
+    void Promise.all([schedulingApi.listBranches(), ratesApi.listServices(), ratesApi.list()])
       .then(([branchItems, serviceItems, rateItems]) => {
         setBranches(branchItems);
         setServices(serviceItems);
         setRates(rateItems);
         if (branchItems[0]) setBranchId(branchItems[0].id);
-        if (serviceItems[0]) setServiceId(serviceItems[0].id);
+        setServiceId(serviceItems.find((service) => service.estado)?.id ?? serviceItems[0]?.id ?? '');
       })
-      .catch((cause: unknown) => setError(cause instanceof ApiError && cause.status === 403
-        ? FORBIDDEN_RATE_MESSAGE
-        : cause instanceof Error ? cause.message : 'No se pudo cargar el catálogo de tarifas'));
+      .catch((cause: unknown) => {
+        const globalError = globalErrorMessage(cause, 'No se pudo cargar el catálogo de tarifas');
+        setGlobalError(globalError);
+        setOperationError(globalError ? '' : operationErrorMessage(cause, 'No se pudo cargar el catálogo de tarifas'));
+      });
   }, [canRead]);
 
-  const filteredRates = useMemo(() => rates
-    .filter((rate) => (!branchId || rate.sucursalId === branchId)
-      && (!serviceId || rate.servicioId === serviceId)),
-  [branchId, rates, serviceId]);
+  const tableRows = useMemo(() => branches.flatMap((branch) => services.map((service) => {
+    const serviceRates = rates.filter((rate) => rate.sucursalId === branch.id && rate.servicioId === service.id);
+    const rate = serviceRates.find((item) => item.estado) ?? serviceRates[0];
+    return { branch, service, rate };
+  })), [branches, services, rates]);
 
   function parseAmount(raw: string): number | null {
     if (raw.trim() === '') {
-      setError(REQUIRED_RATE_MESSAGE);
+      setAmountError(REQUIRED_RATE_MESSAGE);
       return null;
     }
     const normalized = raw.trim().replace(',', '.');
     if (!/^[-+]?(?:\d+(?:\.\d*)?|\.\d+)$/.test(normalized)) {
-      setError(INVALID_RATE_MESSAGE);
+      setAmountError(INVALID_RATE_MESSAGE);
       return null;
     }
     const decimalPart = normalized.includes('.') ? normalized.split('.')[1] : '';
     if (decimalPart.length > 2) {
-      setError(INVALID_RATE_MESSAGE);
+      setAmountError(INVALID_RATE_MESSAGE);
       return null;
     }
     const value = Number(normalized);
     if (!Number.isFinite(value) || value <= 0) {
-      setError(INVALID_RATE_MESSAGE);
+      setAmountError(INVALID_RATE_MESSAGE);
       return null;
     }
     return value;
   }
 
   async function save() {
-    setError('');
+    setGlobalError('');
+    setOperationError('');
     setMessage('');
+    setAmountError('');
     if (!canManage) {
-      setError(FORBIDDEN_RATE_MESSAGE);
+      setGlobalError(FORBIDDEN_RATE_MESSAGE);
       return;
     }
     if (!branchId || !serviceId) return;
+    if (amountInput.current?.validity.badInput) {
+      setAmountError(INVALID_RATE_MESSAGE);
+      return;
+    }
     const value = parseAmount(amount);
     if (value === null) return;
-    const active = filteredRates.find((rate) => rate.estado);
+    const active = rates.find((rate) => rate.servicioId === serviceId
+      && rate.sucursalId === branchId
+      && rate.estado);
     try {
       const saved = active
         ? await ratesApi.update(active.id, value)
@@ -86,27 +112,45 @@ export function RatesPage() {
       setAmount('');
       setMessage('Tarifa guardada correctamente');
     } catch (cause) {
-      setError(cause instanceof ApiError && cause.status === 403
-        ? FORBIDDEN_RATE_MESSAGE
-        : cause instanceof Error ? cause.message : 'No se pudo guardar la tarifa');
+      const globalError = globalErrorMessage(cause, 'No se pudo guardar la tarifa');
+      setGlobalError(globalError);
+      setOperationError(globalError ? '' : operationErrorMessage(cause, 'No se pudo guardar la tarifa'));
     }
   }
 
-  async function deactivateService() {
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    void save();
+  }
+
+  async function toggleService(service: RateService) {
     if (!canManage) {
-      setError(FORBIDDEN_RATE_MESSAGE);
+      setGlobalError(FORBIDDEN_RATE_MESSAGE);
       return;
     }
-    if (!serviceId) return;
+    setGlobalError('');
+    setOperationError('');
+    setMessage('');
+    setUpdatingServiceId(service.id);
     try {
-      await ratesApi.deactivateService(serviceId);
-      setServices((current) => current.filter((service) => service.id !== serviceId));
-      setServiceId('');
-      setMessage('Servicio inactivado correctamente');
+      const updated = service.estado
+        ? await ratesApi.deactivateService(service.id)
+        : await ratesApi.activateService(service.id);
+      setServices((current) => current.map((item) => item.id === service.id
+        ? { ...item, estado: updated.estado }
+        : item));
+      if (updated.estado) {
+        setServiceId(updated.id);
+      } else if (serviceId === service.id) {
+        setServiceId(services.find((item) => item.id !== service.id && item.estado)?.id ?? '');
+      }
+      setMessage(updated.estado ? 'Servicio activado correctamente' : 'Servicio inactivado correctamente');
     } catch (cause) {
-      setError(cause instanceof ApiError && cause.status === 403
-        ? FORBIDDEN_RATE_MESSAGE
-        : cause instanceof Error ? cause.message : 'No se pudo inactivar el servicio');
+      const globalError = globalErrorMessage(cause, 'No se pudo actualizar el estado del servicio');
+      setGlobalError(globalError);
+      setOperationError(globalError ? '' : operationErrorMessage(cause, 'No se pudo actualizar el estado del servicio'));
+    } finally {
+      setUpdatingServiceId('');
     }
   }
 
@@ -119,39 +163,81 @@ export function RatesPage() {
       <div className="page-heading">
         <div><span className="eyebrow">Agenda</span><h2>Tarifas</h2><p>Mantenga el catálogo de tarifas por sucursal y servicio.</p></div>
       </div>
-      {error && <p className="form-error" role="alert">{error}</p>}
+      {globalError && <p className="form-error" role="alert">{globalError}</p>}
       {message && <p className="form-success" role="status">{message}</p>}
-      <div className="rates-filters">
-        <label className="field"><span>Sucursal</span>
-          <select value={branchId} onChange={(event) => setBranchId(event.target.value)}>
-            {branches.map((branch) => <option key={branch.id} value={branch.id}>{branch.nombre}</option>)}
-          </select>
-        </label>
-        <label className="field"><span>Servicio</span>
-          <select value={serviceId} onChange={(event) => setServiceId(event.target.value)}>
-            {services.map((service) => <option key={service.id} value={service.id}>{service.nombre}</option>)}
-          </select>
-        </label>
-      </div>
       {canManage && (
-        <div className="rates-form">
-          <label className="field"><span>Tarifa USD</span>
-            <input aria-label="Tarifa" value={amount} onChange={(event) => setAmount(event.target.value)} placeholder="20.00" />
+        <form className="rates-form" onSubmit={handleSubmit} noValidate>
+          <label className="field"><span>Sucursal</span>
+            <select value={branchId} onChange={(event) => setBranchId(event.target.value)}>
+              {branches.map((branch) => <option key={branch.id} value={branch.id}>{branch.nombre}</option>)}
+            </select>
           </label>
-          <button type="button" className="button button--primary" onClick={() => void save()}>Guardar</button>
-          <button type="button" className="button button--ghost" onClick={() => void deactivateService()}>Inactivar servicio</button>
-        </div>
+          <label className="field"><span>Servicio</span>
+            <select value={serviceId} onChange={(event) => setServiceId(event.target.value)}>
+              {services.map((service) => <option key={service.id} value={service.id}>{service.nombre}</option>)}
+            </select>
+          </label>
+          <label className="field"><span>Tarifa USD <b>*</b></span>
+            <input
+              ref={amountInput}
+              aria-label="Tarifa USD"
+              type="number"
+              min="0"
+              step="0.01"
+              value={amount}
+              onChange={(event) => {
+                setAmount(event.target.value);
+                setAmountError('');
+              }}
+              placeholder="20.00"
+              aria-invalid={Boolean(amountError)}
+              aria-describedby={amountError ? 'rate-amount-error' : undefined}
+            />
+            {amountError && <small id="rate-amount-error" className="field-error" role="alert">{amountError}</small>}
+          </label>
+          <button
+            type="submit"
+            className="button button--primary mt-4"
+            disabled={!branchId || !serviceId}
+          >
+            Guardar
+          </button>
+          {operationError && <p className="field-error" role="alert">{operationError}</p>}
+        </form>
       )}
-      <div className="simple-list">
-        {filteredRates.map((rate) => (
-          <div className="simple-list__item" key={rate.id}>
-            <div className="list-copy">
-              <strong>{rate.sucursal.nombre} · {rate.servicio.nombre}</strong>
-              <small>USD {Number(rate.importe).toFixed(2)} · {rate.estado ? 'Activa' : 'Inactiva'}</small>
-            </div>
-          </div>
-        ))}
+      <div className="product-table-wrap">
+        <table className="product-table" aria-label="Tarifas">
+          <thead>
+            <tr><th>Sucursal</th><th>Servicio</th><th>Tarifa</th><th>Estado</th>{canManage && <th>Acciones</th>}</tr>
+          </thead>
+          <tbody>
+            {tableRows.map(({ branch, service, rate }) => {
+              const isActive = service.estado && Boolean(rate?.estado);
+              return (
+                <tr key={`${branch.id}-${service.id}`}>
+                  <td>{branch.nombre}</td>
+                  <td>{service.nombre}</td>
+                  <td className="price-cell">{rate ? `USD ${Number(rate.importe).toFixed(2)}` : 'Sin tarifa'}</td>
+                  <td>{isActive ? 'Activa' : 'Inactiva'}</td>
+                  {canManage && (
+                    <td>
+                      <button
+                        type="button"
+                        className="button button--ghost button--small"
+                        onClick={() => void toggleService(service)}
+                        disabled={updatingServiceId === service.id}
+                      >
+                        {service.estado ? 'Inactivar servicio' : 'Activar servicio'}
+                      </button>
+                    </td>
+                  )}
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
       </div>
+      {!canManage && operationError && <p className="field-error" role="alert">{operationError}</p>}
     </section>
   );
 }

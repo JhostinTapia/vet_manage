@@ -20,6 +20,13 @@ export class RateRepository {
     return this.prisma.servicio.findUnique({ where: { id }, select: { id: true, nombre: true, estado: true } });
   }
 
+  findServices() {
+    return this.prisma.servicio.findMany({
+      orderBy: { nombre: 'asc' },
+      select: { id: true, nombre: true, duracionMaximaMin: true, estado: true },
+    });
+  }
+
   findBranch(id: string) {
     return this.prisma.sucursal.findUnique({ where: { id }, select: { id: true, nombre: true, estado: true } });
   }
@@ -59,6 +66,14 @@ export class RateRepository {
     return this.prisma.servicio.update({
       where: { id },
       data: { estado: false },
+      select: { id: true, nombre: true, estado: true },
+    });
+  }
+
+  activateService(id: string) {
+    return this.prisma.servicio.update({
+      where: { id },
+      data: { estado: true },
       select: { id: true, nombre: true, estado: true },
     });
   }

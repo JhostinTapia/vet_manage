@@ -14,9 +14,13 @@ export class RatesService {
     return this.rates.findMany(servicioId, sucursalId);
   }
 
+  listServices() {
+    return this.rates.findServices();
+  }
+
   async save(dto: CreateRateDto) {
     const service = await this.rates.findService(dto.servicioId);
-    if (!service || !service.estado) throw ApiException.badRequest(INACTIVE_SERVICE_RATE_MESSAGE);
+    if (!service) throw ApiException.badRequest(INACTIVE_SERVICE_RATE_MESSAGE);
 
     const branch = await this.rates.findBranch(dto.sucursalId);
     if (!branch || !branch.estado) throw ApiException.badRequest('La sucursal no está activa');
@@ -28,7 +32,6 @@ export class RatesService {
     const active = await this.rates.findMany();
     const existing = active.find((rate) => rate.id === id);
     if (!existing) throw ApiException.notFound('Tarifa no encontrada');
-    if (!existing.servicio.estado) throw ApiException.badRequest(INACTIVE_SERVICE_RATE_MESSAGE);
     return this.rates.upsert(existing.servicioId, existing.sucursalId, dto.importe);
   }
 
@@ -36,6 +39,12 @@ export class RatesService {
     const service = await this.rates.findService(id);
     if (!service) throw ApiException.notFound('Servicio no encontrado');
     return this.rates.deactivateService(id);
+  }
+
+  async activateService(id: string) {
+    const service = await this.rates.findService(id);
+    if (!service) throw ApiException.notFound('Servicio no encontrado');
+    return this.rates.activateService(id);
   }
 
   async getActiveRate(servicioId: string, sucursalId: string) {

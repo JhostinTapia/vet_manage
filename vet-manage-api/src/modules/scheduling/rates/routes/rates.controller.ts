@@ -15,6 +15,12 @@ export class RatesController {
     return success(await this.rates.list(servicioId, sucursalId), 'Catálogo de tarifas');
   }
 
+  @Get('services')
+  @RequirePermissions('rates:read')
+  async listServices() {
+    return success(await this.rates.listServices(), 'Catálogo de servicios');
+  }
+
   @Post()
   @RequirePermissions('rates:manage')
   async create(@Body() dto: CreateRateDto) {
@@ -31,5 +37,11 @@ export class RatesController {
   @RequirePermissions('rates:manage')
   async deactivateService(@Param('id') id: string) {
     return success(await this.rates.deactivateService(id), 'Servicio inactivado correctamente');
+  }
+
+  @Patch('services/:id/activate')
+  @RequirePermissions('rates:manage')
+  async activateService(@Param('id') id: string) {
+    return success(await this.rates.activateService(id), 'Servicio activado correctamente');
   }
 }
