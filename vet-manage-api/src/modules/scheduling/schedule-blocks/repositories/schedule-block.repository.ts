@@ -102,6 +102,16 @@ export class ScheduleBlockRepository {
     return db.bloqueoHorario.create({ data, select: SCHEDULE_BLOCK_SELECT });
   }
 
+  // Eliminación lógica de un solo bloqueo. La condición fechaEliminacion = null hace que, si dos
+  // personas eliminan el mismo bloqueo a la vez, solo una lo logre. Devuelve cuántos se eliminaron (0 o 1).
+  async softDelete(id: string, eliminadoPorId: string, fechaEliminacion: Date): Promise<number> {
+    const { count } = await this.prisma.bloqueoHorario.updateMany({
+      where: { id, fechaEliminacion: null },
+      data: { fechaEliminacion, eliminadoPorId },
+    });
+    return count;
+  }
+
   // Bloqueos vigentes (no eliminados), del más próximo al más lejano.
   listActive(filter: { sucursalId?: string; desde?: Date; hasta?: Date }): Promise<ScheduleBlockRecord[]> {
     return this.prisma.bloqueoHorario.findMany({

@@ -5,11 +5,12 @@ import { ScheduleBlockRepository } from './repositories/schedule-block.repositor
 import { ScheduleBlocksController } from './routes/schedule-blocks.controller.js';
 import { ListScheduleBlocksService } from './services/list-schedule-blocks.service.js';
 import { RegisterScheduleBlockService } from './services/register-schedule-block.service.js';
+import { RemoveScheduleBlockService } from './services/remove-schedule-block.service.js';
 
 // Registro y eliminación de bloqueos de horario.
 @Module({
   imports: [PrismaModule, IdentityModule],
   controllers: [ScheduleBlocksController],
-  providers: [ScheduleBlockRepository, RegisterScheduleBlockService, ListScheduleBlocksService],
+  providers: [ScheduleBlockRepository, RegisterScheduleBlockService, ListScheduleBlocksService, RemoveScheduleBlockService],
 })
 export class ScheduleBlocksModule {}

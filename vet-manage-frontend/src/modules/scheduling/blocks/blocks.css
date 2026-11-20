@@ -12,6 +12,13 @@
 
 .blocks-filter { min-width: 200px; }
 
+.block-actions { white-space: nowrap; text-align: right; }
+.block-confirm { display: inline-flex; align-items: center; gap: 8px; color: #b94d54; font-weight: 650; }
+.block-actions .button { min-height: 32px; padding: 0 12px; font-size: 11px; }
+.button--danger { color: #fff; border-color: #c95e65; background: #c95e65; }
+.button--danger:hover:not(:disabled) { background: #b94d54; }
+.visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
 @media (max-width: 640px) {
   .form-problem { margin: 0 18px 18px; }
   .blocks-list .catalog-card__heading { flex-direction: column; align-items: stretch; }
