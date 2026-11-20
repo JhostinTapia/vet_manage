@@ -1,5 +1,6 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ToastContext } from '../../../common/components/toast-context';
 import { schedulingApi } from '../services/scheduling-api';
@@ -31,7 +32,7 @@ const block: ScheduleBlock = {
 function renderPage() {
   return render(
     <ToastContext.Provider value={{ showToast, dismissToast: vi.fn() }}>
-      <BlocksPage />
+      <MemoryRouter><BlocksPage /></MemoryRouter>
     </ToastContext.Provider>,
   );
 }
@@ -41,7 +42,7 @@ async function removeFirstBlock() {
   await userEvent.click(screen.getByRole('button', { name: /sí, eliminar/i }));
 }
 
-describe('BlocksPage: eliminar un bloqueo', () => {
+describe('BlocksPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     permissions = new Set(['schedule-blocks:read', 'schedule-blocks:remove']);
@@ -79,5 +80,21 @@ describe('BlocksPage: eliminar un bloqueo', () => {
 
     expect(await screen.findByText('Permiso médico')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /eliminar el bloqueo/i })).not.toBeInTheDocument();
+  });
+
+  it('quien puede registrar ve el botón Nuevo bloqueo que lleva al formulario', async () => {
+    permissions = new Set(['schedule-blocks:read', 'schedule-blocks:create']);
+    renderPage();
+
+    expect(await screen.findByRole('link', { name: /nuevo bloqueo/i })).toHaveAttribute('href', '/appointments/blocks/new');
+    expect(screen.queryByRole('button', { name: /registrar bloqueo/i })).not.toBeInTheDocument();
+  });
+
+  it('sin permiso para registrar no muestra el botón Nuevo bloqueo', async () => {
+    permissions = new Set(['schedule-blocks:read']);
+    renderPage();
+
+    expect(await screen.findByText('Permiso médico')).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /nuevo bloqueo/i })).not.toBeInTheDocument();
   });
 });

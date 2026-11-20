@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import type { FormEvent, ReactNode } from 'react';
+import { Link } from 'react-router-dom';
+import { CheckIcon } from '../../../common/components/icons';
 import type { Branch } from '../types';
 import {
   MOTIVO_MAX,
@@ -16,6 +18,8 @@ type BlockFormProps = {
   veterinarians: Veterinarian[];
   // Debe lanzar el error de la API para mostrarlo en el formulario.
   onSubmit: (draft: ScheduleBlockDraft) => Promise<void>;
+  // Ruta a la que vuelve el botón Cancelar; sin ella no se muestra.
+  cancelTo?: string;
 };
 
 type FormProblem = { message: string; details: string[] } | null;
@@ -24,7 +28,7 @@ const EMPTY: BlockFormInput = {
   sucursalId: '', alcance: 'VETERINARIO', veterinarioId: '', fecha: '', horaInicio: '', horaFin: '', motivo: '',
 };
 
-export function BlockForm({ branches, veterinarians, onSubmit }: BlockFormProps) {
+export function BlockForm({ branches, veterinarians, onSubmit, cancelTo }: BlockFormProps) {
   const [form, setForm] = useState<BlockFormInput>(EMPTY);
   const [errors, setErrors] = useState<BlockFieldErrors>({});
   const [problem, setProblem] = useState<FormProblem>(null);
@@ -64,9 +68,11 @@ export function BlockForm({ branches, veterinarians, onSubmit }: BlockFormProps)
   }
 
   const scope = (value: ScheduleBlockScope, label: string) => (
+    // El radio queda oculto pero sigue funcionando con teclado y lectores de pantalla.
     <label className="scope-option">
-      <input type="radio" name="alcance" value={value} checked={form.alcance === value} onChange={() => update('alcance', value)} />
-      <span>{label}</span>
+      <input className="scope-option__input" type="radio" name="alcance" value={value} checked={form.alcance === value} onChange={() => update('alcance', value)} />
+      <span className="scope-option__label">{label}</span>
+      <span className="scope-option__check" aria-hidden="true"><CheckIcon size={14} /></span>
     </label>
   );
 
@@ -137,6 +143,7 @@ export function BlockForm({ branches, veterinarians, onSubmit }: BlockFormProps)
       )}
 
       <div className="form-actions">
+        {cancelTo && <Link className="button button--ghost" to={cancelTo}>Cancelar</Link>}
         <button className="button button--primary" type="submit" disabled={saving}>{saving ? 'Guardando…' : 'Registrar bloqueo'}</button>
       </div>
     </form>

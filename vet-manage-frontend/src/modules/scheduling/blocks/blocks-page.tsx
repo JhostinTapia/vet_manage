@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useToast } from '../../../common/components/toast-context';
 import { useAuth } from '../../auth/auth-context';
 import { schedulingApi } from '../services/scheduling-api';
 import type { Branch } from '../types';
-import { BlockForm } from './block-form';
 import { blocksApi } from './blocks-api';
 import { BlocksTable } from './blocks-table';
-import type { ScheduleBlock, ScheduleBlockDraft, Veterinarian } from './types';
+import type { ScheduleBlock } from './types';
 import './blocks.css';
 
 export function BlocksPage() {
@@ -16,20 +16,18 @@ export function BlocksPage() {
   const canRemove = hasPermission('schedule-blocks:remove');
 
   const [branches, setBranches] = useState<Branch[]>([]);
-  const [veterinarians, setVeterinarians] = useState<Veterinarian[]>([]);
   const [branchFilter, setBranchFilter] = useState('');
   const [blocks, setBlocks] = useState<ScheduleBlock[]>([]);
   const [loading, setLoading] = useState(true);
-  // Cambia después de registrar o eliminar un bloqueo para volver a cargar la lista.
+  // Cambia después de eliminar un bloqueo para volver a cargar la lista.
   const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
-    Promise.all([schedulingApi.listBranches(), blocksApi.listVeterinarians()])
-      .then(([loadedBranches, loadedVets]) => {
-        setBranches(loadedBranches);
-        setVeterinarians(loadedVets);
-      })
-      .catch(() => showToast('No se pudieron cargar las sucursales y los veterinarios.', 'error'));
+    let active = true;
+    schedulingApi.listBranches()
+      .then((loaded) => { if (active) setBranches(loaded); })
+      .catch(() => { if (active) showToast('No se pudieron cargar las sucursales.', 'error'); });
+    return () => { active = false; };
   }, [showToast]);
 
   useEffect(() => {
@@ -49,12 +47,6 @@ export function BlocksPage() {
   function reload() {
     setLoading(true);
     setReloadKey((key) => key + 1);
-  }
-
-  async function register(draft: ScheduleBlockDraft) {
-    await blocksApi.create(draft);
-    showToast('Bloqueo registrado correctamente', 'success');
-    reload();
   }
 
   async function remove(block: ScheduleBlock) {
@@ -77,9 +69,8 @@ export function BlocksPage() {
           <h2>Bloqueos de horario</h2>
           <p>Impide reservas durante una ausencia o un mantenimiento. Un bloqueo no cancela citas: si afecta una, no se guarda.</p>
         </div>
+        {canCreate && <Link className="button button--primary" to="/appointments/blocks/new">Nuevo bloqueo</Link>}
       </div>
-
-      {canCreate && <BlockForm branches={branches} veterinarians={veterinarians} onSubmit={register} />}
 
       <div className="catalog-card blocks-list">
         <div className="catalog-card__heading">
