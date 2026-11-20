@@ -1,5 +1,5 @@
 import { getJson, postJson, putJson, deleteJson } from '../../../infrastructure/api/http-client';
-import type { Branch, ClinicService, WorkSchedule, WorkScheduleFormData, VeterinarianOption } from '../types';
+import type { Branch, ClinicService, GenerateSaturdayShiftsData, SaturdayShift, SubstituteSaturdayShiftData, WorkSchedule, WorkScheduleFormData, VeterinarianOption } from '../types';
 
 export const schedulingApi = {
   listBranches() {
@@ -26,5 +26,19 @@ export const schedulingApi = {
   },
   deleteWorkSchedule(id: string) {
     return deleteJson<void>(`/scheduling/work-schedules/${id}`);
+  },
+  listSaturdayShifts(params?: { sucursalId?: string; fechaDesde?: string; fechaHasta?: string }) {
+    const query = new URLSearchParams();
+    if (params?.sucursalId) query.set('sucursalId', params.sucursalId);
+    if (params?.fechaDesde) query.set('fechaDesde', params.fechaDesde);
+    if (params?.fechaHasta) query.set('fechaHasta', params.fechaHasta);
+    const qs = query.toString();
+    return getJson<SaturdayShift[]>(`/scheduling/saturday-shifts${qs ? `?${qs}` : ''}`);
+  },
+  generateSaturdayShifts(data: GenerateSaturdayShiftsData) {
+    return postJson<SaturdayShift[], GenerateSaturdayShiftsData>('/scheduling/saturday-shifts/generate', data);
+  },
+  substituteSaturdayShift(id: string, data: SubstituteSaturdayShiftData) {
+    return putJson<SaturdayShift, SubstituteSaturdayShiftData>(`/scheduling/saturday-shifts/${id}`, data);
   },
 };
