@@ -32,6 +32,11 @@
 
 ## Pending
 
+- Cambio pendiente de decisión del grupo: se retiró
+  `saturday-shifts:read` del rol Veterinario en `roles.catalog.ts`, pero este
+  cambio no contó con aprobación explícita previa. Debe confirmarse o revertirse
+  antes del push.
+
 - Discrepancia de contrato 403: la HU-024 exige
   `"No tiene permisos para esta acción"`, pero el `PermissionsGuard` actual
   devuelve `"No tiene permisos para realizar esta acción"`. Resolverlo requiere
