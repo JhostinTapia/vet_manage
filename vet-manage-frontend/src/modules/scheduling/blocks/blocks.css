@@ -1,0 +1,18 @@
+.blocks-page .product-form { margin-bottom: 22px; }
+
+.scope-field { margin: 0; padding: 0; border: 0; }
+.scope-field legend { margin-bottom: 7px; padding: 0; }
+.scope-options { display: flex; flex-wrap: wrap; gap: 10px; }
+.scope-option { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border: 1px solid #dfe6ec; border-radius: 8px; color: #26323d; font-weight: 600; cursor: pointer; }
+.scope-option:has(input:checked) { border-color: #7d9fff; background: #f5f8ff; }
+
+.form-problem { margin: 0 32px 20px; padding: 13px 15px; border: 1px solid #f3c9cc; border-radius: 9px; color: #b94d54; background: #fff6f6; font-size: 12px; }
+.form-problem ul { margin: 8px 0 0; padding-left: 18px; color: #8f3f45; }
+.form-problem li + li { margin-top: 4px; }
+
+.blocks-filter { min-width: 200px; }
+
+@media (max-width: 640px) {
+  .form-problem { margin: 0 18px 18px; }
+  .blocks-list .catalog-card__heading { flex-direction: column; align-items: stretch; }
+}
