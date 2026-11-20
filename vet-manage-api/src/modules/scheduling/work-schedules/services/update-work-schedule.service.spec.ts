@@ -37,7 +37,7 @@ describe('UpdateWorkScheduleService', () => {
   });
 
   it('lanza NotFoundException cuando el horario no existe', async () => {
-    ctx.repo.findById.mockResolvedValue(null);
+    ctx.repo.findById.mockResolvedValue(null as never);
 
     await expect(ctx.service.update('missing', { horaInicio: '09:00' })).rejects.toThrow(
       NotFoundException,

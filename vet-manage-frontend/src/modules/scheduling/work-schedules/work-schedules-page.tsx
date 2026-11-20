@@ -213,7 +213,7 @@ export function WorkSchedulesPage() {
               >
                 <option value="">Todos los veterinarios</option>
                 {veterinarians.map((v) => (
-                  <option key={v.id} value={v.id}>{v.firstName} {v.lastName}</option>
+                  <option key={v.id} value={v.id}>{v.person.firstName} {v.person.lastName}</option>
                 ))}
               </select>
             </label>
@@ -286,7 +286,7 @@ export function WorkSchedulesPage() {
                   >
                     <option value="">Seleccione un veterinario</option>
                     {veterinarians.map((v) => (
-                      <option key={v.id} value={v.id}>{v.firstName} {v.lastName}</option>
+                      <option key={v.id} value={v.id}>{v.person.firstName} {v.person.lastName}</option>
                     ))}
                   </select>
                 </label>

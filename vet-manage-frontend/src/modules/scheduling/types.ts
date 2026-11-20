@@ -44,6 +44,8 @@ export type WorkScheduleFormData = {
 
 export type VeterinarianOption = {
   id: string;
-  firstName: string;
-  lastName: string;
+  person: {
+    firstName: string;
+    lastName: string;
+  };
 };

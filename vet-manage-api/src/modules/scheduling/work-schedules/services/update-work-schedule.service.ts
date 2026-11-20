@@ -14,6 +14,7 @@ export class UpdateWorkScheduleService {
       throw new NotFoundException('Horario no encontrado');
     }
 
+    const veterinarioId = dto.veterinarioId ?? existing.veterinarioId;
     const diaSemana = dto.diaSemana ?? existing.diaSemana;
 
     // Parse and validate times — use existing values when not provided
@@ -27,7 +28,7 @@ export class UpdateWorkScheduleService {
         throw new BadRequestException('La hora de inicio no tiene un formato válido (HH:mm)');
       }
       if (!isOnSlot(parsed)) {
-        throw new BadRequestException('La hora de inicio debe ser en punto o y media');
+        throw new BadRequestException('Las horas deben ser en punto o media hora');
       }
       startMin = parsed;
     } else {
@@ -41,7 +42,7 @@ export class UpdateWorkScheduleService {
         throw new BadRequestException('La hora de fin no tiene un formato válido (HH:mm)');
       }
       if (!isOnSlot(parsed)) {
-        throw new BadRequestException('La hora de fin debe ser en punto o y media');
+        throw new BadRequestException('Las horas deben ser en punto o media hora');
       }
       endMin = parsed;
     } else {
@@ -54,7 +55,7 @@ export class UpdateWorkScheduleService {
 
     // Check overlapping schedules (excluding current)
     const overlapping = await this.repo.findOverlapping(
-      existing.veterinarioId,
+      veterinarioId,
       diaSemana,
       startMin,
       endMin,
@@ -62,26 +63,25 @@ export class UpdateWorkScheduleService {
     );
     if (overlapping.length > 0) {
       throw new BadRequestException(
-        'El horario se cruza con otro horario existente del mismo veterinario',
+        'El veterinario ya tiene otro horario asignado en ese mismo intervalo',
       );
     }
 
-    // If range is being reduced, check for conflicting appointments and availability
     const oldStartMin = dbTimeToMinutes(existing.horaInicio);
     const oldEndMin = dbTimeToMinutes(existing.horaFin);
     const isReduced = startMin > oldStartMin || endMin < oldEndMin;
+    const isDayChanged = dto.diaSemana !== undefined && dto.diaSemana !== existing.diaSemana;
+    const isVeterinarianChanged = dto.veterinarioId !== undefined && dto.veterinarioId !== existing.veterinarioId;
 
-    if (isReduced) {
+    if (isReduced || isDayChanged || isVeterinarianChanged) {
       const conflictingAppointments = await this.repo.countConflictingAppointments(
         existing.veterinarioId,
-        diaSemana,
+        existing.diaSemana,
         startMin,
         endMin,
       );
       if (conflictingAppointments > 0) {
-        throw new BadRequestException(
-          'No se puede reducir el horario: existen citas programadas fuera del nuevo rango',
-        );
+        throw new BadRequestException('El cambio afecta citas o disponibilidad diaria existente');
       }
 
       const conflictingAvailability = await this.repo.countConflictingAvailability(
@@ -90,9 +90,7 @@ export class UpdateWorkScheduleService {
         endMin,
       );
       if (conflictingAvailability > 0) {
-        throw new BadRequestException(
-          'No se puede reducir el horario: existen disponibilidades diarias fuera del nuevo rango',
-        );
+        throw new BadRequestException('El cambio afecta citas o disponibilidad diaria existente');
       }
     }
 
@@ -101,6 +99,7 @@ export class UpdateWorkScheduleService {
     if (dto.diaSemana !== undefined) updateData.diaSemana = dto.diaSemana;
     if (dto.horaInicio !== undefined) updateData.horaInicio = minutesToDbTime(startMin);
     if (dto.horaFin !== undefined) updateData.horaFin = minutesToDbTime(endMin);
+    if (dto.veterinarioId !== undefined) updateData.veterinarioId = dto.veterinarioId;
 
     const record = await this.repo.update(id, updateData);
     return toWorkScheduleResponse(record);

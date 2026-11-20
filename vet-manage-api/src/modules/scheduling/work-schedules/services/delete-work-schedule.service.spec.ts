@@ -35,7 +35,7 @@ describe('DeleteWorkScheduleService', () => {
   });
 
   it('lanza NotFoundException cuando el horario no existe', async () => {
-    ctx.repo.findById.mockResolvedValue(null);
+    ctx.repo.findById.mockResolvedValue(null as never);
 
     await expect(ctx.service.remove('missing')).rejects.toThrow(NotFoundException);
   });
@@ -53,9 +53,9 @@ describe('DeleteWorkScheduleService', () => {
     expect(ctx.repo.softDelete).not.toHaveBeenCalled();
   });
 
-  it('llama countConflictingAppointments con rango [0,0) para contar todas las citas del día', async () => {
+  it('llama countConflictingAppointments con el rango real del horario', async () => {
     await ctx.service.remove('ws-1');
 
-    expect(ctx.repo.countConflictingAppointments).toHaveBeenCalledWith('vet-1', 'LUNES', 0, 0);
+    expect(ctx.repo.countConflictingAppointments).toHaveBeenCalledWith('vet-1', 'LUNES', 480, 720);
   });
 });

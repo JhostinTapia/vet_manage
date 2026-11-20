@@ -7,8 +7,6 @@ import {
   Post,
   Put,
   Query,
-  UsePipes,
-  ValidationPipe,
 } from '@nestjs/common';
 import { success } from '../../../../common/errors/api-response.js';
 import { RequirePermissions } from '../../../identity/decorators/require-permissions.decorator.js';
@@ -16,9 +14,9 @@ import { ListWorkSchedulesService } from '../services/list-work-schedules.servic
 import { CreateWorkScheduleService } from '../services/create-work-schedule.service.js';
 import { UpdateWorkScheduleService } from '../services/update-work-schedule.service.js';
 import { DeleteWorkScheduleService } from '../services/delete-work-schedule.service.js';
-import type { QueryWorkSchedulesDto } from '../dtos/query-work-schedules.dto.js';
-import type { CreateWorkScheduleDto } from '../dtos/create-work-schedule.dto.js';
-import type { UpdateWorkScheduleDto } from '../dtos/update-work-schedule.dto.js';
+import { QueryWorkSchedulesDto } from '../dtos/query-work-schedules.dto.js';
+import { CreateWorkScheduleDto } from '../dtos/create-work-schedule.dto.js';
+import { UpdateWorkScheduleDto } from '../dtos/update-work-schedule.dto.js';
 
 @Controller('scheduling')
 export class WorkSchedulesController {
@@ -43,14 +41,12 @@ export class WorkSchedulesController {
 
   @Post('work-schedules')
   @RequirePermissions('work-schedules:manage')
-  @UsePipes(new ValidationPipe({ whitelist: true }))
   async create(@Body() dto: CreateWorkScheduleDto) {
     return success(await this.createService.create(dto), 'Horario creado');
   }
 
   @Put('work-schedules/:id')
   @RequirePermissions('work-schedules:manage')
-  @UsePipes(new ValidationPipe({ whitelist: true }))
   async update(@Param('id') id: string, @Body() dto: UpdateWorkScheduleDto) {
     return success(await this.updateService.update(id, dto), 'Horario actualizado');
   }

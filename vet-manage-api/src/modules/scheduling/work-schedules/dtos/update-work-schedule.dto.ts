@@ -4,6 +4,10 @@ import { DIA_SEMANA_VALUES, type DiaSemanaValue } from './create-work-schedule.d
 export class UpdateWorkScheduleDto {
   @IsOptional()
   @IsString()
+  veterinarioId?: string;
+
+  @IsOptional()
+  @IsString()
   sucursalId?: string;
 
   @IsOptional()
