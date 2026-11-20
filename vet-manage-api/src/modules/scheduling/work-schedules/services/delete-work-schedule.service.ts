@@ -1,5 +1,6 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { WorkScheduleRepository } from '../repositories/work-schedule.repository.js';
+import { dbTimeToMinutes } from '../../common/time-slots.js';
 
 @Injectable()
 export class DeleteWorkScheduleService {
@@ -16,8 +17,8 @@ export class DeleteWorkScheduleService {
     const futureAppointments = await this.repo.countConflictingAppointments(
       existing.veterinarioId,
       existing.diaSemana,
-      0,
-      0,
+      dbTimeToMinutes(existing.horaInicio),
+      dbTimeToMinutes(existing.horaFin),
     );
     if (futureAppointments > 0) {
       throw new BadRequestException(

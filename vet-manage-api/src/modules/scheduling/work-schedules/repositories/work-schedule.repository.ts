@@ -33,8 +33,8 @@ export class WorkScheduleRepository {
   }
 
   findById(id: string) {
-    return this.prisma.horarioBase.findUnique({
-      where: { id },
+    return this.prisma.horarioBase.findFirst({
+      where: { id, estado: true },
       include: SCHEDULE_INCLUDES,
     });
   }
@@ -127,13 +127,14 @@ export class WorkScheduleRepository {
         estado: { in: ['PROGRAMADA', 'CONFIRMADA'] },
         fechaHora: { gte: new Date() },
       },
-      select: { fechaHora: true },
+      select: { fechaHora: true, fechaHoraFin: true },
     });
 
     return citas.filter((c) => {
       if (c.fechaHora.getUTCDay() !== targetDay) return false;
-      const citaMin = c.fechaHora.getUTCHours() * 60 + c.fechaHora.getUTCMinutes();
-      return citaMin < startMin || citaMin >= endMin;
+      const citaStart = c.fechaHora.getUTCHours() * 60 + c.fechaHora.getUTCMinutes();
+      const citaEnd = c.fechaHoraFin.getUTCHours() * 60 + c.fechaHoraFin.getUTCMinutes();
+      return citaStart < endMin && citaEnd > startMin;
     }).length;
   }
 
@@ -143,8 +144,8 @@ export class WorkScheduleRepository {
     endMin: number,
   ): Promise<number> {
     const records = await this.prisma.disponibilidadDiaria.findMany({
-      where: { horarioBaseId },
-      select: { horaInicio: true, horaFin: true },
+      where: { horarioBaseId, fecha: { gte: new Date() } },
+      select: { fecha: true, horaInicio: true, horaFin: true },
     });
 
     return records.filter((r) => {

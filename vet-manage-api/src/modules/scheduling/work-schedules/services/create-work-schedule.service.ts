@@ -14,7 +14,7 @@ export class CreateWorkScheduleService {
       throw new BadRequestException('La hora de inicio no tiene un formato válido (HH:mm)');
     }
     if (!isOnSlot(startMin)) {
-      throw new BadRequestException('La hora de inicio debe ser en punto o y media');
+      throw new BadRequestException('Las horas deben ser en punto o media hora');
     }
 
     const endMin = parseTime(dto.horaFin);
@@ -22,7 +22,7 @@ export class CreateWorkScheduleService {
       throw new BadRequestException('La hora de fin no tiene un formato válido (HH:mm)');
     }
     if (!isOnSlot(endMin)) {
-      throw new BadRequestException('La hora de fin debe ser en punto o y media');
+      throw new BadRequestException('Las horas deben ser en punto o media hora');
     }
 
     if (endMin <= startMin) {
@@ -37,7 +37,7 @@ export class CreateWorkScheduleService {
     );
     if (overlapping.length > 0) {
       throw new BadRequestException(
-        'El horario se cruza con otro horario existente del mismo veterinario',
+        'El veterinario ya tiene otro horario asignado en ese mismo intervalo',
       );
     }
 
