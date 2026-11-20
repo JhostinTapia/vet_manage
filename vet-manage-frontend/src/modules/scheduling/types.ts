@@ -49,3 +49,27 @@ export type VeterinarianOption = {
     lastName: string;
   };
 };
+
+export type SaturdayShift = {
+  id: string;
+  fecha: string;
+  justificacion: string | null;
+  sucursalId: string;
+  sucursalNombre: string;
+  veterinarioId: string;
+  veterinarioNombre: string;
+  horaInicio: string;
+  horaFin: string;
+};
+
+export type GenerateSaturdayShiftsData = {
+  sucursalId: string;
+  fechas: string[];
+  veterinarioIds: string[];
+  asignaciones?: Array<{ fecha: string; veterinarioId: string }>;
+};
+
+export type SubstituteSaturdayShiftData = {
+  veterinarioId: string;
+  justificacion: string;
+};
