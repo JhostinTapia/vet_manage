@@ -4,8 +4,18 @@ import { useToast } from '../../../common/components/toast-context';
 import { ApiError } from '../../../infrastructure/api/http-client';
 import { schedulingApi } from '../services/scheduling-api';
 import type { WorkSchedule, WorkScheduleFormData, VeterinarianOption, Branch, DiaSemana } from '../types';
+import './work-schedules.css';
 
 const DIAS_SEMANA: DiaSemana[] = ['LUNES', 'MARTES', 'MIERCOLES', 'JUEVES', 'VIERNES', 'SABADO'];
+
+const DIA_LABELS: Record<DiaSemana, string> = {
+  LUNES: 'Lunes',
+  MARTES: 'Martes',
+  MIERCOLES: 'Miércoles',
+  JUEVES: 'Jueves',
+  VIERNES: 'Viernes',
+  SABADO: 'Sábado',
+};
 
 function generateTimeOptions(): string[] {
   const options: string[] = [];
@@ -160,165 +170,189 @@ export function WorkSchedulesPage() {
   }, [loadSchedules, showToast]);
 
   return (
-    <div>
-      <div className="page-header">
-        <h1>Horarios Base de Atención</h1>
+    <section className="inventory-page work-schedules-page">
+      <div className="page-heading">
+        <div>
+          <span className="eyebrow">Agenda · Horarios</span>
+          <h2>Horarios base de atención</h2>
+          <p>Configure la disponibilidad semanal por sucursal y veterinario.</p>
+        </div>
         {canManage && (
-          <button className="btn btn-primary" onClick={openCreateModal}>
+          <button type="button" className="button button--primary" onClick={openCreateModal}>
             Nuevo horario
           </button>
         )}
       </div>
 
-      <div className="filters-row">
-        <select
-          className="form-control"
-          value={filterSucursalId}
-          onChange={(e) => setFilterSucursalId(e.target.value)}
-        >
-          <option value="">Todas las sucursales</option>
-          {branches.map((b) => (
-            <option key={b.id} value={b.id}>{b.nombre}</option>
-          ))}
-        </select>
-
-        <select
-          className="form-control"
-          value={filterVeterinarioId}
-          onChange={(e) => setFilterVeterinarioId(e.target.value)}
-        >
-          <option value="">Todos los veterinarios</option>
-          {veterinarians.map((v) => (
-            <option key={v.id} value={v.id}>{v.firstName} {v.lastName}</option>
-          ))}
-        </select>
-      </div>
-
-      {loading ? (
-        <p>Cargando...</p>
-      ) : schedules.length === 0 ? (
-        <p>No hay horarios registrados</p>
-      ) : (
-        <table className="data-table">
-          <thead>
-            <tr>
-              <th>Veterinario</th>
-              <th>Día</th>
-              <th>Sucursal</th>
-              <th>Hora inicio</th>
-              <th>Hora fin</th>
-              {canManage && <th>Acciones</th>}
-            </tr>
-          </thead>
-          <tbody>
-            {schedules.map((s) => (
-              <tr key={s.id}>
-                <td>{s.veterinarioNombre}</td>
-                <td>{s.diaSemana}</td>
-                <td>{s.sucursalNombre}</td>
-                <td>{s.horaInicio}</td>
-                <td>{s.horaFin}</td>
-                {canManage && (
-                  <td>
-                    <button className="btn btn-secondary" onClick={() => openEditModal(s)}>
-                      Editar
-                    </button>
-                    <button className="btn btn-danger" onClick={() => handleDelete(s.id)}>
-                      Eliminar
-                    </button>
-                  </td>
-                )}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
-
-      {modalOpen && (
-        <div className="modal-overlay" onClick={closeModal}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <h2>{editingId ? 'Editar horario' : 'Nuevo horario'}</h2>
-
-            <div className="form-group">
-              <label className="form-label">Veterinario</label>
+      <div className="catalog-card work-schedules-card">
+        <div className="catalog-card__heading work-schedules-toolbar">
+          <div>
+            <h3>Horarios registrados</h3>
+            <p>{loading ? 'Cargando disponibilidad…' : `${schedules.length} horario${schedules.length === 1 ? '' : 's'} encontrado${schedules.length === 1 ? '' : 's'}`}</p>
+          </div>
+          <div className="work-schedules-filters">
+            <label className="field">
+              <span>Sucursal</span>
               <select
-                className="form-control"
-                value={form.veterinarioId}
-                onChange={(e) => setForm({ ...form, veterinarioId: e.target.value })}
+                value={filterSucursalId}
+                onChange={(e) => setFilterSucursalId(e.target.value)}
+                aria-label="Filtrar por sucursal"
               >
-                <option value="">Seleccione un veterinario</option>
-                {veterinarians.map((v) => (
-                  <option key={v.id} value={v.id}>{v.firstName} {v.lastName}</option>
-                ))}
-              </select>
-            </div>
-
-            <div className="form-group">
-              <label className="form-label">Sucursal</label>
-              <select
-                className="form-control"
-                value={form.sucursalId}
-                onChange={(e) => setForm({ ...form, sucursalId: e.target.value })}
-              >
-                <option value="">Seleccione una sucursal</option>
+                <option value="">Todas las sucursales</option>
                 {branches.map((b) => (
                   <option key={b.id} value={b.id}>{b.nombre}</option>
                 ))}
               </select>
-            </div>
-
-            <div className="form-group">
-              <label className="form-label">Día de la semana</label>
+            </label>
+            <label className="field">
+              <span>Veterinario</span>
               <select
-                className="form-control"
-                value={form.diaSemana}
-                onChange={(e) => setForm({ ...form, diaSemana: e.target.value as DiaSemana })}
+                value={filterVeterinarioId}
+                onChange={(e) => setFilterVeterinarioId(e.target.value)}
+                aria-label="Filtrar por veterinario"
               >
-                {DIAS_SEMANA.map((d) => (
-                  <option key={d} value={d}>{d}</option>
+                <option value="">Todos los veterinarios</option>
+                {veterinarians.map((v) => (
+                  <option key={v.id} value={v.id}>{v.firstName} {v.lastName}</option>
                 ))}
               </select>
-            </div>
+            </label>
+          </div>
+        </div>
 
-            <div className="form-group">
-              <label className="form-label">Hora inicio</label>
-              <select
-                className="form-control"
-                value={form.horaInicio}
-                onChange={(e) => setForm({ ...form, horaInicio: e.target.value })}
-              >
-                <option value="">Seleccione hora</option>
-                {TIME_OPTIONS.map((t) => (
-                  <option key={t} value={t}>{t}</option>
+        {loading ? (
+          <div className="empty-state">Cargando horarios…</div>
+        ) : schedules.length === 0 ? (
+          <div className="empty-state work-schedules-empty">
+            <div className="work-schedules-empty__icon" aria-hidden="true">◷</div>
+            <strong>No hay horarios registrados</strong>
+            <p>Prueba otro filtro o crea un nuevo horario base.</p>
+            {canManage && <button type="button" className="button button--primary" onClick={openCreateModal}>Nuevo horario</button>}
+          </div>
+        ) : (
+          <div className="product-table-wrap">
+            <table className="product-table work-schedules-table" aria-label="Horarios base de atención">
+              <thead>
+                <tr>
+                  <th>Veterinario</th>
+                  <th>Día</th>
+                  <th>Sucursal</th>
+                  <th>Hora inicio</th>
+                  <th>Hora fin</th>
+                  {canManage && <th className="work-schedules-actions-heading">Acciones</th>}
+                </tr>
+              </thead>
+              <tbody>
+                {schedules.map((s) => (
+                  <tr key={s.id}>
+                    <td><strong>{s.veterinarioNombre}</strong></td>
+                    <td><span className="day-pill">{DIA_LABELS[s.diaSemana]}</span></td>
+                    <td>{s.sucursalNombre}</td>
+                    <td><span className="time-cell">{s.horaInicio}</span></td>
+                    <td><span className="time-cell">{s.horaFin}</span></td>
+                    {canManage && (
+                      <td className="work-schedules-actions">
+                        <button type="button" className="button button--secondary button--small" onClick={() => openEditModal(s)}>Editar</button>
+                        <button type="button" className="button button--danger button--small" onClick={() => handleDelete(s.id)}>Eliminar</button>
+                      </td>
+                    )}
+                  </tr>
                 ))}
-              </select>
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {modalOpen && (
+        <div className="modal-overlay" onClick={closeModal}>
+          <div className="modal-card work-schedules-modal" role="dialog" aria-modal="true" aria-labelledby="work-schedule-modal-title" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-card__heading">
+              <div>
+                <span className="eyebrow">Agenda · Horario</span>
+                <h3 id="work-schedule-modal-title">{editingId ? 'Editar horario' : 'Nuevo horario'}</h3>
+                <p>Define la disponibilidad semanal del veterinario.</p>
+              </div>
+              <button type="button" className="modal-card__close" onClick={closeModal} aria-label="Cerrar">×</button>
             </div>
 
-            <div className="form-group">
-              <label className="form-label">Hora fin</label>
-              <select
-                className="form-control"
-                value={form.horaFin}
-                onChange={(e) => setForm({ ...form, horaFin: e.target.value })}
-              >
-                <option value="">Seleccione hora</option>
-                {TIME_OPTIONS.map((t) => (
-                  <option key={t} value={t}>{t}</option>
-                ))}
-              </select>
-            </div>
+            <div className="modal-card__body">
+              <div className="work-schedules-form-grid">
+                <label className="field">
+                  <span>Veterinario <b>*</b></span>
+                  <select
+                    value={form.veterinarioId}
+                    onChange={(e) => setForm({ ...form, veterinarioId: e.target.value })}
+                  >
+                    <option value="">Seleccione un veterinario</option>
+                    {veterinarians.map((v) => (
+                      <option key={v.id} value={v.id}>{v.firstName} {v.lastName}</option>
+                    ))}
+                  </select>
+                </label>
 
-            <div className="form-group" style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-              <button className="btn btn-secondary" onClick={closeModal}>
-                Cancelar
-              </button>
-              <button className="btn btn-primary" onClick={handleSubmit}>
-                {editingId ? 'Guardar cambios' : 'Crear horario'}
-              </button>
+                <label className="field">
+                  <span>Sucursal <b>*</b></span>
+                  <select
+                    value={form.sucursalId}
+                    onChange={(e) => setForm({ ...form, sucursalId: e.target.value })}
+                  >
+                    <option value="">Seleccione una sucursal</option>
+                    {branches.map((b) => (
+                      <option key={b.id} value={b.id}>{b.nombre}</option>
+                    ))}
+                  </select>
+                </label>
+
+                <label className="field work-schedules-form-grid__full">
+                  <span>Día de la semana <b>*</b></span>
+                  <select
+                    value={form.diaSemana}
+                    onChange={(e) => setForm({ ...form, diaSemana: e.target.value as DiaSemana })}
+                  >
+                    {DIAS_SEMANA.map((d) => (
+                      <option key={d} value={d}>{DIA_LABELS[d]}</option>
+                    ))}
+                  </select>
+                </label>
+
+                <label className="field">
+                  <span>Hora inicio <b>*</b></span>
+                  <select
+                    value={form.horaInicio}
+                    onChange={(e) => setForm({ ...form, horaInicio: e.target.value })}
+                  >
+                    <option value="">Seleccione hora</option>
+                    {TIME_OPTIONS.map((t) => (
+                      <option key={t} value={t}>{t}</option>
+                    ))}
+                  </select>
+                </label>
+
+                <label className="field">
+                  <span>Hora fin <b>*</b></span>
+                  <select
+                    value={form.horaFin}
+                    onChange={(e) => setForm({ ...form, horaFin: e.target.value })}
+                  >
+                    <option value="">Seleccione hora</option>
+                    {TIME_OPTIONS.map((t) => (
+                      <option key={t} value={t}>{t}</option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+
+              <div className="work-schedules-modal__actions">
+                <button type="button" className="button button--ghost" onClick={closeModal}>Cancelar</button>
+                <button type="button" className="button button--primary" onClick={handleSubmit}>
+                  {editingId ? 'Guardar cambios' : 'Crear horario'}
+                </button>
+              </div>
             </div>
           </div>
         </div>
       )}
-    </div>
+    </section>
   );
 }
