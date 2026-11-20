@@ -36,12 +36,23 @@ const clinicalFiles: PermissionKey[] = [
   'clinical-files:create', 'clinical-files:read', 'clinical-files:update', 'clinical-files:remove',
 ];
 
+// Configuración de la agenda: jornadas, turnos de sábado, bloqueos y tarifas.
+const schedulingAdmin: PermissionKey[] = [
+  'branches:read',
+  'work-schedules:read', 'work-schedules:manage',
+  'saturday-shifts:read', 'saturday-shifts:manage',
+  'daily-availability:read',
+  'schedule-blocks:read', 'schedule-blocks:create', 'schedule-blocks:remove',
+  'rates:read', 'rates:manage',
+  'resources:read-availability',
+];
+
 // Permisos iniciales de cada rol. El Administrador puede modificarlos desde el sistema.
 export const ROLES: readonly RoleDefinition[] = [
   {
     name: 'administrator',
     displayName: 'Administrador',
-    description: 'Gestiona usuarios, roles, permisos y auditoría.',
+    description: 'Gestiona usuarios, roles, permisos, auditoría y la configuración de la agenda.',
     category: 'STAFF',
     permissions: [
       'users:create', 'users:read', 'users:update', 'users:assign-roles',
@@ -49,17 +60,19 @@ export const ROLES: readonly RoleDefinition[] = [
       'roles:manage-permissions', 'audit:read', 'audit:export',
       ...catalogManagement('species'),
       ...catalogManagement('breeds'),
+      ...schedulingAdmin,
     ],
   },
   {
     name: 'manager',
     displayName: 'Gerente',
-    description: 'Gestiona clientes, pacientes y catálogos de procedimientos.',
+    description: 'Gestiona clientes, pacientes, catálogos de procedimientos y la configuración de la agenda.',
     category: 'STAFF',
     permissions: [
       ...clientsAndPetsFull,
       'species:read', 'breeds:read',
       ...procedureCatalog,
+      ...schedulingAdmin,
     ],
   },
   {
@@ -79,6 +92,9 @@ export const ROLES: readonly RoleDefinition[] = [
       'procedure-reports:create', 'procedure-reports:correct',
       'supplies-used:create', 'supplies-used:remove',
       ...clinicalFiles,
+      // Agenda: consulta su jornada y registra su disponibilidad diaria.
+      'branches:read', 'work-schedules:read', 'saturday-shifts:read',
+      'daily-availability:read', 'daily-availability:manage-own', 'schedule-blocks:read',
     ],
   },
   {
@@ -104,6 +120,9 @@ export const ROLES: readonly RoleDefinition[] = [
       'clients:create', 'clients:read', 'clients:update', 'clients:inactivate', 'clients:activate',
       'pets:create', 'pets:read', 'pets:update', 'pets:inactivate', 'pets:activate',
       'species:read', 'breeds:read',
+      // Agenda: consulta recursos disponibles y tarifas.
+      'branches:read', 'resources:read-availability', 'rates:read',
+      'work-schedules:read', 'schedule-blocks:read',
     ],
   },
   {

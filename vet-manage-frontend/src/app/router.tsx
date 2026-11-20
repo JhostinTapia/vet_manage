@@ -12,6 +12,7 @@ import { PatientsPage } from '../modules/pets/pages/patients-page';
 import { CatalogPage } from '../modules/inventory/pages/catalog-page';
 import { ProductFormPage } from '../modules/inventory/pages/product-form-page';
 import { ProductsPage } from '../modules/inventory/pages/products-page';
+import { schedulingRoutes } from '../modules/scheduling/routes';
 import { UsersPage } from '../modules/users/pages/users-page';
 import { UserRegisterPage } from '../modules/users/pages/user-register-page';
 import { UserRoleAssignmentPage } from '../modules/users/pages/user-role-assignment-page';
@@ -32,6 +33,7 @@ export function AppRouter() {
           <Route path="clients" element={<RequirePermission permission="clients:read"><ClientsPage /></RequirePermission>} />
           <Route path="clients/new" element={<RequirePermission permission="clients:create"><ClientRegisterPage /></RequirePermission>} />
           <Route path="appointments" element={<ComingSoonPage />} />
+          {schedulingRoutes}
           <Route path="inventory/products" element={<ProductsPage />} />
           <Route path="inventory/products/new" element={<ProductFormPage />} />
           <Route path="inventory/products/:id/edit" element={<ProductFormPage />} />
