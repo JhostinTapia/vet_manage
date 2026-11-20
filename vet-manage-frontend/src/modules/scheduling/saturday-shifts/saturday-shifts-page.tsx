@@ -28,13 +28,16 @@ export function SaturdayShiftsPage() {
   }, [sucursalId, showToast]);
 
   useEffect(() => {
-    load();
+    const timeout = window.setTimeout(() => {
+      void load();
+    }, 0);
     Promise.all([schedulingApi.listBranches(), schedulingApi.listVeterinarians()])
       .then(([loadedBranches, loadedVeterinarians]) => {
         setBranches(loadedBranches);
         setVeterinarians(loadedVeterinarians);
       })
       .catch((cause) => showToast(cause instanceof ApiError ? cause.message : 'No se pudieron cargar los datos.', 'error'));
+    return () => window.clearTimeout(timeout);
   }, [load, showToast]);
 
   async function generate() {
