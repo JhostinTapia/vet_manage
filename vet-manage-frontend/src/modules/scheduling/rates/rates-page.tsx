@@ -4,8 +4,9 @@ import { useAuth } from '../../auth/auth-context';
 import { schedulingApi } from '../services/scheduling-api';
 import type { Branch } from '../types';
 import { ratesApi, type Rate, type RateService } from './rates-api';
+import { useToast } from '../../../common/components/toast-context';
 
-export const INVALID_RATE_MESSAGE = 'Ingrese un importe mayor a cero con hasta dos decimales';
+export const INVALID_RATE_MESSAGE = 'Ingrese un importe mayor a cero con hasta dos decimales ';
 export const REQUIRED_RATE_MESSAGE = 'El campo tarifa es obligatorio';
 export const FORBIDDEN_RATE_MESSAGE = 'No tiene permisos para esta acción';
 
@@ -36,6 +37,7 @@ export function RatesPage() {
   const [operationError, setOperationError] = useState('');
   const [message, setMessage] = useState('');
   const [updatingServiceId, setUpdatingServiceId] = useState('');
+  const { showToast } = useToast();
 
   useEffect(() => {
     if (!canRead) return;
@@ -145,6 +147,7 @@ export function RatesPage() {
         setServiceId(services.find((item) => item.id !== service.id && item.estado)?.id ?? '');
       }
       setMessage(updated.estado ? 'Servicio activado correctamente' : 'Servicio inactivado correctamente');
+      showToast(updated.estado ? 'Servicio inactivado correctamente' : 'Servicio activado correctamente');
     } catch (cause) {
       const globalError = globalErrorMessage(cause, 'No se pudo actualizar el estado del servicio');
       setGlobalError(globalError);
@@ -223,8 +226,19 @@ export function RatesPage() {
                     <td>
                       <button
                         type="button"
-                        className="button button--ghost button--small"
-                        onClick={() => void toggleService(service)}
+                        className={`button button--small ${service.estado ? 'button--danger-soft' : 'button--success-soft'
+                          }`}
+                        onClick={() => {
+                          const action = service.estado ? 'inactivar' : 'activar';
+
+                          const confirmed = window.confirm(
+                            `¿Estás seguro de que deseas ${action} el servicio "${service.nombre}"?`
+                          );
+
+                          if (confirmed) {
+                            void toggleService(service);
+                          }
+                        }}
                         disabled={updatingServiceId === service.id}
                       >
                         {service.estado ? 'Inactivar servicio' : 'Activar servicio'}
