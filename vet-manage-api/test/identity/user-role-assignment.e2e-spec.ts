@@ -10,6 +10,7 @@ import { PrismaService } from '../../src/infrastructure/database/prisma/prisma.s
 import { IdentityModule } from '../../src/modules/identity/identity.module.js';
 import { AccessService } from '../../src/modules/identity/services/access.service.js';
 import { TokenService } from '../../src/modules/identity/services/token.service.js';
+import { deleteAuditLogsOfPeople } from './support.js';
 
 const EMAIL_DOMAIN = '@e2e-roleassign.test';
 let counter = 0;
@@ -118,6 +119,7 @@ describe('Asignación de roles (e2e)', () => {
 
   afterAll(async () => {
     if (!prisma) return;
+    await deleteAuditLogsOfPeople(prisma, personIds);
     await prisma.userRole.deleteMany({ where: { user: { personId: { in: personIds } } } });
     await prisma.user.deleteMany({ where: { personId: { in: personIds } } });
     await prisma.person.deleteMany({ where: { id: { in: personIds } } });

@@ -12,8 +12,9 @@ function build() {
     total: 0,
     totalPages: 0,
   }));
-  const service = { list };
-  return { controller: new ClientsController(service as never), service, list };
+  const listPets = vi.fn(async () => []);
+  const service = { list, listPets };
+  return { controller: new ClientsController(service as never), service, list, listPets };
 }
 
 describe('ClientsController', () => {
@@ -43,5 +44,22 @@ describe('ClientsController', () => {
       total: 0,
       totalPages: 0,
     }));
+  });
+
+  it('exige el permiso pets:read en la consulta de mascotas vinculadas', () => {
+    const listPetsMethod = Object.getOwnPropertyDescriptor(ClientsController.prototype, 'listPets')?.value;
+    const permissions = Reflect.getMetadata(PERMISSIONS_METADATA, listPetsMethod as object);
+
+    expect(permissions).toEqual(['pets:read']);
+  });
+
+  it('devuelve las mascotas del cliente en la envoltura success', async () => {
+    const pets = [{ id: 'pet1', code: 'PAC-000001', name: 'Firulais', species: 'Canino', breed: 'Labrador', status: 'ACTIVE' as const }];
+    ctx.listPets.mockResolvedValue(pets);
+
+    const result = await ctx.controller.listPets('c1');
+
+    expect(ctx.listPets).toHaveBeenCalledWith('c1');
+    expect(result).toEqual(success(pets));
   });
 });

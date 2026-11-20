@@ -1,8 +1,10 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Param, ParseUUIDPipe, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, HttpStatus, Param, ParseUUIDPipe, Post, Req, UseGuards } from '@nestjs/common';
+import { ApiException } from '../../../common/errors/api-exception.js';
 import { success } from '../../../common/errors/api-response.js';
 import { JwtAuthGuard } from '../../identity/guards/jwt-auth.guard.js';
 import { PermissionsGuard } from '../../identity/guards/permissions.guard.js';
 import { RequirePermissions } from '../../identity/decorators/require-permissions.decorator.js';
+import type { AuthenticatedRequest } from '../../identity/types/authenticated-request.js';
 import { RegisterBreedDto } from '../dtos/breeds/register-breed.dto.js';
 import { ListActiveBreedsService } from '../services/breeds/list-active-breeds.service.js';
 import { RegisterBreedService } from '../services/breeds/register-breed.service.js';
@@ -19,8 +21,9 @@ export class BreedController {
   @UseGuards(JwtAuthGuard, PermissionsGuard)
   // Solo usuarios con permiso breeds:create pueden registrar razas
   @RequirePermissions('breeds:create')
-  async registerBreed(@Body() dto: RegisterBreedDto) {
-    const created = await this.registerBreedService.execute(dto);
+  async registerBreed(@Body() dto: RegisterBreedDto, @Req() request: AuthenticatedRequest) {
+    if (!request.user) throw ApiException.unauthorized();
+    const created = await this.registerBreedService.execute(dto, request.user.id);
     return success(created, 'Raza registrada exitosamente', 201);
   }
 

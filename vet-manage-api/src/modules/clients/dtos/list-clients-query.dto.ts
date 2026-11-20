@@ -1,9 +1,15 @@
 import { Transform } from 'class-transformer';
-import { IsIn, IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
+import { IsIn, IsInt, IsOptional, IsString, Max, Min, MinLength } from 'class-validator';
 import type { ClientStatus } from './client-response.dto.js';
 
 const toPositiveNumber = (fallback: number) => ({ value }: { value: unknown }) =>
   value === undefined || value === '' ? fallback : Number(value);
+
+const normalizeSearch = ({ value }: { value: unknown }) => {
+  if (typeof value !== 'string') return value;
+  const trimmed = value.trim();
+  return trimmed === '' ? undefined : trimmed;
+};
 
 export class ListClientsQueryDto {
   @IsOptional()
@@ -20,7 +26,11 @@ export class ListClientsQueryDto {
   pageSize = 20;
 
   @IsOptional()
+  @Transform(normalizeSearch)
   @IsString()
+  @MinLength(2, {
+    message: 'Ingrese al menos 2 caracteres para buscar por nombre o los 10 dígitos de la cédula',
+  })
   search?: string;
 
   @IsOptional()

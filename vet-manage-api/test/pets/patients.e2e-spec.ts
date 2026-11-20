@@ -12,6 +12,7 @@ import { PatientRepository } from '../../src/modules/pets/repositories/patient.r
 import { SpeciesRepository } from '../../src/modules/pets/repositories/species.repository.js';
 import { ClientsRepository } from '../../src/modules/clients/repositories/clients.repository.js';
 import { PrismaService } from '../../src/infrastructure/database/prisma/prisma.service.js';
+import { AuditService } from '../../src/modules/audit/services/audit.service.js';
 import { AccessService } from '../../src/modules/identity/services/access.service.js';
 import { TokenService } from '../../src/modules/identity/services/token.service.js';
 
@@ -48,6 +49,8 @@ describe('PatientsController (e2e)', () => {
   ];
 
   const tokens = { verify: vi.fn(async () => 'user-1') };
+  const audit = { record: vi.fn(async () => undefined) };
+  const prisma = { $transaction: vi.fn(async (run: (client: unknown) => unknown) => run({})) };
   const access = {
     findActiveUser: vi.fn(async () => ({ id: 'user-1' })),
     getPermissionKeys: vi.fn(async () => permissions),
@@ -86,7 +89,8 @@ describe('PatientsController (e2e)', () => {
     const moduleRef = await Test.createTestingModule({
       imports: [ConfigModule.forRoot({ isGlobal: true, load: [configuration] }), PetsModule],
     })
-      .overrideProvider(PrismaService).useValue({})
+      .overrideProvider(PrismaService).useValue(prisma)
+      .overrideProvider(AuditService).useValue(audit)
       .overrideProvider(SpeciesRepository).useValue(speciesRepo)
       .overrideProvider(BreedRepository).useValue(breedRepo)
       .overrideProvider(PatientRepository).useValue(petRepo)
@@ -142,6 +146,7 @@ describe('PatientsController (e2e)', () => {
         breed: { id: LABRADOR, name: 'Labrador' },
       });
       expect(res.body.data.code).toMatch(/^PAC-\d{6}$/);
+      expect(audit.record).toHaveBeenCalledWith({}, expect.objectContaining({ actorId: 'user-1', action: 'Registrar', module: 'Pacientes' }));
     });
 
     it('asigna códigos distintos a pacientes consecutivos (201)', async () => {

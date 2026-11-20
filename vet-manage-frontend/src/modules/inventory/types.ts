@@ -40,6 +40,17 @@ export type BatchEntryResult = {
     code: string;
     expirationDate: string;
     initialQuantity: number;
+    availableQuantity: number;
   };
   product: { id: string; code: string; name: string; stock: number };
+};
+
+export type ExpirationAlert = {
+  lotId: string;
+  productName: string;
+  lotCode: string;
+  expirationDate: string;
+  availableQuantity: number;
+  status: 'UPCOMING' | 'EXPIRED';
+  label: 'Próximo a caducar' | 'Caducado';
 };

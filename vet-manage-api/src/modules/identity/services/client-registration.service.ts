@@ -6,6 +6,9 @@ import { isValidIdentification } from '../../../common/validation/identification
 import { PrismaService } from '../../../infrastructure/database/prisma/prisma.service.js';
 import { MailService } from '../../../infrastructure/mail/mail.service.js';
 import { renderCredentialsEmail } from '../../../infrastructure/mail/templates/credentials-email.js';
+import { AUDIT_ACTIONS, AUDIT_MODULES } from '../../audit/audit.catalog.js';
+import { describePerson } from '../../audit/describe-person.js';
+import { AuditService } from '../../audit/services/audit.service.js';
 import type { ClientRegistrationDto } from '../dtos/client-registration.dto.js';
 import { PasswordHasher } from './password-hasher.service.js';
 import { generateTemporaryPassword } from './temporary-password.js';
@@ -68,6 +71,7 @@ export class ClientRegistrationService {
     private readonly hasher: PasswordHasher,
     private readonly mail: MailService,
     private readonly config: ConfigService,
+    private readonly audit: AuditService,
   ) {}
 
   // El registro de clientes siempre asigna el rol de la categoría CLIENT.
@@ -190,6 +194,12 @@ export class ClientRegistrationService {
       where: { personId: person.id },
       create: { personId: person.id, status: 'ACTIVE' },
       update: {},
+    });
+    await this.audit.record(tx, {
+      actorId: assignedById,
+      action: AUDIT_ACTIONS.register,
+      module: AUDIT_MODULES.clients,
+      affectedRecord: describePerson(person),
     });
 
     return { person, user, client, passwordAssigned, existingPerson: Boolean(found) };

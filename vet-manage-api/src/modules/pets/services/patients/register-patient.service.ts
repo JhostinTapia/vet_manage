@@ -1,5 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { ApiException } from '../../../../common/errors/api-exception.js';
+import { PrismaService } from '../../../../infrastructure/database/prisma/prisma.service.js';
+import { AUDIT_ACTIONS, AUDIT_MODULES } from '../../../audit/audit.catalog.js';
+import { AuditService } from '../../../audit/services/audit.service.js';
 import { ClientsService } from '../../../clients/services/clients.service.js';
 import type { RegisterPatientDto } from '../../dtos/patients/register-patient.dto.js';
 import { BreedRepository } from '../../repositories/breed.repository.js';
@@ -73,9 +76,11 @@ export class RegisterPatientService {
     private readonly speciesRepository: SpeciesRepository,
     private readonly breedRepository: BreedRepository,
     private readonly clientsService: ClientsService,
+    private readonly prisma: PrismaService,
+    private readonly audit: AuditService,
   ) {}
 
-  async execute(dto: RegisterPatientDto): Promise<RegisteredPatient> {
+  async execute(dto: RegisterPatientDto, actorId: string): Promise<RegisteredPatient> {
     const data = this.validate(dto);
 
     // El dueño se valida con el servicio de clientes, no con su tabla.
@@ -92,7 +97,18 @@ export class RegisterPatientService {
     if (breed.speciesId !== species.id) throw fail(PATIENT_MESSAGES.breedMismatch, 400, ['breedId'], 'PATIENT_BREED_MISMATCH');
     if (!breed.isActive) throw fail(PATIENT_MESSAGES.breedInactive, 409, ['breedId'], 'PATIENT_BREED_INACTIVE');
 
-    return this.toResponse(await this.patientRepository.create(data));
+    const created = await this.prisma.$transaction(async (tx) => {
+      const patient = await this.patientRepository.create(data, tx);
+      await this.audit.record(tx, {
+        actorId,
+        action: AUDIT_ACTIONS.register,
+        module: AUDIT_MODULES.patients,
+        affectedRecord: `${patient.name} (${patient.code})`,
+      });
+      return patient;
+    });
+
+    return this.toResponse(created);
   }
 
   // Valida en el orden de los criterios de aceptación; dto.code se ignora a propósito.

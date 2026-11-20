@@ -53,6 +53,16 @@ button { cursor: pointer; }
 .content-grid { display: grid; grid-template-columns: 1.55fr 1fr; gap: 18px; }
 .panel { padding: 24px; }
 .panel-heading { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 21px; }.panel h3 { font-size: 18px; font-weight: 750; }
+.expiration-alerts { margin-top: 18px; }
+.expiration-alerts__message { margin: 0; padding: 18px; border-radius: 10px; color: #74808d; background: #f7f9fb; font-size: 12px; text-align: center; }
+.expiration-alerts__message--error { color: #a8444b; background: #fff0f0; }
+.expiration-alerts__table-wrap { overflow-x: auto; }
+.expiration-alerts__table { min-width: 720px; }
+.expiration-alerts__date { display: flex; align-items: center; gap: 8px; white-space: nowrap; }
+.expiration-alerts__editor { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; min-width: 230px; }
+.expiration-alerts__editor input { min-width: 135px; padding: 7px; border: 1px solid #dfe6ec; border-radius: 7px; color: #26323d; font: inherit; font-size: 11px; }
+.expiration-alerts__save-error { flex-basis: 100%; color: #c95e65; }
+.tag-red { color: #b94d54; background: #fff0f0; }
 .text-button { border: 0; padding: 0; color: #4c7dff; background: transparent; font-size: 12px; font-weight: 700; }
 .appointment-list { display: grid; gap: 2px; }.appointment-row { display: grid; grid-template-columns: 45px 30px 1fr auto; align-items: center; gap: 10px; min-height: 59px; border-bottom: 1px solid #f0f2f4; }.appointment-row:last-child { border-bottom: 0; }.appointment-row > strong { color: #596674; font-size: 12px; }.appointment-row b { display: block; color: #26323d; font-size: 12px; }.appointment-row small { display: block; color: #9aa4ae; font-size: 10px; margin-top: 3px; }.appointment-avatar { width: 28px; height: 28px; display: grid; place-items: center; border-radius: 9px; font-size: 9px; font-weight: 800; }.avatar-blue { color: #436ee4; background: #e7edff; }.avatar-purple { color: #9360d8; background: #f1e9ff; }.avatar-yellow { color: #c28b33; background: #fff2d9; }
 .tag { padding: 5px 8px; border-radius: 6px; font-size: 9px; font-weight: 700; }.tag-green { color: #3caa79; background: #e9f8f1; }.tag-orange { color: #c48638; background: #fff4e4; }

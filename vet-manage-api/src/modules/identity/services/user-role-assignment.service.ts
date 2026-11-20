@@ -1,6 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { ApiException } from '../../../common/errors/api-exception.js';
 import { PrismaService } from '../../../infrastructure/database/prisma/prisma.service.js';
+import { AUDIT_ACTIONS, AUDIT_MODULES } from '../../audit/audit.catalog.js';
+import { describePerson } from '../../audit/describe-person.js';
+import { AuditService } from '../../audit/services/audit.service.js';
 
 export const ROLE_ASSIGNMENT_MESSAGES = {
   userNotFound: 'Usuario no encontrado',
@@ -20,7 +23,10 @@ export type RoleAssignmentView = {
 
 @Injectable()
 export class UserRoleAssignmentService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly audit: AuditService,
+  ) {}
 
   async get(userId: string): Promise<RoleAssignmentView> {
     const now = new Date();
@@ -73,6 +79,7 @@ export class UserRoleAssignmentService {
         select: {
           id: true,
           status: true,
+          person: { select: { identification: true, firstName: true, lastName: true } },
           userRoles: {
             select: {
               id: true,
@@ -122,18 +129,31 @@ export class UserRoleAssignmentService {
       const desiredIds = new Set(desiredRoles.map((role) => role.id));
       const byRoleId = new Map(user.userRoles.map((assignment) => [assignment.roleId, assignment]));
 
-      for (const role of desiredRoles) {
+      const toAdd = desiredRoles.filter((role) => !byRoleId.has(role.id));
+      const toRenew = desiredRoles.flatMap((role) => {
         const assignment = byRoleId.get(role.id);
-        if (!assignment) {
-          await tx.userRole.create({ data: { userId, roleId: role.id, assignedById: actorId } });
-        } else if (assignment.expiresAt && assignment.expiresAt <= now) {
-          await tx.userRole.update({ where: { id: assignment.id }, data: { expiresAt: null, assignedById: actorId } });
-        }
-      }
-
+        return assignment?.expiresAt && assignment.expiresAt <= now ? [assignment.id] : [];
+      });
       const toRemove = user.userRoles
         .filter((assignment) => !desiredIds.has(assignment.roleId))
         .map((assignment) => assignment.id);
+
+      // Se registra antes de aplicar los cambios para que el rol guardado sea el que tenía el actor.
+      if (toAdd.length > 0 || toRenew.length > 0 || toRemove.length > 0) {
+        await this.audit.record(tx, {
+          actorId,
+          action: AUDIT_ACTIONS.assignRoles,
+          module: AUDIT_MODULES.users,
+          affectedRecord: describePerson(user.person),
+        });
+      }
+
+      for (const role of toAdd) {
+        await tx.userRole.create({ data: { userId, roleId: role.id, assignedById: actorId } });
+      }
+      for (const id of toRenew) {
+        await tx.userRole.update({ where: { id }, data: { expiresAt: null, assignedById: actorId } });
+      }
       if (toRemove.length > 0) {
         await tx.userRole.deleteMany({ where: { id: { in: toRemove } } });
       }

@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import type { ClientListResponseDto, ClientResponseDto, ClientRole } from '../dtos/client-response.dto.js';
+import { ApiException } from '../../../common/errors/api-exception.js';
+import type { ClientListResponseDto, ClientPetDto, ClientResponseDto, ClientRole } from '../dtos/client-response.dto.js';
 import type { ListClientsQueryDto } from '../dtos/list-clients-query.dto.js';
 import { ClientsRepository, type ClientWithPerson } from '../repositories/clients.repository.js';
 
@@ -29,6 +30,20 @@ export class ClientsService {
   // Usado por pets para validar el dueño sin consultar la tabla de clientes.
   findById(id: string) {
     return this.repository.findById(id);
+  }
+
+  async listPets(clientId: string): Promise<ClientPetDto[]> {
+    const pets = await this.repository.findPetsByClientId(clientId);
+    if (!pets) throw ApiException.notFound('Cliente no encontrado');
+
+    return pets.map((pet) => ({
+      id: pet.id,
+      code: pet.code,
+      name: pet.name,
+      species: pet.species.name,
+      breed: pet.breed.name,
+      status: pet.status,
+    }));
   }
 
   private toResponse(client: ClientWithPerson): ClientResponseDto {

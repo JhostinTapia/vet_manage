@@ -14,9 +14,10 @@ function build(tx: Tx, view: unknown) {
     user: { findUnique: vi.fn() },
     role: { findMany: vi.fn() },
   };
-  const service = new UserRoleAssignmentService(prisma as never);
+  const audit = { record: vi.fn(async () => undefined) };
+  const service = new UserRoleAssignmentService(prisma as never, audit as never);
   const getSpy = vi.spyOn(service, 'get').mockResolvedValue(view as never);
-  return { prisma, tx, service, getSpy };
+  return { prisma, tx, service, getSpy, audit };
 }
 
 const now = new Date('2026-11-19T12:00:00Z');
@@ -25,6 +26,7 @@ function baseUser(overrides: Partial<{ status: string; userRoles: unknown[] }> =
   return {
     id: 'u-1',
     status: 'ACTIVE',
+    person: { identification: '1710034065', firstName: 'María', lastName: 'López' },
     userRoles: [
       {
         id: 'ur-rec',
@@ -111,6 +113,79 @@ describe('UserRoleAssignmentService.update', () => {
     });
     expect(tx.userRole.deleteMany).toHaveBeenCalledWith({ where: { id: { in: ['ur-rec'] } } });
     vi.useRealTimers();
+  });
+
+  describe('auditoría', () => {
+    const unchangedTx = (): Tx => ({
+      user: { findUnique: vi.fn().mockResolvedValue(baseUser()), count: vi.fn() },
+      role: { findMany: vi.fn().mockResolvedValue([{ id: 'role-rec', name: 'receptionist' }]) },
+      userRole: { create: vi.fn(), update: vi.fn(), deleteMany: vi.fn() },
+    });
+
+    it('registra "Asignar roles" en la transacción cuando cambian los roles', async () => {
+      const tx = unchangedTx();
+      tx.role.findMany.mockResolvedValue([
+        { id: 'role-rec', name: 'receptionist' },
+        { id: 'role-cash', name: 'cashier' },
+      ]);
+      const { service, audit } = build(tx, {});
+
+      await service.update('u-1', ['receptionist', 'cashier'], 'admin-1');
+
+      expect(audit.record).toHaveBeenCalledTimes(1);
+      expect(audit.record).toHaveBeenCalledWith(tx, {
+        actorId: 'admin-1',
+        action: 'Asignar roles',
+        module: 'Usuarios',
+        affectedRecord: '1710034065 - María López',
+      });
+    });
+
+    it('registra la acción antes de aplicar los cambios de roles', async () => {
+      const tx = unchangedTx();
+      tx.role.findMany.mockResolvedValue([
+        { id: 'role-rec', name: 'receptionist' },
+        { id: 'role-cash', name: 'cashier' },
+      ]);
+      const { service, audit } = build(tx, {});
+
+      await service.update('u-1', ['receptionist', 'cashier'], 'admin-1');
+
+      expect(audit.record.mock.invocationCallOrder[0]).toBeLessThan(tx.userRole.create.mock.invocationCallOrder[0]);
+    });
+
+    it('registra la acción cuando solo se quita un rol', async () => {
+      const tx = unchangedTx();
+      tx.user.findUnique.mockResolvedValue(baseUser({
+        userRoles: [{ id: 'ur-cash', roleId: 'role-cash', expiresAt: null, role: { name: 'cashier', isActive: true } }],
+      }));
+      const { service, audit } = build(tx, {});
+
+      await service.update('u-1', ['receptionist'], 'admin-1');
+
+      expect(tx.userRole.deleteMany).toHaveBeenCalled();
+      expect(audit.record).toHaveBeenCalledTimes(1);
+    });
+
+    it('no registra nada cuando se guardan los mismos roles', async () => {
+      const tx = unchangedTx();
+      const { service, audit } = build(tx, {});
+
+      await service.update('u-1', ['receptionist'], 'admin-1');
+
+      expect(tx.userRole.create).not.toHaveBeenCalled();
+      expect(tx.userRole.deleteMany).not.toHaveBeenCalled();
+      expect(audit.record).not.toHaveBeenCalled();
+    });
+
+    it('no registra nada cuando la solicitud se rechaza', async () => {
+      const tx = unchangedTx();
+      tx.user.findUnique.mockResolvedValue(null);
+      const { service, audit } = build(tx, {});
+
+      await expect(service.update('u-1', ['receptionist'], 'admin-1')).rejects.toMatchObject({ statusCode: 404 });
+      expect(audit.record).not.toHaveBeenCalled();
+    });
   });
 
   it('rechaza guardar sin roles efectivos', async () => {

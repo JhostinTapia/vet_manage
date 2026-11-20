@@ -34,11 +34,11 @@ export function AppRouter() {
           <Route path="clients/new" element={<RequirePermission permission="clients:create"><ClientRegisterPage /></RequirePermission>} />
           <Route path="appointments" element={<ComingSoonPage />} />
           {schedulingRoutes}
-          <Route path="inventory/products" element={<ProductsPage />} />
-          <Route path="inventory/products/new" element={<ProductFormPage />} />
-          <Route path="inventory/products/:id/edit" element={<ProductFormPage />} />
-          <Route path="inventory/categories" element={<CatalogPage type="category" />} />
-          <Route path="inventory/brands" element={<CatalogPage type="brand" />} />
+          <Route path="inventory/products" element={<RequirePermission permission="inventory:read"><ProductsPage /></RequirePermission>} />
+          <Route path="inventory/products/new" element={<RequirePermission permission="inventory:manage-products"><ProductFormPage /></RequirePermission>} />
+          <Route path="inventory/products/:id/edit" element={<RequirePermission permission="inventory:manage-products"><ProductFormPage /></RequirePermission>} />
+          <Route path="inventory/categories" element={<RequirePermission permission="inventory:read"><CatalogPage type="category" /></RequirePermission>} />
+          <Route path="inventory/brands" element={<RequirePermission permission="inventory:read"><CatalogPage type="brand" /></RequirePermission>} />
           <Route path="inventory/batches/new" element={<RequirePermission permission="inventory:register-entry"><BatchEntryPage /></RequirePermission>} />
           <Route path="users" element={<RequirePermission permission="users:read"><UsersPage /></RequirePermission>} />
           <Route path="users/new" element={<RequirePermission permission="users:create"><UserRegisterPage /></RequirePermission>} />

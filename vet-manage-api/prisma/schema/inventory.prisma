@@ -57,6 +57,7 @@ model Batch {
   code            String   @db.VarChar(50)
   expirationDate  DateTime @map("expiration_date") @db.Date
   initialQuantity Int      @map("initial_quantity")
+  availableQuantity Int    @default(0) @map("available_quantity")
   createdAt       DateTime @default(now()) @map("created_at")
   updatedAt       DateTime @updatedAt @map("updated_at")
 

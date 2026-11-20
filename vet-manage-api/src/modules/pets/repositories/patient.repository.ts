@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../infrastructure/database/prisma/prisma.service.js';
-import type { Gender, ReproductiveStatus } from '../../../generated/prisma/client.js';
+import type { Gender, Prisma, ReproductiveStatus } from '../../../generated/prisma/client.js';
 
 export type NewPatient = {
   name: string;
@@ -25,8 +25,8 @@ export class PatientRepository {
   constructor(private readonly prisma: PrismaService) {}
 
   // El código (PAC-NNNNNN) y el estado ACTIVE los asigna la base de datos.
-  create(data: NewPatient) {
-    return this.prisma.patient.create({ data, include: patientWithCatalog });
+  create(data: NewPatient, tx?: Prisma.TransactionClient) {
+    return (tx ?? this.prisma).patient.create({ data, include: patientWithCatalog });
   }
 }
 

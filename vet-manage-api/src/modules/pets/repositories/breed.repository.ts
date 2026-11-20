@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../infrastructure/database/prisma/prisma.service.js';
-import type { Breed } from '../../../generated/prisma/client.js';
+import type { Breed, Prisma } from '../../../generated/prisma/client.js';
 
 @Injectable()
 export class BreedRepository {
@@ -27,8 +27,11 @@ export class BreedRepository {
   }
 
   // Toda raza nueva se crea activa
-  async create(data: { name: string; speciesId: string; description?: string | null }): Promise<Breed> {
-    return this.prisma.breed.create({
+  async create(
+    data: { name: string; speciesId: string; description?: string | null },
+    tx?: Prisma.TransactionClient,
+  ): Promise<Breed> {
+    return (tx ?? this.prisma).breed.create({
       data: {
         name: data.name.trim(),
         speciesId: data.speciesId,

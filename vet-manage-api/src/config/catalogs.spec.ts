@@ -20,9 +20,9 @@ describe('Catálogos de permisos y roles', () => {
     for (const key of keys) expect(key).toMatch(/^[a-z-]+:[a-z-]+$/);
   });
 
-  it('declara los 8 roles del sistema sin super administrador', () => {
+  it('declara el superadmin de pruebas y los roles operativos', () => {
     expect(ROLES.map((role) => role.name)).toEqual([
-      'administrator', 'manager', 'veterinarian', 'veterinary_technician',
+      'superadmin', 'administrator', 'manager', 'veterinarian', 'veterinary_technician',
       'receptionist', 'cashier', 'warehouse_keeper', 'client',
     ]);
   });
@@ -42,6 +42,13 @@ describe('Catálogos de permisos y roles', () => {
     expect(admin.has('roles:manage-permissions')).toBe(true);
     expect(admin.has('audit:export')).toBe(true);
     expect([...admin].some((key) => key.startsWith('clients:') || key.startsWith('pets:'))).toBe(false);
+  });
+
+  it('el superadmin tiene todos los permisos y no es visible para administración normal', () => {
+    const superadmin = ROLES.find((role) => role.name === 'superadmin');
+
+    expect(superadmin?.visible).toBe(false);
+    expect(keysOf('superadmin')).toEqual(new Set(PERMISSIONS.map((permission) => permission.key)));
   });
 
   it('el Recepcionista no puede dar de baja clientes ni pacientes', () => {
@@ -71,8 +78,16 @@ describe('Catálogos de permisos y roles', () => {
     expect(technician.has('clients:create')).toBe(false);
   });
 
-  it('Cajero y Cliente no tienen permisos en este módulo', () => {
-    for (const name of ['cashier', 'client']) expect(keysOf(name).size).toBe(0);
+  it('Gerente y Bodeguero pueden gestionar el catálogo de inventario (HU-01)', () => {
+    const catalogPermissions = [
+      'inventory:manage-products', 'inventory:manage-categories', 'inventory:manage-brands',
+    ];
+
+    for (const role of ['manager', 'warehouse_keeper']) {
+      const permissions = keysOf(role);
+      expect(permissions.has('inventory:read'), role).toBe(true);
+      for (const permission of catalogPermissions) expect(permissions.has(permission), `${role}: ${permission}`).toBe(true);
+    }
   });
 
   it('Administrador y Gerente configuran la agenda', () => {
@@ -105,7 +120,15 @@ describe('Catálogos de permisos y roles', () => {
     expect(receptionist.has('rates:manage')).toBe(false);
   });
 
-  it('el Bodeguero consulta inventario y registra entradas de lote (HU-02)', () => {
-    expect([...keysOf('warehouse_keeper')].sort()).toEqual(['inventory:read', 'inventory:register-entry']);
+  it('el Bodeguero también registra entradas de lote (HU-02)', () => {
+    expect(keysOf('warehouse_keeper').has('inventory:register-entry')).toBe(true);
+    expect(keysOf('manager').has('inventory:register-entry')).toBe(false);
+  });
+
+  it('los actores de HU-12 pueden consultar alertas de inventario', () => {
+    for (const name of ['manager', 'veterinarian', 'cashier', 'warehouse_keeper']) {
+      expect(keysOf(name).has('inventory:read'), name).toBe(true);
+    }
+    expect(keysOf('client').size).toBe(0);
   });
 });

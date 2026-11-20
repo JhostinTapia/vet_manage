@@ -43,8 +43,9 @@ function build() {
   const hasher = { hash: vi.fn(async (password: string) => `hash:${password}`) };
   const mail = { send: vi.fn(async () => undefined) };
   const config = { get: vi.fn(() => 'http://localhost:5174') };
-  const service = new ClientRegistrationService(prisma as never, hasher as never, mail as never, config as never);
-  return { service, tx, prisma, hasher, mail };
+  const audit = { record: vi.fn(async () => undefined) };
+  const service = new ClientRegistrationService(prisma as never, hasher as never, mail as never, config as never, audit as never);
+  return { service, tx, prisma, hasher, mail, audit };
 }
 
 async function rejection(promise: Promise<unknown>): Promise<ApiException> {
@@ -216,6 +217,37 @@ describe('ClientRegistrationService', () => {
     it('lista todos los campos faltantes', async () => {
       const error = await rejection(ctx.service.register({}, 'admin-1'));
       expect(error.errors).toEqual(['identification', 'firstName', 'lastName', 'email']);
+    });
+  });
+
+  describe('auditoría', () => {
+    it('registra la acción en la transacción con el usuario autenticado como actor', async () => {
+      await ctx.service.register(valid, 'recep-1');
+
+      expect(ctx.audit.record).toHaveBeenCalledTimes(1);
+      expect(ctx.audit.record).toHaveBeenCalledWith(ctx.tx, {
+        actorId: 'recep-1',
+        action: 'Registrar',
+        module: 'Clientes',
+        affectedRecord: `${valid.identification} - ${valid.firstName} ${valid.lastName}`,
+      });
+    });
+
+    it('no registra nada cuando el registro se rechaza', async () => {
+      ctx.tx.person.findUnique.mockResolvedValue({
+        id: 'p2', identification: valid.identification,
+        user: { id: 'u2', password: 'h', userRoles: [{ role: { category: 'STAFF' } }] },
+      });
+
+      await rejection(ctx.service.register(valid, 'recep-1'));
+
+      expect(ctx.audit.record).not.toHaveBeenCalled();
+    });
+
+    it('falla el registro si no se puede guardar la auditoría', async () => {
+      ctx.audit.record.mockRejectedValue(new Error('fallo de auditoría'));
+
+      await expect(ctx.service.register(valid, 'recep-1')).rejects.toThrow('fallo de auditoría');
     });
   });
 

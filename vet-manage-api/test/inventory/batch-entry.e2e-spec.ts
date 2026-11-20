@@ -13,7 +13,14 @@ import { TokenService } from '../../src/modules/identity/services/token.service.
 const DOG_FOOD = '123e4567-e89b-12d3-a456-426614174000';
 const MISSING = '123e4567-e89b-12d3-a456-426614174999';
 
-type Batch = { id: string; productId: string; code: string; expirationDate: Date; initialQuantity: number };
+type Batch = {
+  id: string;
+  productId: string;
+  code: string;
+  expirationDate: Date;
+  initialQuantity: number;
+  availableQuantity: number;
+};
 
 describe('POST /inventory/batches (HU-02, e2e)', () => {
   let app: INestApplication;
@@ -90,7 +97,9 @@ describe('POST /inventory/batches (HU-02, e2e)', () => {
 
     expect(res.body.success).toBe(true);
     expect(res.body.message).toBe('Entrada de lote registrada correctamente');
-    expect(res.body.data.batch).toMatchObject({ code: 'L-2026-001', expirationDate: '2027-10-23', initialQuantity: 50, productId: DOG_FOOD });
+    expect(res.body.data.batch).toMatchObject({
+      code: 'L-2026-001', expirationDate: '2027-10-23', initialQuantity: 50, availableQuantity: 50, productId: DOG_FOOD,
+    });
     expect(res.body.data.product).toMatchObject({ id: DOG_FOOD, stock: 60 });
     expect(batches).toHaveLength(1);
     expect(products[0].stock).toBe(60);

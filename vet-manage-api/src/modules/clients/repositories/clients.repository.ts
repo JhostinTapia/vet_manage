@@ -24,7 +24,59 @@ export type ClientWithPerson = {
 
 export type ClientSearchResult = { clients: ClientWithPerson[]; total: number };
 
+export type ClientPetRecord = {
+  id: string;
+  code: string;
+  name: string;
+  status: ClientStatus;
+  species: { name: string };
+  breed: { name: string };
+};
+
 const CLIENT_ROLE_NAME = 'client';
+const MAX_SEARCH_VARIANTS = 64;
+
+const ACCENT_EQUIVALENTS: Record<string, string[]> = {
+  a: ['a', 'á'],
+  e: ['e', 'é'],
+  i: ['i', 'í'],
+  o: ['o', 'ó'],
+  u: ['u', 'ú', 'ü'],
+  n: ['n', 'ñ'],
+};
+
+const searchVariants = (search: string): string[] => {
+  const normalized = search.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+  let variants = [''];
+
+  for (const char of normalized) {
+    const options = ACCENT_EQUIVALENTS[char] ?? [char];
+    const next: string[] = [];
+    for (const variant of variants) {
+      for (const option of options) {
+        if (next.length >= MAX_SEARCH_VARIANTS) break;
+        next.push(`${variant}${option}`);
+      }
+      if (next.length >= MAX_SEARCH_VARIANTS) break;
+    }
+    variants = next;
+  }
+
+  return variants;
+};
+
+const personSearchWhere = (search: string): Prisma.PersonWhereInput => {
+  if (/^\d{10}$/.test(search)) {
+    return { OR: [{ identification: { equals: search } }] };
+  }
+
+  return {
+    OR: searchVariants(search).flatMap((variant) => [
+      { firstName: { contains: variant, mode: 'insensitive' as const } },
+      { lastName: { contains: variant, mode: 'insensitive' as const } },
+    ]),
+  };
+};
 
 @Injectable()
 export class ClientsRepository {
@@ -38,23 +90,17 @@ export class ClientsRepository {
       OR: [{ expiresAt: null }, { expiresAt: { gt: now } }],
     } satisfies Prisma.UserRoleWhereInput;
 
+    const person: Prisma.PersonWhereInput = {
+      user: { userRoles: { some: activeClientRole } },
+      ...(search ? personSearchWhere(search) : {}),
+    };
+
     const where = {
       ...(query.status ? { status: query.status } : {}),
-      person: {
-        user: { userRoles: { some: activeClientRole } },
-        ...(search
-          ? {
-              OR: [
-                { identification: { contains: search, mode: 'insensitive' } },
-                { firstName: { contains: search, mode: 'insensitive' } },
-                { lastName: { contains: search, mode: 'insensitive' } },
-              ],
-            }
-          : {}),
-      },
+      person,
     } satisfies Prisma.ClientWhereInput;
 
-    const [clients, total] = await this.prisma.$transaction([
+    const [clients, total] = await Promise.all([
       this.prisma.client.findMany({
         where,
         include: {
@@ -87,5 +133,23 @@ export class ClientsRepository {
   // Datos mínimos para que otros dominios validen al cliente (HU-07).
   findById(id: string): Promise<{ id: string; status: ClientStatus } | null> {
     return this.prisma.client.findUnique({ where: { id }, select: { id: true, status: true } });
+  }
+
+  async findPetsByClientId(clientId: string): Promise<ClientPetRecord[] | null> {
+    const client = await this.findById(clientId);
+    if (!client) return null;
+
+    return this.prisma.patient.findMany({
+      where: { clientId },
+      select: {
+        id: true,
+        code: true,
+        name: true,
+        status: true,
+        species: { select: { name: true } },
+        breed: { select: { name: true } },
+      },
+      orderBy: { name: 'asc' },
+    });
   }
 }

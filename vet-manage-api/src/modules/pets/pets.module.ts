@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { PrismaModule } from '../../infrastructure/database/prisma/prisma.module.js';
+import { AuditModule } from '../audit/audit.module.js';
 import { ClientsModule } from '../clients/clients.module.js';
 import { IdentityModule } from '../identity/identity.module.js';
 import { BreedController } from './routes/breed.controller.js';
@@ -15,7 +16,7 @@ import { ListActiveSpeciesService } from './services/species/list-active-species
 import { RegisterSpeciesService } from './services/species/register-species.service.js';
 
 @Module({
-  imports: [PrismaModule, IdentityModule, ClientsModule],
+  imports: [PrismaModule, AuditModule, IdentityModule, ClientsModule],
   controllers: [SpeciesController, BreedController, PatientsController],
   providers: [
     SpeciesRepository,

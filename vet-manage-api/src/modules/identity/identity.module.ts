@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { MailModule } from '../../infrastructure/mail/mail.module.js';
+import { AuditModule } from '../audit/audit.module.js';
 import { RedisModule } from '../../infrastructure/redis/redis.module.js';
 import { UsersController } from './users.controller.js';
 import { AuthController } from './auth.controller.js';
@@ -26,6 +27,7 @@ import { UserRoleAssignmentService } from './services/user-role-assignment.servi
   imports: [
     RedisModule,
     MailModule,
+    AuditModule,
     JwtModule.registerAsync({
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({ secret: config.getOrThrow<string>('auth.jwtSecret') }),

@@ -119,3 +119,44 @@ describe('ClientsService.findById', () => {
     expect(findById).toHaveBeenCalledWith('missing');
   });
 });
+
+describe('ClientsService.listPets', () => {
+  const pets = () => [{
+    id: 'pet1',
+    code: 'PAC-000001',
+    name: 'Firulais',
+    status: 'ACTIVE' as const,
+    species: { name: 'Canino' },
+    breed: { name: 'Labrador' },
+  }];
+
+  it('mapea las mascotas vinculadas con especie y raza como texto', async () => {
+    const findPetsByClientId = vi.fn(async () => pets());
+    const service = new ClientsService({ findPetsByClientId } as never);
+
+    await expect(service.listPets('c1')).resolves.toEqual([{
+      id: 'pet1',
+      code: 'PAC-000001',
+      name: 'Firulais',
+      species: 'Canino',
+      breed: 'Labrador',
+      status: 'ACTIVE',
+    }]);
+    expect(findPetsByClientId).toHaveBeenCalledWith('c1');
+  });
+
+  it('devuelve una lista vacía cuando el cliente no tiene mascotas', async () => {
+    const service = new ClientsService({ findPetsByClientId: vi.fn(async () => []) } as never);
+
+    await expect(service.listPets('c1')).resolves.toEqual([]);
+  });
+
+  it('lanza 404 cuando el cliente no existe', async () => {
+    const service = new ClientsService({ findPetsByClientId: vi.fn(async () => null) } as never);
+
+    await expect(service.listPets('missing')).rejects.toMatchObject({
+      message: 'Cliente no encontrado',
+      statusCode: 404,
+    });
+  });
+});

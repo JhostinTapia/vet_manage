@@ -23,3 +23,12 @@ export class ClientListResponseDto {
   total: number;
   totalPages: number;
 }
+
+export type ClientPetDto = {
+  id: string;
+  code: string;
+  name: string;
+  species: string;
+  breed: string;
+  status: ClientStatus;
+};
