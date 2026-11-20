@@ -1,38 +1,33 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useToast } from '../../../common/components/toast-context';
 import { useAuth } from '../../auth/auth-context';
 import { schedulingApi } from '../services/scheduling-api';
 import type { Branch } from '../types';
-import { BlockForm } from './block-form';
 import { blocksApi } from './blocks-api';
-import type { ScheduleBlock, ScheduleBlockDraft, Veterinarian } from './types';
+import { BlocksTable } from './blocks-table';
+import type { ScheduleBlock } from './types';
 import './blocks.css';
-
-const formatDate = (iso: string) => {
-  const [year, month, day] = iso.split('-');
-  return `${day}/${month}/${year}`;
-};
 
 export function BlocksPage() {
   const { hasPermission } = useAuth();
   const { showToast } = useToast();
   const canCreate = hasPermission('schedule-blocks:create');
+  const canRemove = hasPermission('schedule-blocks:remove');
 
   const [branches, setBranches] = useState<Branch[]>([]);
-  const [veterinarians, setVeterinarians] = useState<Veterinarian[]>([]);
   const [branchFilter, setBranchFilter] = useState('');
   const [blocks, setBlocks] = useState<ScheduleBlock[]>([]);
   const [loading, setLoading] = useState(true);
-  // Cambia después de registrar un bloqueo para volver a cargar la lista.
+  // Cambia después de eliminar un bloqueo para volver a cargar la lista.
   const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
-    Promise.all([schedulingApi.listBranches(), blocksApi.listVeterinarians()])
-      .then(([loadedBranches, loadedVets]) => {
-        setBranches(loadedBranches);
-        setVeterinarians(loadedVets);
-      })
-      .catch(() => showToast('No se pudieron cargar las sucursales y los veterinarios.', 'error'));
+    let active = true;
+    schedulingApi.listBranches()
+      .then((loaded) => { if (active) setBranches(loaded); })
+      .catch(() => { if (active) showToast('No se pudieron cargar las sucursales.', 'error'); });
+    return () => { active = false; };
   }, [showToast]);
 
   useEffect(() => {
@@ -49,11 +44,21 @@ export function BlocksPage() {
     setBranchFilter(sucursalId);
   }
 
-  async function register(draft: ScheduleBlockDraft) {
-    await blocksApi.create(draft);
-    showToast('Bloqueo registrado correctamente', 'success');
+  function reload() {
     setLoading(true);
     setReloadKey((key) => key + 1);
+  }
+
+  async function remove(block: ScheduleBlock) {
+    try {
+      await blocksApi.remove(block.id);
+      showToast('Bloqueo eliminado correctamente', 'success');
+    } catch (cause) {
+      // Si otra persona ya lo eliminó, la API responde "El bloqueo ya no existe".
+      showToast(cause instanceof Error ? cause.message : 'No se pudo eliminar el bloqueo.', 'error');
+    }
+    // En ambos casos se actualiza la lista para mostrar los bloqueos vigentes.
+    reload();
   }
 
   return (
@@ -64,9 +69,8 @@ export function BlocksPage() {
           <h2>Bloqueos de horario</h2>
           <p>Impide reservas durante una ausencia o un mantenimiento. Un bloqueo no cancela citas: si afecta una, no se guarda.</p>
         </div>
+        {canCreate && <Link className="button button--primary" to="/appointments/blocks/new">Nuevo bloqueo</Link>}
       </div>
-
-      {canCreate && <BlockForm branches={branches} veterinarians={veterinarians} onSubmit={register} />}
 
       <div className="catalog-card blocks-list">
         <div className="catalog-card__heading">
@@ -85,25 +89,7 @@ export function BlocksPage() {
         ) : blocks.length === 0 ? (
           <div className="empty-state"><strong>No hay bloqueos vigentes</strong></div>
         ) : (
-          <div className="product-table-wrap">
-            <table className="product-table">
-              <thead>
-                <tr><th>Fecha</th><th>Horario</th><th>Sucursal</th><th>Aplica a</th><th>Motivo</th><th>Registrado por</th></tr>
-              </thead>
-              <tbody>
-                {blocks.map((block) => (
-                  <tr key={block.id}>
-                    <td>{formatDate(block.fecha)}</td>
-                    <td>{block.horaInicio}–{block.horaFin}</td>
-                    <td>{block.sucursal.nombre}</td>
-                    <td>{block.veterinario ? block.veterinario.nombre : <span className="tag tag-red">Toda la sucursal</span>}</td>
-                    <td>{block.motivo}</td>
-                    <td>{block.registradoPor}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <BlocksTable blocks={blocks} canRemove={canRemove} onRemove={remove} />
         )}
       </div>
     </section>
