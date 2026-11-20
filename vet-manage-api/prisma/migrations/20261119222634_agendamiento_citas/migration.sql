@@ -236,7 +236,7 @@ ALTER TABLE "bloqueos_horario" ADD CONSTRAINT "bloqueos_horario_registrado_por_i
 ALTER TABLE "bloqueos_horario" ADD CONSTRAINT "bloqueos_horario_eliminado_por_id_fkey" FOREIGN KEY ("eliminado_por_id") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "citas" ADD CONSTRAINT "citas_paciente_id_fkey" FOREIGN KEY ("paciente_id") REFERENCES "pets"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "citas" ADD CONSTRAINT "citas_paciente_id_fkey" FOREIGN KEY ("paciente_id") REFERENCES "patients"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "citas" ADD CONSTRAINT "citas_sala_id_fkey" FOREIGN KEY ("sala_id") REFERENCES "salas"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
