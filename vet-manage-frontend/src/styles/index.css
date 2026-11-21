@@ -106,6 +106,84 @@ button { cursor: pointer; }
   cursor: not-allowed;
 }
 
+
+.confirm-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(0, 0, 0, 0.45);
+}
+
+.confirm-modal {
+  width: 100%;
+  max-width: 420px;
+  padding: 24px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 10px 35px rgba(0, 0, 0, 0.2);
+}
+
+.confirm-modal h3 {
+  margin: 0 0 12px;
+}
+
+.confirm-modal p {
+  margin-bottom: 24px;
+}
+
+.confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.confirm-actions button {
+  padding: 9px 18px;
+  border-radius: 7px;
+  cursor: pointer;
+}
+
+
+
+.confirm-submit {
+  border: none;
+  color: white;
+  padding: 9px 18px;
+  border-radius: 7px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background 0.2s;
+}
+
+.confirm-submit--danger {
+  background: #dc2626;
+}
+
+.confirm-submit--danger:hover {
+  background: #b91c1c;
+}
+
+.confirm-submit--success {
+  background: #16a34a;
+}
+
+.confirm-submit--success:hover {
+  background: #15803d;
+}
+
+.confirm-cancel {
+  background: #e5e7eb;
+  color: #374151;
+  border: none;
+  padding: 9px 18px;
+  border-radius: 7px;
+  cursor: pointer;
+}
+
 /*fin Marylin botones*/
 
 #root { min-height: 100vh; }
