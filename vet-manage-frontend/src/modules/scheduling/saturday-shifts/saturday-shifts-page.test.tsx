@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AuthContext, type AuthContextValue } from '../../auth/auth-context';
 import type { SessionProfile } from '../../auth/types';
 import { schedulingApi } from '../services/scheduling-api';
@@ -76,7 +76,8 @@ function renderPage(canReadWorkSchedules = true) {
 describe('SaturdayShiftsPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.setSystemTime(new Date('2026-11-01T12:00:00'));
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date('2026-11-01T08:00:00'));
     vi.spyOn(window, 'confirm').mockReturnValue(true);
     vi.mocked(schedulingApi.listBranches).mockResolvedValue([
       { id: 'loja', nombre: 'Loja', salas: [] },
@@ -85,6 +86,10 @@ describe('SaturdayShiftsPage', () => {
     vi.mocked(schedulingApi.listSaturdayShifts).mockResolvedValue(shifts);
     vi.mocked(schedulingApi.generateSaturdayShifts).mockResolvedValue([]);
     vi.mocked(schedulingApi.substituteSaturdayShift).mockResolvedValue(shifts[0]);
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   it('generates 07, 14 y 21 de noviembre y muestra la rotación en vista previa', async () => {

@@ -79,8 +79,14 @@ export function SaturdayShiftsPage() {
   }, [sucursalId, canReadWorkSchedules]);
 
   useEffect(() => {
-    void loadShifts();
-  }, [loadShifts]);
+    let active = true;
+    schedulingApi.listSaturdayShifts(sucursalId ? { sucursalId } : undefined)
+      .then((loaded) => { if (active) setShifts(loaded); })
+      .catch((cause) => {
+        if (active) showToast(cause instanceof ApiError ? cause.message : 'No se pudieron cargar los turnos.', 'error');
+      });
+    return () => { active = false; };
+  }, [sucursalId, showToast]);
 
   const eligible = useMemo(
     () => getEligibleVeterinarians(workSchedules, sucursalId),
