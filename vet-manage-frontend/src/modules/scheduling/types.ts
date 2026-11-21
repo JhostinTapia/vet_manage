@@ -100,3 +100,25 @@ export type SaveMyAvailabilityData = {
   horarioBaseId: string;
   franjas: Array<{ horaInicio: string; horaFin: string }>;
 };
+
+export type ConsultAvailableResourcesParams = {
+  sucursalId: string;
+  fecha: string;
+  hora: string;
+  duracionMin: number;
+};
+
+export type AvailableResource = {
+  id: string;
+  nombre: string;
+};
+
+export type AvailableResources = {
+  fecha: string;
+  hora: string;
+  duracionMin: number;
+  veterinarios: AvailableResource[];
+  consultorios: AvailableResource[];
+  disponible: boolean;
+  mensaje: string;
+};
