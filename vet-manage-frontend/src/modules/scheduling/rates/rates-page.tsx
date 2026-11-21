@@ -6,6 +6,7 @@ import type { Branch } from '../types';
 import { ratesApi, type Rate, type RateService } from './rates-api';
 import { useToast } from '../../../common/components/toast-context';
 
+
 export const INVALID_RATE_MESSAGE = 'Ingrese un importe mayor a cero con hasta dos decimales ';
 export const REQUIRED_RATE_MESSAGE = 'El campo tarifa es obligatorio';
 export const FORBIDDEN_RATE_MESSAGE = 'No tiene permisos para esta acción';
@@ -37,7 +38,7 @@ export function RatesPage() {
   const [operationError, setOperationError] = useState('');
   const [message, setMessage] = useState('');
   const [updatingServiceId, setUpdatingServiceId] = useState('');
-  const { showToast } = useToast();
+  const { showToast, confirm } = useToast();
 
   useEffect(() => {
     if (!canRead) return;
@@ -130,6 +131,17 @@ export function RatesPage() {
       setGlobalError(FORBIDDEN_RATE_MESSAGE);
       return;
     }
+    //'button--danger-soft' : 'button--success-soft
+    const accepted = await confirm(
+      service.estado
+        ? '¿Estás seguro de que deseas desactivar este servicio?'
+        : '¿Deseas activar este servicio?',
+      service.estado ? 'Sí, Activar' : 'Sí, Desactivar',
+      service.estado ? 'success' : 'danger'
+    );
+
+    if (!accepted) return;
+
     setGlobalError('');
     setOperationError('');
     setMessage('');
@@ -221,7 +233,8 @@ export function RatesPage() {
                   <td>{branch.nombre}</td>
                   <td>{service.nombre}</td>
                   <td className="price-cell">{rate ? `USD ${Number(rate.importe).toFixed(2)}` : 'Sin tarifa'}</td>
-                  <td>{isActive ? 'Activa' : 'Inactiva'}</td>
+                  <td><span className={`tag  ${service.estado ? 'tag-green' : 'tag-red'
+                          }`}>{isActive ? 'Activa' : 'Inactiva'}</span></td>
                   {canManage && (
                     <td>
                       <button
@@ -229,19 +242,19 @@ export function RatesPage() {
                         className={`button button--small ${service.estado ? 'button--danger-soft' : 'button--success-soft'
                           }`}
                         onClick={() => {
-                          const action = service.estado ? 'inactivar' : 'activar';
+                          //const action = service.estado ? 'inactivar' : 'activar';
 
-                          const confirmed = window.confirm(
+                          /*const confirmed = window.confirm(
                             `¿Estás seguro de que deseas ${action} el servicio "${service.nombre}"?`
                           );
 
-                          if (confirmed) {
-                            void toggleService(service);
-                          }
+                          if (confirmed) {*/
+                          void toggleService(service);
+                          //}
                         }}
                         disabled={updatingServiceId === service.id}
                       >
-                        {service.estado ? 'Inactivar servicio' : 'Activar servicio'}
+                        {service.estado ? 'Inactiva' : 'Activa'}
                       </button>
                     </td>
                   )}
