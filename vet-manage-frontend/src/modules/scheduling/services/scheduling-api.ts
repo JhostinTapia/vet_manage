@@ -1,7 +1,16 @@
 import { getJson, postJson, putJson, deleteJson } from '../../../infrastructure/api/http-client';
-import type { Branch, ClinicService, GenerateSaturdayShiftsData, MyAvailability, SaturdayShift, SaveMyAvailabilityData, SubstituteSaturdayShiftData, WorkSchedule, WorkScheduleFormData, VeterinarianOption } from '../types';
+import type { AvailableResources, ConsultAvailableResourcesParams, Branch, ClinicService, GenerateSaturdayShiftsData, MyAvailability, SaturdayShift, SaveMyAvailabilityData, SubstituteSaturdayShiftData, WorkSchedule, WorkScheduleFormData, VeterinarianOption } from '../types';
 
 export const schedulingApi = {
+  consultAvailableResources(params: ConsultAvailableResourcesParams) {
+    const query = new URLSearchParams({
+      sucursalId: params.sucursalId,
+      fecha: params.fecha,
+      hora: params.hora,
+      duracionMin: String(params.duracionMin),
+    });
+    return getJson<AvailableResources>(`/scheduling/resources/availability?${query.toString()}`);
+  },
   listBranches() {
     return getJson<Branch[]>('/scheduling/branches');
   },
