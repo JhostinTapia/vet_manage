@@ -73,3 +73,30 @@ export type SubstituteSaturdayShiftData = {
   veterinarioId: string;
   justificacion: string;
 };
+
+export type MyAvailabilitySlot = {
+  id: string;
+  horaInicio: string;
+  horaFin: string;
+};
+
+export type MyAvailabilityJornada = {
+  horarioBaseId: string;
+  sucursalId: string;
+  sucursalNombre: string;
+  horaInicio: string;
+  horaFin: string;
+  franjas: MyAvailabilitySlot[];
+};
+
+export type MyAvailability = {
+  fecha: string;
+  diaSemana: DiaSemana;
+  jornadas: MyAvailabilityJornada[];
+};
+
+export type SaveMyAvailabilityData = {
+  fecha: string;
+  horarioBaseId: string;
+  franjas: Array<{ horaInicio: string; horaFin: string }>;
+};

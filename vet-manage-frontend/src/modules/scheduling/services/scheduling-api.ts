@@ -1,5 +1,5 @@
 import { getJson, postJson, putJson, deleteJson } from '../../../infrastructure/api/http-client';
-import type { Branch, ClinicService, GenerateSaturdayShiftsData, SaturdayShift, SubstituteSaturdayShiftData, WorkSchedule, WorkScheduleFormData, VeterinarianOption } from '../types';
+import type { Branch, ClinicService, GenerateSaturdayShiftsData, MyAvailability, SaturdayShift, SaveMyAvailabilityData, SubstituteSaturdayShiftData, WorkSchedule, WorkScheduleFormData, VeterinarianOption } from '../types';
 
 export const schedulingApi = {
   listBranches() {
@@ -40,5 +40,15 @@ export const schedulingApi = {
   },
   substituteSaturdayShift(id: string, data: SubstituteSaturdayShiftData) {
     return putJson<SaturdayShift, SubstituteSaturdayShiftData>(`/scheduling/saturday-shifts/${id}`, data);
+  },
+  getMyAvailability(fecha: string) {
+    return getJson<MyAvailability>(`/scheduling/daily-availability/me?fecha=${encodeURIComponent(fecha)}`);
+  },
+  saveMyAvailability(data: SaveMyAvailabilityData) {
+    return putJson<MyAvailability, SaveMyAvailabilityData>('/scheduling/daily-availability/me', data);
+  },
+  resetMyAvailability(fecha: string, horarioBaseId: string) {
+    const query = new URLSearchParams({ fecha, horarioBaseId });
+    return deleteJson<MyAvailability>(`/scheduling/daily-availability/me?${query.toString()}`);
   },
 };
