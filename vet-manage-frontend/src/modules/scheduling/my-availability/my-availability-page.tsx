@@ -89,6 +89,11 @@ export function MyAvailabilityPage() {
       setSlotError('La hora de fin debe ser posterior a la hora de inicio');
       return;
     }
+    // Misma regla que la API: la franja no puede salir de la jornada autorizada.
+    if (selected && (newSlot.horaInicio < selected.horaInicio || newSlot.horaFin > selected.horaFin)) {
+      setSlotError('La disponibilidad diaria debe estar dentro del horario base');
+      return;
+    }
     setSlots((current) => [...current, newSlot].sort((a, b) => a.horaInicio.localeCompare(b.horaInicio)));
     setNewSlot(EMPTY_SLOT);
     setSlotError('');
@@ -115,10 +120,14 @@ export function MyAvailabilityPage() {
     } catch (cause) {
       // Las citas afectadas vuelven en `errors` y se muestran junto al mensaje.
       const apiError = cause as { message?: string; errors?: string[] };
-      setProblem({
+      const nextProblem = {
         message: apiError.message ?? 'No se pudo guardar la disponibilidad.',
         details: apiError.errors ?? [],
-      });
+      };
+      // El cambio no se guardó: se recarga la disponibilidad anterior y luego se
+      // vuelve a mostrar el motivo para no dejar en pantalla datos que no existen.
+      await load(selected.horarioBaseId);
+      setProblem(nextProblem);
     } finally {
       setSaving(false);
     }

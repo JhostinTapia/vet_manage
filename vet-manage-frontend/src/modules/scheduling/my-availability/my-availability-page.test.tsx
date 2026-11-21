@@ -106,6 +106,20 @@ describe('MyAvailabilityPage', () => {
     expect(showToast).toHaveBeenCalledWith('Disponibilidad guardada correctamente', 'success');
   });
 
+  it('no agrega una franja fuera de la jornada autorizada', async () => {
+    renderPage();
+
+    await screen.findByRole('table', { name: 'Franjas disponibles' });
+    await userEvent.selectOptions(screen.getByLabelText('Hora de inicio'), '08:00');
+    await userEvent.selectOptions(screen.getByLabelText('Hora de fin'), '13:00');
+    await userEvent.click(screen.getByRole('button', { name: 'Agregar franja' }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'La disponibilidad diaria debe estar dentro del horario base',
+    );
+    expect(screen.getByRole('table', { name: 'Franjas disponibles' })).not.toHaveTextContent('13:00');
+  });
+
   it('muestra las citas afectadas cuando el cambio deja una fuera de horario', async () => {
     vi.mocked(schedulingApi.saveMyAvailability).mockRejectedValue(
       new ApiError('El cambio afecta una cita existente', 409, {
@@ -115,12 +129,18 @@ describe('MyAvailabilityPage', () => {
     renderPage();
 
     await screen.findByRole('table', { name: 'Franjas disponibles' });
+    // Se agrega una franja que tampoco se debe conservar si el guardado falla.
+    await userEvent.selectOptions(screen.getByLabelText('Hora de inicio'), '11:30');
+    await userEvent.selectOptions(screen.getByLabelText('Hora de fin'), '12:00');
+    await userEvent.click(screen.getByRole('button', { name: 'Agregar franja' }));
     await userEvent.click(screen.getByRole('button', { name: 'Guardar disponibilidad' }));
 
     const alert = await screen.findByRole('alert');
     expect(alert).toHaveTextContent('El cambio afecta una cita existente');
     expect(alert).toHaveTextContent('Cita #12');
     expect(showToast).not.toHaveBeenCalledWith('Disponibilidad guardada correctamente', 'success');
+    // Vuelve a mostrarse el horario guardado, no el intento rechazado.
+    expect(screen.getByRole('table', { name: 'Franjas disponibles' })).not.toHaveTextContent('11:30');
   });
 
   it('restablece la jornada y quita las franjas', async () => {
