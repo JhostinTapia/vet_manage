@@ -99,11 +99,12 @@ export function SaturdayShiftsPage() {
               <label className="field"><span>Sucursal</span><select value={sucursalId} onChange={(event) => setSucursalId(event.target.value)}><option value="">Seleccione</option>{branches.map((branch) => <option key={branch.id} value={branch.id}>{branch.nombre}</option>)}</select></label>
               <label className="field"><span>Fechas de los sábados</span><input value={fechas} onChange={(event) => setFechas(event.target.value)} aria-describedby="saturday-dates-help" /><small id="saturday-dates-help">Formato AAAA-MM-DD, separadas por comas.</small></label>
               <div className="saturday-shifts-vets">
-                <label className="field">
+                <label className="field" htmlFor="saturday-veterinarian-selector">
                   <span>Veterinarios de la rotación</span>
                   <select
+                    id="saturday-veterinarian-selector"
                     value=""
-                    aria-describedby="saturday-vets-help"
+                    aria-label="Veterinarios de la rotación"
                     onChange={(event) => {
                       const id = event.target.value;
                       if (id) setVeterinarioIds((current) => current.includes(id) ? current : [...current, id]);
