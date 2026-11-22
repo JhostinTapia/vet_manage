@@ -32,3 +32,9 @@
   .saturday-shifts-page .catalog-card__heading { padding: 20px 16px; }
   .saturday-shifts-page .saturday-shifts-form__actions .button { width: 100%; }
 }
+
+.saturday-shifts-page .saturday-shifts-vets__list { margin: 14px 0 0; padding-left: 24px; color: #416fe7; font-size: 12px; font-weight: 650; }
+.saturday-shifts-page .saturday-shifts-vets__list li { padding: 8px 0 8px 4px; border-bottom: 1px solid #eef1f4; }
+.saturday-shifts-page .saturday-shifts-vets__list li > span { display: inline-block; width: calc(100% - 80px); vertical-align: middle; overflow-wrap: anywhere; color: #26323d; }
+.saturday-shifts-page .saturday-shifts-vets__list .button { margin-left: 8px; }
+.saturday-shifts-page .saturday-shifts-vets__empty { margin: 12px 0 0; color: #677586; font-size: 12px; }

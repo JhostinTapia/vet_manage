@@ -17,7 +17,7 @@ export function SaturdayShiftsPage() {
   const [shifts, setShifts] = useState<SaturdayShift[]>([]);
   const [sucursalId, setSucursalId] = useState('');
   const [fechas, setFechas] = useState('2026-11-07,2026-11-14,2026-11-21');
-  const [veterinarioIds, setVeterinarioIds] = useState('');
+  const [veterinarioIds, setVeterinarioIds] = useState<string[]>([]);
   const [substituteId, setSubstituteId] = useState('');
   const [replacementId, setReplacementId] = useState('');
   const [justificacion, setJustificacion] = useState('');
@@ -44,7 +44,7 @@ export function SaturdayShiftsPage() {
   }, [load, showToast]);
 
   async function generate() {
-    if (!sucursalId || !veterinarioIds.trim()) {
+    if (!sucursalId || veterinarioIds.length === 0) {
       showToast('Sucursal y veterinarios elegibles son obligatorios.', 'error');
       return;
     }
@@ -52,7 +52,7 @@ export function SaturdayShiftsPage() {
       await schedulingApi.generateSaturdayShifts({
         sucursalId,
         fechas: fechas.split(',').map((value) => value.trim()).filter(Boolean),
-        veterinarioIds: veterinarioIds.split(',').map((value) => value.trim()).filter(Boolean),
+        veterinarioIds,
       });
       showToast('Turnos de sábado generados correctamente', 'success');
       await load();
@@ -98,7 +98,39 @@ export function SaturdayShiftsPage() {
             <div className="saturday-shifts-form">
               <label className="field"><span>Sucursal</span><select value={sucursalId} onChange={(event) => setSucursalId(event.target.value)}><option value="">Seleccione</option>{branches.map((branch) => <option key={branch.id} value={branch.id}>{branch.nombre}</option>)}</select></label>
               <label className="field"><span>Fechas de los sábados</span><input value={fechas} onChange={(event) => setFechas(event.target.value)} aria-describedby="saturday-dates-help" /><small id="saturday-dates-help">Formato AAAA-MM-DD, separadas por comas.</small></label>
-              <label className="field"><span>Lista de veterinarios</span><input value={veterinarioIds} onChange={(event) => setVeterinarioIds(event.target.value)} aria-describedby="saturday-vets-help" placeholder="Identificadores en orden de rotación" /><small id="saturday-vets-help">Ingresa los IDs separados por comas, en el orden de la rotación.</small></label>
+              <div className="saturday-shifts-vets">
+                <label className="field">
+                  <span>Veterinarios de la rotación</span>
+                  <select
+                    value=""
+                    aria-describedby="saturday-vets-help"
+                    onChange={(event) => {
+                      const id = event.target.value;
+                      if (id) setVeterinarioIds((current) => current.includes(id) ? current : [...current, id]);
+                    }}
+                  >
+                    <option value="">Agregar veterinario</option>
+                    {veterinarians.filter((vet) => !veterinarioIds.includes(vet.id)).map((vet) => (
+                      <option key={vet.id} value={vet.id}>{vet.person.firstName} {vet.person.lastName}</option>
+                    ))}
+                  </select>
+                  <small id="saturday-vets-help">Agrega los veterinarios en el orden en que atenderán. Puedes quitar un nombre y agregarlo nuevamente al final.</small>
+                </label>
+                {veterinarioIds.length > 0 ? (
+                  <ol className="saturday-shifts-vets__list" aria-label="Orden de rotación">
+                    {veterinarioIds.map((id) => {
+                      const vet = veterinarians.find((item) => item.id === id);
+                      const name = vet ? `${vet.person.firstName} ${vet.person.lastName}` : 'Veterinario seleccionado';
+                      return (
+                        <li key={id}>
+                          <span>{name}</span>
+                          <button type="button" className="button button--ghost button--small" aria-label={`Quitar a ${name} de la rotación`} onClick={() => setVeterinarioIds((current) => current.filter((item) => item !== id))}>Quitar</button>
+                        </li>
+                      );
+                    })}
+                  </ol>
+                ) : <p className="saturday-shifts-vets__empty">Todavía no has agregado veterinarios.</p>}
+              </div>
               <div className="saturday-shifts-form__actions"><button type="button" className="button button--primary" onClick={generate}>Generar y guardar</button></div>
             </div>
           </div>
