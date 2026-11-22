@@ -1,0 +1,23 @@
+.saturday-generation { display: grid; gap: 16px; padding: 18px 32px 24px; }
+.saturday-generation__basics { grid-template-columns: repeat(2, minmax(190px, 220px)); }
+.saturday-selector { margin: 0; padding: 0; border: 0; }
+.saturday-selector legend { margin-bottom: 8px; font-weight: 800; color: #26323d; }
+.saturday-selector__grid { display: grid; grid-template-columns: repeat(3, minmax(160px, 1fr)); gap: 8px; }
+.saturday-date-option { min-height: 42px; }
+.saturday-veterinarian-list { display: grid; gap: 8px; }
+.saturday-rotation-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+.saturday-rotation-list { margin: 0; padding: 0; list-style: none; display: grid; gap: 8px; }
+.saturday-rotation-list li { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 8px 10px; border: 1px solid #e3e8ee; border-radius: 8px; }
+.saturday-rotation-list li > span:last-child { display: flex; gap: 5px; }
+.saturday-rotation-list .button { min-height: 32px; }
+.saturday-preview h3 { margin: 0 0 8px; }
+.saturday-actions { display: flex; justify-content: flex-end; align-items: center; gap: 12px; }
+.saturday-actions small { color: #66758a; }
+.saturday-substitution { grid-template-columns: repeat(2, minmax(220px, 300px)); padding: 18px 32px 8px; }
+.saturday-substitution textarea { resize: vertical; }
+
+@media (max-width: 900px) {
+  .saturday-selector__grid,
+  .saturday-rotation-grid { grid-template-columns: 1fr; }
+  .saturday-substitution { grid-template-columns: 1fr; }
+}

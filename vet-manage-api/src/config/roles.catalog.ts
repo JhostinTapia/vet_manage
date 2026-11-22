@@ -104,7 +104,7 @@ export const ROLES: readonly RoleDefinition[] = [
       'supplies-used:create', 'supplies-used:remove',
       ...clinicalFiles,
       // Agenda: consulta su jornada y registra su disponibilidad diaria.
-      'branches:read', 'work-schedules:read', 'saturday-shifts:read',
+      'branches:read', 'work-schedules:read',
       'daily-availability:read', 'daily-availability:manage-own', 'schedule-blocks:read',
     ],
   },
