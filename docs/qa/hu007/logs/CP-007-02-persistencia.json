@@ -1,0 +1,36 @@
+{
+  "mode": "snapshot",
+  "vet": "011ad805-98ec-48ce-a10e-4380828e4681",
+  "recep": "9dc266d2-7d38-429f-89db-06740f95e3db",
+  "branches": [
+    {
+      "id": "5b39714a-78e3-40b5-9256-70bd06a1f710",
+      "nombre": "Loja",
+      "estado": true,
+      "creadoEn": "2026-11-22T00:08:58.058Z",
+      "actualizadoEn": "2026-11-22T00:08:58.058Z"
+    },
+    {
+      "id": "914dc0a5-0d37-4dd3-b518-f45e74f50cb1",
+      "nombre": "Vilcabamba",
+      "estado": true,
+      "creadoEn": "2026-11-22T00:08:58.065Z",
+      "actualizadoEn": "2026-11-22T00:08:58.065Z"
+    }
+  ],
+  "schedules": [
+    {
+      "id": "f0595c9e-e380-4ddb-b605-41958c710afd",
+      "veterinarioId": "011ad805-98ec-48ce-a10e-4380828e4681",
+      "sucursalId": "5b39714a-78e3-40b5-9256-70bd06a1f710",
+      "diaSemana": "LUNES",
+      "horaInicio": "1970-01-01T08:00:00.000Z",
+      "horaFin": "1970-01-01T12:00:00.000Z",
+      "estado": true,
+      "creadoEn": "2026-11-22T00:09:41.131Z",
+      "actualizadoEn": "2026-11-22T00:09:41.131Z",
+      "disponibilidadesDiarias": []
+    }
+  ],
+  "appointments": []
+}

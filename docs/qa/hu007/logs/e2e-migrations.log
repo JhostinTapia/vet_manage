@@ -1,0 +1,30 @@
+Loaded Prisma config from prisma7.config.ts.
+
+Prisma schema loaded from prisma/schema.
+Datasource "db": PostgreSQL database "hu007_qa_e2e", schema "public" at "postgres:55432"
+
+13 migrations found in prisma/migrations
+
+Applying migration `20261117200000_init_identity`
+Applying migration `20261117211000_add_inventory_catalog`
+Applying migration `20261118052628_add_failed_login_attempts`
+Applying migration `20261118053500_add_species_model`
+Applying migration `20261118230000_add_breed_model`
+Applying migration `20261119080000_add_client_model`
+Applying migration `20261119150000_add_person_address`
+Applying migration `20261119200000_add_pet_model`
+Applying migration `20261119210223_add_product_batches`
+Applying migration `20261119220000_add_batch_available_quantity`
+Applying migration `20261119222634_agendamiento_citas`
+Error: P3018
+
+A migration failed to apply. New migrations cannot be applied before the error is recovered from. Read more about how to resolve migration issues in a production database: https://pris.ly/d/migrate-resolve
+
+Migration name: 20261119222634_agendamiento_citas
+
+Database error code: 42P01
+
+Database error:
+ERROR: relation "patients" does not exist
+
+DbError { severity: "ERROR", parsed_severity: Some(Error), code: SqlState(E42P01), message: "relation \"patients\" does not exist", detail: None, hint: None, position: None, where_: None, schema: None, table: None, column: None, datatype: None, constraint: None, file: Some("namespace.c"), line: Some(636), routine: Some("RangeVarGetRelidExtended") }

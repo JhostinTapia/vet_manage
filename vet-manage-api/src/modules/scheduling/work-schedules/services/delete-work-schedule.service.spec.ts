@@ -21,6 +21,7 @@ function build() {
   const repo = {
     findById: vi.fn(async () => existingRecord()),
     countConflictingAppointments: vi.fn(async () => 0),
+    countAvailability: vi.fn(async () => 0),
     softDelete: vi.fn(async () => undefined),
   };
   const service = new DeleteWorkScheduleService(repo as never);
@@ -48,6 +49,13 @@ describe('DeleteWorkScheduleService', () => {
 
   it('rechaza eliminación cuando existen citas futuras', async () => {
     ctx.repo.countConflictingAppointments.mockResolvedValue(3);
+
+    await expect(ctx.service.remove('ws-1')).rejects.toThrow(BadRequestException);
+    expect(ctx.repo.softDelete).not.toHaveBeenCalled();
+  });
+
+  it('rechaza eliminación cuando existen disponibilidades futuras', async () => {
+    ctx.repo.countAvailability.mockResolvedValue(1);
 
     await expect(ctx.service.remove('ws-1')).rejects.toThrow(BadRequestException);
     expect(ctx.repo.softDelete).not.toHaveBeenCalled();

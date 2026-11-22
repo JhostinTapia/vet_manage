@@ -17,6 +17,7 @@ import { DeleteWorkScheduleService } from '../services/delete-work-schedule.serv
 import { QueryWorkSchedulesDto } from '../dtos/query-work-schedules.dto.js';
 import { CreateWorkScheduleDto } from '../dtos/create-work-schedule.dto.js';
 import { UpdateWorkScheduleDto } from '../dtos/update-work-schedule.dto.js';
+import { QueryWorkScheduleSlotsDto } from '../dtos/query-work-schedule-slots.dto.js';
 
 @Controller('scheduling')
 export class WorkSchedulesController {
@@ -43,6 +44,12 @@ export class WorkSchedulesController {
   @RequirePermissions('work-schedules:manage')
   async create(@Body() dto: CreateWorkScheduleDto) {
     return success(await this.createService.create(dto), 'Horario creado');
+  }
+
+  @Get('work-schedules/:id/slots')
+  @RequirePermissions('work-schedules:read')
+  async slots(@Param('id') id: string, @Query() query: QueryWorkScheduleSlotsDto) {
+    return success(await this.listService.slots(id, query.fecha), 'Turnos base');
   }
 
   @Put('work-schedules/:id')

@@ -1,0 +1,154 @@
+[4m>>>> Executing external compose provider "/usr/libexec/docker/cli-plugins/docker-compose". Please see podman-compose(1) for how to disable this message. <<<<
+
+[0m
+> vet-manage-frontend@0.0.0 test
+> vitest run
+
+
+[1m[30m[46m RUN [49m[39m[22m [36mv5.1.1 [39m[90m/app[39m
+
+ [32m✓[39m src/modules/clients/form-rules.test.ts [2m([22m[2m15 tests[22m[2m)[22m[32m 236[2mms[22m[39m
+ [32m✓[39m src/modules/pets/components/breed-form.test.tsx [2m([22m[2m8 tests[22m[2m)[22m[33m 7616[2mms[22m[39m
+   [32m✓[39m BreedForm [2m(8)[22m
+     [33m[2m✓[22m[39m muestra el error cuando el nombre está vacío[33m 2561[2mms[22m[39m
+     [33m[2m✓[22m[39m exige seleccionar una especie[33m 891[2mms[22m[39m
+     [33m[2m✓[22m[39m ofrece únicamente las especies recibidas como activas[33m 548[2mms[22m[39m
+     [33m[2m✓[22m[39m envía los datos normalizados y permite omitir la descripción[33m 1121[2mms[22m[39m
+     [33m[2m✓[22m[39m envía la descripción sin espacios sobrantes[33m 1270[2mms[22m[39m
+     [33m[2m✓[22m[39m cancela sin enviar y limpia el formulario[33m 495[2mms[22m[39m
+     [33m[2m✓[22m[39m rechaza una descripción de más de 500 caracteres[33m 497[2mms[22m[39m
+ [32m✓[39m src/modules/users/pages/user-role-assignment-page.test.tsx [2m([22m[2m6 tests[22m[2m)[22m[33m 7860[2mms[22m[39m
+   [32m✓[39m UserRoleAssignmentPage [2m(6)[22m
+     [33m[2m✓[22m[39m muestra roles actuales y disponibles sin repetir los asignados[33m 1409[2mms[22m[39m
+     [33m[2m✓[22m[39m asigna un rol adicional y confirma el cambio[33m 4833[2mms[22m[39m
+     [33m[2m✓[22m[39m quita un rol y permite cambiar de función[33m 589[2mms[22m[39m
+     [33m[2m✓[22m[39m impide guardar sin roles y muestra el mensaje de HU-54[33m 341[2mms[22m[39m
+     [33m[2m✓[22m[39m muestra los mensajes de rechazo del backend y refresca la asignación[33m 645[2mms[22m[39m
+ [32m✓[39m src/modules/users/pages/users-page.test.tsx [2m([22m[2m7 tests[22m[2m)[22m[33m 10086[2mms[22m[39m
+   [32m✓[39m UsersPage [2m(7)[22m
+     [33m[2m✓[22m[39m muestra la lista inicial con cédula, nombre, correo, roles y estado[33m 3819[2mms[22m[39m
+     [33m[2m✓[22m[39m combina búsqueda, rol y estado y reinicia la página[33m 1982[2mms[22m[39m
+     [33m[2m✓[22m[39m conserva los filtros al avanzar de página[33m 2279[2mms[22m[39m
+     [33m[2m✓[22m[39m recarga el listado sin búsqueda al borrar todo el campo[33m 813[2mms[22m[39m
+     [33m[2m✓[22m[39m restablece búsqueda y filtros con Limpiar búsqueda[33m 997[2mms[22m[39m
+ [32m✓[39m src/modules/scheduling/rates/rates-page.test.tsx [2m([22m[2m15 tests[22m[2m)[22m[33m 10356[2mms[22m[39m
+   [32m✓[39m RatesPage [2m(15)[22m
+     [33m[2m✓[22m[39m CP-025-04 muestra debajo del campo el mensaje exacto para tarifa cero[33m 2995[2mms[22m[39m
+     [33m[2m✓[22m[39m CP-025-05 muestra debajo del campo el mensaje exacto para tarifa negativa[33m 429[2mms[22m[39m
+     [33m[2m✓[22m[39m CP-025-06 valida texto inválido mediante la validación del formulario[33m 763[2mms[22m[39m
+     [33m[2m✓[22m[39m CP-025-07 muestra debajo del campo el mensaje exacto para tres decimales[33m 510[2mms[22m[39m
+     [33m[2m✓[22m[39m CP-025-08 muestra debajo del campo el mensaje exacto para tarifa vacía[33m 457[2mms[22m[39m
+     [33m[2m✓[22m[39m CP-025-01 registra y muestra la tarifa vigente de USD 20.00[33m 635[2mms[22m[39m
+     [33m[2m✓[22m[39m CP-025-02 crea una tarifa vigente nueva sin reemplazar el historial local[33m 343[2mms[22m[39m
+     [33m[2m✓[22m[39m CP-025-03 mantiene el servicio y sus citas/tarifas visibles al inactivarlo[33m 553[2mms[22m[39m
+     [33m[2m✓[22m[39m CP-025-03 reactiva un servicio y lo conserva disponible en el selector[33m 627[2mms[22m[39m
+     [33m[2m✓[22m[39m permite seleccionar un servicio inactivo y asignarle tarifa sin cambiar su estado[33m 1190[2mms[22m[39m
+     [33m[2m✓[22m[39m CP-025-01 muestra tarifas de todos los servicios y sucursales al cargar desde la API[33m 793[2mms[22m[39m
+     [33m[2m✓[22m[39m CP-025-09 muestra el permiso denegado ante un 403 y conserva el catálogo[33m 847[2mms[22m[39m
+ [32m✓[39m src/modules/clients/pages/clients-page.test.tsx [2m([22m[2m9 tests[22m[2m)[22m[33m 12309[2mms[22m[39m
+   [32m✓[39m ClientsPage [2m(9)[22m
+     [33m[2m✓[22m[39m muestra el listado inicial y elimina el placeholder[33m 3236[2mms[22m[39m
+     [33m[2m✓[22m[39m busca por cédula y por nombre con el botón Buscar[33m 3646[2mms[22m[39m
+     [33m[2m✓[22m[39m no consulta cuando el término tiene menos de 2 caracteres[33m 748[2mms[22m[39m
+     [33m[2m✓[22m[39m conserva la búsqueda al avanzar de página[33m 2864[2mms[22m[39m
+     [33m[2m✓[22m[39m muestra las mascotas vinculadas al expandir un cliente[33m 487[2mms[22m[39m
+     [33m[2m✓[22m[39m indica cuando el cliente no tiene mascotas y cuando falla la consulta[33m 983[2mms[22m[39m
+ [32m✓[39m src/modules/pets/components/patient-form.test.tsx [2m([22m[2m6 tests[22m[2m)[22m[33m 14717[2mms[22m[39m
+   [32m✓[39m PatientForm [2m(6)[22m
+     [33m[2m✓[22m[39m no tiene ningún campo para el código identificador[33m 741[2mms[22m[39m
+     [33m[2m✓[22m[39m impide guardar con campos vacíos y los resalta[33m 2667[2mms[22m[39m
+     [33m[2m✓[22m[39m exige seleccionar un cliente[33m 3727[2mms[22m[39m
+     [33m[2m✓[22m[39m carga las razas de la especie elegida y limpia la raza al cambiarla[33m 1517[2mms[22m[39m
+     [33m[2m✓[22m[39m envía el borrador completo con el cliente elegido[33m 3373[2mms[22m[39m
+     [33m[2m✓[22m[39m resalta los campos que rechaza el backend[33m 2663[2mms[22m[39m
+ [32m✓[39m src/modules/scheduling/blocks/blocks-page.test.tsx [2m([22m[2m5 tests[22m[2m)[22m[33m 2440[2mms[22m[39m
+   [32m✓[39m BlocksPage [2m(5)[22m
+     [33m[2m✓[22m[39m elimina el bloqueo, avisa y vuelve a cargar la lista sin él[33m 1899[2mms[22m[39m
+ [32m✓[39m src/modules/users/form-rules.test.ts [2m([22m[2m11 tests[22m[2m)[22m[32m 40[2mms[22m[39m
+ [32m✓[39m src/modules/pets/schemas/patient.test.ts [2m([22m[2m18 tests[22m[2m)[22m[32m 57[2mms[22m[39m
+ [32m✓[39m src/modules/pets/pages/patients-page.test.tsx [2m([22m[2m4 tests[22m[2m)[22m[33m 5344[2mms[22m[39m
+   [32m✓[39m PatientsPage [2m(4)[22m
+     [33m[2m✓[22m[39m abre el registro en un modal con las especies activas[33m 2074[2mms[22m[39m
+     [33m[2m✓[22m[39m cierra el modal con Escape y con Cancelar[33m 843[2mms[22m[39m
+     [33m[2m✓[22m[39m cierra el modal y muestra el toast de éxito al registrar[33m 2398[2mms[22m[39m
+ [32m✓[39m src/modules/scheduling/blocks/block-form.test.tsx [2m([22m[2m8 tests[22m[2m)[22m[33m 11071[2mms[22m[39m
+   [32m✓[39m BlockForm [2m(8)[22m
+     [33m[2m✓[22m[39m registra el bloqueo de un veterinario[33m 4112[2mms[22m[39m
+     [33m[2m✓[22m[39m registra un bloqueo de toda la sucursal sin pedir veterinario[33m 1643[2mms[22m[39m
+     [33m[2m✓[22m[39m no envía un bloqueo sin motivo y muestra el mensaje[33m 834[2mms[22m[39m
+     [33m[2m✓[22m[39m no envía un bloqueo con la misma hora de inicio y fin y muestra el mensaje[33m 1324[2mms[22m[39m
+     [33m[2m✓[22m[39m no envía un bloqueo sin veterinario y muestra el mensaje[33m 810[2mms[22m[39m
+     [33m[2m✓[22m[39m si el bloqueo afecta una cita muestra sus datos para ubicarla[33m 813[2mms[22m[39m
+     [33m[2m✓[22m[39m muestra el aviso de falta de permisos que devuelve la API[33m 722[2mms[22m[39m
+     [33m[2m✓[22m[39m ubica junto al campo los errores de validación de la API[33m 782[2mms[22m[39m
+ [32m✓[39m src/modules/scheduling/blocks/block-register-page.test.tsx [2m([22m[2m4 tests[22m[2m)[22m[33m 4880[2mms[22m[39m
+   [32m✓[39m BlockRegisterPage [2m(4)[22m
+     [33m[2m✓[22m[39m carga las sucursales y los veterinarios en el formulario[33m 2306[2mms[22m[39m
+     [33m[2m✓[22m[39m al registrar avisa y vuelve a la lista de bloqueos[33m 1321[2mms[22m[39m
+     [33m[2m✓[22m[39m si el bloqueo afecta una cita se queda en el formulario y muestra la cita[33m 1033[2mms[22m[39m
+ [32m✓[39m src/modules/scheduling/blocks/block-form-schema.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 43[2mms[22m[39m
+ [32m✓[39m src/modules/inventory/components/expiration-alerts-panel.test.tsx [2m([22m[2m4 tests[22m[2m)[22m[33m 1462[2mms[22m[39m
+   [32m✓[39m ExpirationAlertsPanel [2m(4)[22m
+     [33m[2m✓[22m[39m shows product, lot, expiry, units, and both alert labels[33m 712[2mms[22m[39m
+     [33m[2m✓[22m[39m lets a Bodeguero save a new expiry date from an alert row[33m 454[2mms[22m[39m
+ [32m✓[39m src/modules/pets/pages/breeds-page.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[33m 2278[2mms[22m[39m
+   [32m✓[39m BreedsPage [2m(3)[22m
+     [33m[2m✓[22m[39m registra una raza, muestra la confirmación y cierra el formulario[33m 1680[2mms[22m[39m
+     [33m[2m✓[22m[39m muestra el error y recarga las especies cuando el registro falla[33m 447[2mms[22m[39m
+ [32m✓[39m src/modules/users/services/users-api.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 33[2mms[22m[39m
+ [32m✓[39m src/modules/inventory/components/batch-entry-form.test.tsx [2m([22m[2m11 tests[22m[2m)[22m[33m 5007[2mms[22m[39m
+   [32m✓[39m BatchEntryForm (HU-02) [2m(11)[22m
+     [33m[2m✓[22m[39m escenario 1: envía la entrada completa con la cantidad como entero[33m 1353[2mms[22m[39m
+     [33m[2m✓[22m[39m escenario 2: sin producto: no envía y muestra el mensaje[33m 335[2mms[22m[39m
+     [33m[2m✓[22m[39m escenario 3: sin código de lote: no envía y muestra el mensaje[33m 303[2mms[22m[39m
+     [33m[2m✓[22m[39m escenario 4: sin fecha de caducidad: no envía y muestra el mensaje[33m 421[2mms[22m[39m
+     [33m[2m✓[22m[39m escenario 5: sin cantidad inicial: no envía y muestra el mensaje[33m 402[2mms[22m[39m
+     [33m[2m✓[22m[39m escenario 6: cantidad cero: no envía y muestra el mensaje[33m 452[2mms[22m[39m
+     [33m[2m✓[22m[39m escenario 7: cantidad negativa: no envía y muestra el mensaje[33m 396[2mms[22m[39m
+     [33m[2m✓[22m[39m escenario 8: cantidad decimal: no envía y muestra el mensaje[33m 381[2mms[22m[39m
+     [33m[2m✓[22m[39m escenario 8: cantidad con letras: no envía y muestra el mensaje[33m 401[2mms[22m[39m
+     [33m[2m✓[22m[39m muestra junto al campo el error devuelto por la API[33m 472[2mms[22m[39m
+ [32m✓[39m src/modules/clients/services/clients-api.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 32[2mms[22m[39m
+ [31m❯[39m src/modules/pets/services/pet.service.test.ts [2m([22m[2m0 test[22m[2m)[22m
+ [32m✓[39m src/modules/scheduling/blocks/blocks-table.test.tsx [2m([22m[2m4 tests[22m[2m)[22m[33m 1220[2mms[22m[39m
+   [32m✓[39m BlocksTable [2m(4)[22m
+     [33m[2m✓[22m[39m pide confirmación y elimina solo el bloqueo elegido[33m 848[2mms[22m[39m
+ [32m✓[39m src/modules/pets/components/species-form.test.tsx [2m([22m[2m4 tests[22m[2m)[22m[33m 1220[2mms[22m[39m
+   [32m✓[39m SpeciesForm [2m(4)[22m
+     [33m[2m✓[22m[39m muestra el error cuando el nombre está vacío[33m 768[2mms[22m[39m
+ [32m✓[39m src/modules/scheduling/rates/rates-api.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 23[2mms[22m[39m
+ [32m✓[39m src/common/validation/identification.test.ts [2m([22m[2m10 tests[22m[2m)[22m[32m 18[2mms[22m[39m
+
+[31m⎯⎯⎯⎯⎯⎯[39m[1m[41m Failed Suites 1 [49m[22m[31m⎯⎯⎯⎯⎯⎯⎯[39m
+
+[41m[1m FAIL [22m[49m src/modules/pets/services/pet.service.test.ts[2m [ src/modules/pets/services/pet.service.test.ts ][22m
+[31m[1mError[22m: Failed to resolve import "./pet.service" from "src/modules/pets/services/pet.service.test.ts". Does the file exist?[39m
+  Plugin: [35mvite:import-analysis[39m
+  File: [36m/app/src/modules/pets/services/pet.service.test.ts[39m:3:0
+[33m  4  |  }));
+  5  |  const __vi_import_0__ = await import("../../../infrastructure/api/http-client");
+  6  |  const __vi_import_1__ = await import("./pet.service");
+     |                                       ^
+  7  |  import { beforeEach, describe, expect, it, vi } from "vitest";
+  8  |  [39m
+[90m [2m❯[22m TransformPluginContext._formatLog node_modules/vite/dist/node/chunks/node.js:[2m8803:39[22m[39m
+[90m [2m❯[22m TransformPluginContext.error node_modules/vite/dist/node/chunks/node.js:[2m8800:14[22m[39m
+[90m [2m❯[22m resolveId node_modules/vite/dist/node/chunks/node.js:[2m26594:18[22m[39m
+[90m [2m❯[22m node_modules/vite/dist/node/chunks/node.js:[2m26693:23[22m[39m
+[90m [2m❯[22m TransformPluginContext.transform node_modules/vite/dist/node/chunks/node.js:[2m26666:4[22m[39m
+[90m [2m❯[22m EnvironmentPluginContainer.transform node_modules/vite/dist/node/chunks/node.js:[2m8582:14[22m[39m
+[90m [2m❯[22m loadAndTransform node_modules/vite/dist/node/chunks/node.js:[2m20155:26[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯[22m[39m
+
+
+[2m Test Files [22m [1m[31m1 failed[39m[22m[2m | [22m[1m[32m23 passed[39m[22m[90m (24)[39m
+[2m      Tests [22m [1m[32m170 passed[39m[22m[90m (170)[39m
+[2m   Start at [22m 00:08:05
+[2m   Duration [22m 40.42s[2m (environment 46%, tests 39%, setup 7%, transform 5%, import 3%)[22m
+
+[2mEnvironment [22m [33mjsdom was created 24 times[39m[2m · 116.33s total, 46% of tracked time[22m
+[2m            [22m [2mcreate it once per worker with [22m[33mpool: 'vmThreads'[39m[2m (keeps per-file isolation) or [22m[33misolate: false[39m[2m (shares it across files)[22m
+[2m            [22m [2mlearn more: https://vitest.dev/guide/improving-performance#test-environments[22m
+
+Error: executing /usr/libexec/docker/cli-plugins/docker-compose exec -T frontend npm test: exit status 1

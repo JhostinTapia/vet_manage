@@ -1,0 +1,81 @@
+[4m>>>> Executing external compose provider "/usr/libexec/docker/cli-plugins/docker-compose". Please see podman-compose(1) for how to disable this message. <<<<
+
+[0m
+> vet-manage-api@0.0.1 test
+> vitest run
+
+
+[1m[30m[46m RUN [49m[39m[22m [36mv4.1.12 [39m[90m/app[39m
+
+ [32m✓[39m src/modules/clients/repositories/clients.repository.spec.ts [2m([22m[2m12 tests[22m[2m)[22m[32m 265[2mms[22m[39m
+ [32m✓[39m src/modules/identity/services/user-role-assignment.service.spec.ts [2m([22m[2m12 tests[22m[2m)[22m[32m 246[2mms[22m[39m
+ [32m✓[39m src/modules/pets/services/patients/register-patient.service.spec.ts [2m([22m[2m32 tests[22m[2m)[22m[33m 319[2mms[22m[39m
+ [32m✓[39m src/modules/inventory/services/inventory.service.spec.ts [2m([22m[2m17 tests[22m[2m)[22m[33m 381[2mms[22m[39m
+[33m[Nest] 307  - [39m11/22/2026, 12:08:09 AM [33m   WARN[39m [38;5;3m[UserRegistrationService] [39m[33mNo se pudieron enviar las credenciales del usuario u1: SMTP caído[39m
+ [32m✓[39m src/modules/identity/services/user-registration.service.spec.ts [2m([22m[2m32 tests[22m[2m)[22m[32m 226[2mms[22m[39m
+[33m[Nest] 306  - [39m11/22/2026, 12:08:09 AM [33m   WARN[39m [38;5;3m[ClientRegistrationService] [39m[33mNo se pudieron enviar las credenciales del cliente u1: SMTP caído[39m
+ [32m✓[39m src/modules/identity/services/client-registration.service.spec.ts [2m([22m[2m31 tests[22m[2m)[22m[33m 537[2mms[22m[39m
+ [32m✓[39m src/modules/scheduling/rates/services/rates.service.spec.ts [2m([22m[2m11 tests[22m[2m)[22m[32m 150[2mms[22m[39m
+ [32m✓[39m src/config/catalogs.spec.ts [2m([22m[2m15 tests[22m[2m)[22m[32m 255[2mms[22m[39m
+ [32m✓[39m seed/identity.seed.spec.ts [2m([22m[2m7 tests[22m[2m)[22m[33m 452[2mms[22m[39m
+     [33m[2m✓[22m[39m uses a password that follows the format policy and verifies against its hash [33m 323[2mms[22m[39m
+ [32m✓[39m src/modules/scheduling/schedule-blocks/services/register-schedule-block.service.spec.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 121[2mms[22m[39m
+ [32m✓[39m src/modules/clients/services/clients.service.spec.ts [2m([22m[2m9 tests[22m[2m)[22m[32m 60[2mms[22m[39m
+ [32m✓[39m src/modules/scheduling/schedule-blocks/services/schedule-block-input.spec.ts [2m([22m[2m9 tests[22m[2m)[22m[32m 84[2mms[22m[39m
+ [32m✓[39m src/modules/pets/services/species/register-species.service.spec.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 157[2mms[22m[39m
+ [32m✓[39m src/modules/pets/services/breeds/register-breed.service.spec.ts [2m([22m[2m10 tests[22m[2m)[22m[32m 209[2mms[22m[39m
+ [32m✓[39m src/modules/scheduling/work-schedules/services/update-work-schedule.service.spec.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 82[2mms[22m[39m
+ [32m✓[39m src/modules/scheduling/schedule-blocks/routes/schedule-blocks.controller.spec.ts [2m([22m[2m12 tests[22m[2m)[22m[32m 71[2mms[22m[39m
+ [32m✓[39m src/modules/identity/repositories/user-query.repository.spec.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 53[2mms[22m[39m
+[33m[Nest] 309  - [39m11/18/2026, 10:00:00 AM [33m   WARN[39m [38;5;3m[AuthService] [39m[33mNo se pudo registrar el intento en Redis: Error: Redis caído[39m
+ [32m✓[39m src/modules/inventory/services/batch-entry-input.service.spec.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 146[2mms[22m[39m
+ [32m✓[39m src/modules/identity/services/user-query.service.spec.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 263[2mms[22m[39m
+ [32m✓[39m src/modules/scheduling/work-schedules/services/create-work-schedule.service.spec.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 203[2mms[22m[39m
+ [32m✓[39m src/modules/inventory/services/expiration-alerts.service.spec.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 28[2mms[22m[39m
+ [32m✓[39m src/modules/identity/services/auth.service.spec.ts [2m([22m[2m24 tests[22m[2m)[22m[33m 9680[2mms[22m[39m
+     [33m[2m✓[22m[39m inicia sesión y abre una sesión renovable [33m 475[2mms[22m[39m
+     [33m[2m✓[22m[39m normaliza el correo antes de buscarlo [33m 385[2mms[22m[39m
+     [33m[2m✓[22m[39m avisa cuántos intentos quedan antes del bloqueo [33m 755[2mms[22m[39m
+     [33m[2m✓[22m[39m responde igual a un correo no registrado, con intentos y bloqueo simulados [33m 3337[2mms[22m[39m
+     [33m[2m✓[22m[39m responde sin contador si Redis no está disponible [33m 1115[2mms[22m[39m
+     [33m[2m✓[22m[39m permite el acceso cuando el bloqueo venció [33m 714[2mms[22m[39m
+     [33m[2m✓[22m[39m niega el acceso a una cuenta INACTIVE con credenciales correctas [33m 364[2mms[22m[39m
+     [33m[2m✓[22m[39m niega el acceso a una cuenta DEACTIVATED con credenciales correctas [33m 559[2mms[22m[39m
+     [33m[2m✓[22m[39m no revela el estado de la cuenta si la contraseña es incorrecta [33m 726[2mms[22m[39m
+ [32m✓[39m src/modules/scheduling/schedule-blocks/services/remove-schedule-block.service.spec.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 121[2mms[22m[39m
+ [32m✓[39m src/modules/scheduling/schedule-blocks/services/list-schedule-blocks.service.spec.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 222[2mms[22m[39m
+ [32m✓[39m src/modules/clients/dtos/list-clients-query.dto.spec.ts [2m([22m[2m11 tests[22m[2m)[22m[32m 98[2mms[22m[39m
+ [32m✓[39m seed/inventory.seed.spec.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 81[2mms[22m[39m
+ [32m✓[39m src/modules/scheduling/rates/repositories/rate.repository.spec.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 56[2mms[22m[39m
+ [32m✓[39m src/config/env.validation.spec.ts [2m([22m[2m13 tests[22m[2m)[22m[32m 191[2mms[22m[39m
+ [32m✓[39m src/modules/audit/services/audit.service.spec.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 217[2mms[22m[39m
+ [32m✓[39m src/modules/pets/services/patients/birth-date.spec.ts [2m([22m[2m18 tests[22m[2m)[22m[32m 253[2mms[22m[39m
+ [32m✓[39m src/modules/scheduling/rates/routes/rates.controller.spec.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 43[2mms[22m[39m
+ [32m✓[39m seed/breeds.seed.spec.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 135[2mms[22m[39m
+ [32m✓[39m src/infrastructure/mail/templates/credentials-email.spec.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 28[2mms[22m[39m
+ [32m✓[39m src/modules/clients/routes/clients.controller.spec.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 151[2mms[22m[39m
+ [32m✓[39m src/modules/scheduling/work-schedules/services/delete-work-schedule.service.spec.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 53[2mms[22m[39m
+ [32m✓[39m src/infrastructure/mail/mail.service.spec.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 38[2mms[22m[39m
+ [32m✓[39m seed/species.seed.spec.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 58[2mms[22m[39m
+ [32m✓[39m src/modules/scheduling/common/time-slots.spec.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 50[2mms[22m[39m
+ [32m✓[39m src/modules/scheduling/rates/dtos/create-rate.dto.spec.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 39[2mms[22m[39m
+ [32m✓[39m src/modules/identity/services/token.service.spec.ts [2m([22m[2m5 tests[22m[2m)[22m[33m 1577[2mms[22m[39m
+     [33m[2m✓[22m[39m rechaza un token vencido [33m 1508[2mms[22m[39m
+ [32m✓[39m src/modules/inventory/services/product-input.service.spec.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 35[2mms[22m[39m
+ [32m✓[39m src/common/validation/identification.spec.ts [2m([22m[2m13 tests[22m[2m)[22m[32m 120[2mms[22m[39m
+ [32m✓[39m src/modules/scheduling/schedule-blocks/repositories/schedule-block.repository.spec.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 23[2mms[22m[39m
+ [32m✓[39m src/modules/pets/services/breeds/list-active-breeds.service.spec.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 25[2mms[22m[39m
+ [32m✓[39m src/modules/identity/services/password-hasher.service.spec.ts [2m([22m[2m11 tests[22m[2m)[22m[33m 1723[2mms[22m[39m
+     [33m[2m✓[22m[39m genera hashes distintos para la misma contraseña [33m 737[2mms[22m[39m
+     [33m[2m✓[22m[39m verifica la contraseña correcta y rechaza otra [33m 764[2mms[22m[39m
+ [32m✓[39m src/modules/pets/services/species/list-active-species.service.spec.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 100[2mms[22m[39m
+ [32m✓[39m src/modules/identity/services/temporary-password.spec.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 259[2mms[22m[39m
+ [32m✓[39m src/modules/inventory/inventory.controller.spec.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 38[2mms[22m[39m
+ [32m✓[39m src/app.controller.spec.ts [2m([22m[2m2 tests[22m[2m)[22m[33m 441[2mms[22m[39m
+       [33m[2m✓[22m[39m should return "Hello World!" [33m 419[2mms[22m[39m
+ [32m✓[39m src/modules/identity/services/session.service.spec.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 24[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m50 passed[39m[22m[90m (50)[39m
+[2m      Tests [22m [1m[32m437 passed[39m[22m[90m (437)[39m
+[2m   Start at [22m 00:08:03
+[2m   Duration [22m 30.48s[2m (transform 10.90s, setup 0ms, import 107.10s, tests 20.18s, environment 72ms)[22m

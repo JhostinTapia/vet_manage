@@ -1,0 +1,9 @@
+[
+  {
+    "id": "CP-007-05",
+    "passed": false,
+    "status": 403,
+    "message": "No tiene permisos para realizar esta acción",
+    "method": "Permiso temporal revocado después de abrir el formulario, antes de guardar. Sesión real de recepcionista."
+  }
+]

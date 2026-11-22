@@ -23,6 +23,7 @@ function build() {
     findOverlapping: vi.fn(async () => []),
     countConflictingAppointments: vi.fn(async () => 0),
     countConflictingAvailability: vi.fn(async () => 0),
+    countAvailability: vi.fn(async () => 0),
     update: vi.fn(async () => existingRecord()),
   };
   const service = new UpdateWorkScheduleService(repo as never);
@@ -102,6 +103,22 @@ describe('UpdateWorkScheduleService', () => {
 
     await expect(
       ctx.service.update('ws-1', { horaInicio: '08:00', horaFin: '12:00' }),
+    ).rejects.toThrow(BadRequestException);
+  });
+
+  it('rechaza cambio de sucursal con citas en el horario original', async () => {
+    ctx.repo.countConflictingAppointments.mockResolvedValue(1);
+
+    await expect(
+      ctx.service.update('ws-1', { sucursalId: 'suc-2' }),
+    ).rejects.toThrow(BadRequestException);
+  });
+
+  it('rechaza cambio de sucursal con disponibilidad futura', async () => {
+    ctx.repo.countAvailability.mockResolvedValue(1);
+
+    await expect(
+      ctx.service.update('ws-1', { sucursalId: 'suc-2' }),
     ).rejects.toThrow(BadRequestException);
   });
 });
