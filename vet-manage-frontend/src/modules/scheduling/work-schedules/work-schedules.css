@@ -79,13 +79,23 @@
   border-top: 1px solid #eef1f4;
 }
 
-.button--danger {
+.work-schedules-page .work-schedules-delete {
   color: #b94d54;
   border-color: #f1d5d7;
   background: #fff0f0;
 }
 
-.button--danger:hover { background: #fde7e8; }
+.work-schedules-page .work-schedules-delete:hover,
+.work-schedules-page .work-schedules-delete:active {
+  color: #b94d54;
+  border-color: #f1d5d7;
+  background: #fde7e8;
+}
+
+.work-schedules-page .work-schedules-delete:focus-visible {
+  outline: 2px solid #4c7dff;
+  outline-offset: 2px;
+}
 
 @media (max-width: 900px) {
   .work-schedules-toolbar {

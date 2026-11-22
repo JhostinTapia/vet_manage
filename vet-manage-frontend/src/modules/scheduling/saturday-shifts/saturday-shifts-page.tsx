@@ -4,6 +4,9 @@ import { useToast } from '../../../common/components/toast-context';
 import { ApiError } from '../../../infrastructure/api/http-client';
 import { schedulingApi } from '../services/scheduling-api';
 import type { Branch, SaturdayShift, VeterinarianOption } from '../types';
+import './saturday-shifts.css';
+
+const formatDate = (date: string) => date.split('-').reverse().join('/');
 
 export function SaturdayShiftsPage() {
   const { hasPermission } = useAuth();
@@ -79,7 +82,7 @@ export function SaturdayShiftsPage() {
   }
 
   return (
-    <section className="inventory-page work-schedules-page">
+    <section className="inventory-page saturday-shifts-page">
       <div className="page-heading">
         <div>
           <span className="eyebrow">Agenda · Sábados</span>
@@ -88,37 +91,40 @@ export function SaturdayShiftsPage() {
         </div>
       </div>
 
-      {canManage && (
-        <div className="catalog-card work-schedules-card">
-          <div className="catalog-card__heading"><h3>Generar rotación</h3></div>
-          <div className="work-schedules-filters">
-            <label className="field"><span>Sucursal</span><select value={sucursalId} onChange={(event) => setSucursalId(event.target.value)}><option value="">Seleccione</option>{branches.map((branch) => <option key={branch.id} value={branch.id}>{branch.nombre}</option>)}</select></label>
-            <label className="field"><span>Fechas (YYYY-MM-DD separadas por coma)</span><input value={fechas} onChange={(event) => setFechas(event.target.value)} /></label>
-            <label className="field"><span>Lista de veterinarios (IDs separados por coma)</span><input value={veterinarioIds} onChange={(event) => setVeterinarioIds(event.target.value)} /></label>
-            <button type="button" className="button button--primary" onClick={generate}>Generar y guardar</button>
+      <div className="saturday-shifts-panels">
+        {canManage && (
+          <div className="catalog-card saturday-shifts-card">
+            <div className="catalog-card__heading"><div><span className="eyebrow">Planificación</span><h3>Generar rotación</h3><p>Organiza la atención de los próximos sábados.</p></div></div>
+            <div className="saturday-shifts-form">
+              <label className="field"><span>Sucursal</span><select value={sucursalId} onChange={(event) => setSucursalId(event.target.value)}><option value="">Seleccione</option>{branches.map((branch) => <option key={branch.id} value={branch.id}>{branch.nombre}</option>)}</select></label>
+              <label className="field"><span>Fechas de los sábados</span><input value={fechas} onChange={(event) => setFechas(event.target.value)} aria-describedby="saturday-dates-help" /><small id="saturday-dates-help">Formato AAAA-MM-DD, separadas por comas.</small></label>
+              <label className="field"><span>Lista de veterinarios</span><input value={veterinarioIds} onChange={(event) => setVeterinarioIds(event.target.value)} aria-describedby="saturday-vets-help" placeholder="Identificadores en orden de rotación" /><small id="saturday-vets-help">Ingresa los IDs separados por comas, en el orden de la rotación.</small></label>
+              <div className="saturday-shifts-form__actions"><button type="button" className="button button--primary" onClick={generate}>Generar y guardar</button></div>
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {canManage && (
-        <div className="catalog-card work-schedules-card">
-          <div className="catalog-card__heading"><h3>Sustituir veterinario</h3></div>
-          <div className="work-schedules-filters">
-            <label className="field"><span>Turno</span><select value={substituteId} onChange={(event) => setSubstituteId(event.target.value)}><option value="">Seleccione</option>{shifts.map((shift) => <option key={shift.id} value={shift.id}>{shift.fecha} · {shift.sucursalNombre} · {shift.veterinarioNombre}</option>)}</select></label>
-            <label className="field"><span>Reemplazo</span><select value={replacementId} onChange={(event) => setReplacementId(event.target.value)}><option value="">Seleccione</option>{veterinarians.map((veterinarian) => <option key={veterinarian.id} value={veterinarian.id}>{veterinarian.person.firstName} {veterinarian.person.lastName}</option>)}</select></label>
-            <label className="field"><span>Justificación</span><input value={justificacion} onChange={(event) => setJustificacion(event.target.value)} /></label>
-            <button type="button" className="button button--primary" onClick={substitute}>Sustituir</button>
+        {canManage && (
+          <div className="catalog-card saturday-shifts-card">
+            <div className="catalog-card__heading"><div><span className="eyebrow">Ajustes de turno</span><h3>Sustituir veterinario</h3><p>Selecciona un reemplazo e indica el motivo del cambio.</p></div></div>
+            <div className="saturday-shifts-form">
+              <label className="field"><span>Turno</span><select value={substituteId} onChange={(event) => setSubstituteId(event.target.value)}><option value="">Seleccione</option>{shifts.map((shift) => <option key={shift.id} value={shift.id}>{formatDate(shift.fecha)} · {shift.sucursalNombre} · {shift.veterinarioNombre}</option>)}</select></label>
+              <label className="field"><span>Reemplazo</span><select value={replacementId} onChange={(event) => setReplacementId(event.target.value)}><option value="">Seleccione</option>{veterinarians.map((veterinarian) => <option key={veterinarian.id} value={veterinarian.id}>{veterinarian.person.firstName} {veterinarian.person.lastName}</option>)}</select></label>
+              <label className="field"><span>Justificación</span><textarea rows={3} value={justificacion} onChange={(event) => setJustificacion(event.target.value)} placeholder="Describe el motivo de la sustitución" /></label>
+              <div className="saturday-shifts-form__actions"><button type="button" className="button button--secondary" onClick={substitute}>Sustituir veterinario</button></div>
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
-      <div className="catalog-card work-schedules-card">
-        <div className="catalog-card__heading"><h3>Turnos registrados</h3></div>
-        {shifts.length === 0 ? <div className="empty-state">No hay turnos registrados.</div> : (
+      </div>
+
+      <div className="catalog-card saturday-shifts-card">
+        <div className="catalog-card__heading"><div><h3>Turnos registrados</h3><p>Asignaciones de atención por sucursal.</p></div><span className="saturday-shifts-count">{shifts.length} turno{shifts.length === 1 ? '' : 's'}</span></div>
+        {shifts.length === 0 ? <div className="empty-state"><span className="saturday-shifts-empty-icon" aria-hidden="true">◷</span><strong>No hay turnos registrados</strong><span>Las asignaciones aparecerán aquí cuando se genere una rotación.</span></div> : (
           <div className="product-table-wrap">
-            <table className="product-table work-schedules-table" aria-label="Turnos de sábado">
+            <table className="product-table saturday-shifts-table" aria-label="Turnos de sábado">
               <thead><tr><th>Fecha</th><th>Sucursal</th><th>Veterinario</th><th>Jornada</th><th>Justificación</th></tr></thead>
-              <tbody>{shifts.map((shift) => <tr key={shift.id}><td>{shift.fecha}</td><td>{shift.sucursalNombre}</td><td>{shift.veterinarioNombre}</td><td>{shift.horaInicio}–{shift.horaFin}</td><td>{shift.justificacion ?? '—'}</td></tr>)}</tbody>
+              <tbody>{shifts.map((shift) => <tr key={shift.id}><td><span className="saturday-shifts-date">{formatDate(shift.fecha)}</span></td><td>{shift.sucursalNombre}</td><td><strong>{shift.veterinarioNombre}</strong></td><td><span className="saturday-shifts-time">{shift.horaInicio}–{shift.horaFin}</span></td><td>{shift.justificacion ?? '—'}</td></tr>)}</tbody>
             </table>
           </div>
         )}
