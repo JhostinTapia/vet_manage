@@ -154,4 +154,10 @@ export class WorkScheduleRepository {
       return rStart < startMin || rEnd > endMin;
     }).length;
   }
+
+  async countAvailability(horarioBaseId: string): Promise<number> {
+    return this.prisma.disponibilidadDiaria.count({
+      where: { horarioBaseId, fecha: { gte: new Date() } },
+    });
+  }
 }

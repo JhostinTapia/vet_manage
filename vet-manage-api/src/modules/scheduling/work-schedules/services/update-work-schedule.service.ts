@@ -72,16 +72,24 @@ export class UpdateWorkScheduleService {
     const isReduced = startMin > oldStartMin || endMin < oldEndMin;
     const isDayChanged = dto.diaSemana !== undefined && dto.diaSemana !== existing.diaSemana;
     const isVeterinarianChanged = dto.veterinarioId !== undefined && dto.veterinarioId !== existing.veterinarioId;
+    const isSucursalChanged = dto.sucursalId !== undefined && dto.sucursalId !== existing.sucursalId;
+    const isStructuralChange = isSucursalChanged || isDayChanged || isVeterinarianChanged;
 
-    if (isReduced || isDayChanged || isVeterinarianChanged) {
-      const conflictingAppointments = await this.repo.countConflictingAppointments(
-        existing.veterinarioId,
-        existing.diaSemana,
-        startMin,
-        endMin,
-      );
-      if (conflictingAppointments > 0) {
-        throw new BadRequestException('El cambio afecta citas o disponibilidad diaria existente');
+    if (isReduced) {
+      const removedRanges: Array<{ start: number; end: number }> = [];
+      if (startMin > oldStartMin) removedRanges.push({ start: oldStartMin, end: startMin });
+      if (endMin < oldEndMin) removedRanges.push({ start: endMin, end: oldEndMin });
+
+      for (const range of removedRanges) {
+        const conflictingAppointments = await this.repo.countConflictingAppointments(
+          existing.veterinarioId,
+          existing.diaSemana,
+          range.start,
+          range.end,
+        );
+        if (conflictingAppointments > 0) {
+          throw new BadRequestException('El cambio afecta citas o disponibilidad diaria existente');
+        }
       }
 
       const conflictingAvailability = await this.repo.countConflictingAvailability(
@@ -89,6 +97,21 @@ export class UpdateWorkScheduleService {
         startMin,
         endMin,
       );
+      if (conflictingAvailability > 0) {
+        throw new BadRequestException('El cambio afecta citas o disponibilidad diaria existente');
+      }
+    } else if (isStructuralChange) {
+      const conflictingAppointments = await this.repo.countConflictingAppointments(
+        existing.veterinarioId,
+        existing.diaSemana,
+        oldStartMin,
+        oldEndMin,
+      );
+      if (conflictingAppointments > 0) {
+        throw new BadRequestException('El cambio afecta citas o disponibilidad diaria existente');
+      }
+
+      const conflictingAvailability = await this.repo.countAvailability(id);
       if (conflictingAvailability > 0) {
         throw new BadRequestException('El cambio afecta citas o disponibilidad diaria existente');
       }

@@ -26,6 +26,13 @@ export class DeleteWorkScheduleService {
       );
     }
 
+    const futureAvailability = await this.repo.countAvailability(id);
+    if (futureAvailability > 0) {
+      throw new BadRequestException(
+        'No se puede eliminar el horario: existen disponibilidades diarias futuras',
+      );
+    }
+
     await this.repo.softDelete(id);
   }
 }
