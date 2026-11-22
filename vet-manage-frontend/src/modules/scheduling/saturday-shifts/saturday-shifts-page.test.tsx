@@ -22,6 +22,23 @@ beforeEach(() => {
 });
 
 describe('Selección de veterinarios para sábados', () => {
+  it('muestra los datos de cada asignación en el listado y en el selector de sustitución', async () => {
+    vi.mocked(schedulingApi.listSaturdayShifts).mockResolvedValue([{
+      id: 'turno-1', fecha: '2026-11-28', sucursalId: 'loja', sucursalNombre: 'Loja',
+      veterinarioId: 'vet-1', veterinarioNombre: 'Ana Ruiz', horaInicio: '09:30', horaFin: '13:45',
+      justificacion: 'Reemplazo por capacitación',
+    }]);
+    render(<ToastProvider><SaturdayShiftsPage /></ToastProvider>);
+    const table = await screen.findByRole('table', { name: 'Turnos de sábado' });
+    const cells = within(table).getAllByRole('cell');
+    expect(cells.map((cell) => cell.textContent)).toEqual([
+      '28/11/2026', 'Loja', 'Ana Ruiz', '09:30–13:45', 'Reemplazo por capacitación',
+    ]);
+    expect(within(screen.getByLabelText('Turno')).getByRole('option', {
+      name: '28/11/2026 · Loja · Ana Ruiz',
+    })).toBeInTheDocument();
+  });
+
   it('permite elegir por nombre, evita duplicados y envía los IDs en el orden elegido', async () => {
     render(<ToastProvider><SaturdayShiftsPage /></ToastProvider>);
     await screen.findByRole('option', { name: 'Loja' });

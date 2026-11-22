@@ -1,5 +1,22 @@
 import { getJson, postJson, putJson, deleteJson } from '../../../infrastructure/api/http-client';
 import type { AvailableResources, ConsultAvailableResourcesParams, Branch, ClinicService, GenerateSaturdayShiftsData, MyAvailability, SaturdayShift, SaveMyAvailabilityData, SubstituteSaturdayShiftData, WorkSchedule, WorkScheduleFormData, VeterinarianOption } from '../types';
+import type { SaturdayShiftRecord, SaturdayShiftResponse } from '../types';
+
+function mapSaturdayShift(record: SaturdayShiftResponse): SaturdayShift {
+  const { horarioBase, sucursal } = record;
+  return {
+    id: record.id,
+    // Son fecha de calendario y horas de jornada, sin conversión a zona local.
+    fecha: record.fecha.slice(0, 10),
+    justificacion: record.justificacion,
+    sucursalId: record.sucursalId,
+    sucursalNombre: sucursal.nombre,
+    veterinarioId: horarioBase.veterinarioId,
+    veterinarioNombre: `${horarioBase.veterinario.person.firstName} ${horarioBase.veterinario.person.lastName}`,
+    horaInicio: horarioBase.horaInicio.slice(11, 16),
+    horaFin: horarioBase.horaFin.slice(11, 16),
+  };
+}
 
 export const schedulingApi = {
   consultAvailableResources(params: ConsultAvailableResourcesParams) {
@@ -42,13 +59,14 @@ export const schedulingApi = {
     if (params?.fechaDesde) query.set('fechaDesde', params.fechaDesde);
     if (params?.fechaHasta) query.set('fechaHasta', params.fechaHasta);
     const qs = query.toString();
-    return getJson<SaturdayShift[]>(`/scheduling/saturday-shifts${qs ? `?${qs}` : ''}`);
+    return getJson<SaturdayShiftResponse[]>(`/scheduling/saturday-shifts${qs ? `?${qs}` : ''}`)
+      .then((records) => records.map(mapSaturdayShift));
   },
   generateSaturdayShifts(data: GenerateSaturdayShiftsData) {
-    return postJson<SaturdayShift[], GenerateSaturdayShiftsData>('/scheduling/saturday-shifts/generate', data);
+    return postJson<SaturdayShiftRecord[], GenerateSaturdayShiftsData>('/scheduling/saturday-shifts/generate', data);
   },
   substituteSaturdayShift(id: string, data: SubstituteSaturdayShiftData) {
-    return putJson<SaturdayShift, SubstituteSaturdayShiftData>(`/scheduling/saturday-shifts/${id}`, data);
+    return putJson<SaturdayShiftRecord, SubstituteSaturdayShiftData>(`/scheduling/saturday-shifts/${id}`, data);
   },
   getMyAvailability(fecha: string) {
     return getJson<MyAvailability>(`/scheduling/daily-availability/me?fecha=${encodeURIComponent(fecha)}`);
