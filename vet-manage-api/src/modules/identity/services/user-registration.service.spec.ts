@@ -103,6 +103,13 @@ describe('UserRegistrationService', () => {
         action: 'Registrar',
         module: 'Usuarios',
         affectedRecord: '1710034065 - María López',
+        newValue: {
+          identification: '1710034065',
+          firstName: 'María',
+          lastName: 'López',
+          email: 'mlopez@vetmanage.com',
+          roles: ['Veterinario'],
+        },
       });
     });
 

@@ -80,10 +80,10 @@ describe('GET /clients y /clients/:clientId/pets (e2e)', () => {
   }
 
   async function createPet(tx: Tx, clientId: string, name: string) {
-    return tx.pet.create({
+    return tx.patient.create({
       data: {
         name,
-        sex: 'MALE',
+        gender: 'MALE',
         birthDate: new Date('2022-01-01'),
         weightKg: 12.5,
         heightCm: 45.3,
@@ -157,7 +157,7 @@ describe('GET /clients y /clients/:clientId/pets (e2e)', () => {
 
   afterAll(async () => {
     if (!prisma) return;
-    await prisma.pet.deleteMany({ where: { speciesId } });
+    await prisma.patient.deleteMany({ where: { speciesId } });
     await prisma.breed.deleteMany({ where: { id: breedId } });
     await prisma.species.deleteMany({ where: { id: speciesId } });
     await prisma.client.deleteMany({ where: { person: { email: { endsWith: EMAIL_DOMAIN } } } });

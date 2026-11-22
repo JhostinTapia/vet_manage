@@ -67,8 +67,7 @@ export const ROLES: readonly RoleDefinition[] = [
       'users:change-status', 'users:deactivate',
       'roles:manage-permissions', 'audit:read', 'audit:export',
       'inventory:read',
-      ...catalogManagement('species'),
-      ...catalogManagement('breeds'),
+      // Especies y razas: el Administrador no tiene acceso (matriz de roles, sección 2.4).
       ...schedulingAdmin,
     ],
   },
@@ -104,7 +103,7 @@ export const ROLES: readonly RoleDefinition[] = [
       'supplies-used:create', 'supplies-used:remove',
       ...clinicalFiles,
       // Agenda: consulta su jornada y registra su disponibilidad diaria.
-      'branches:read', 'work-schedules:read',
+      'branches:read', 'work-schedules:read', 'saturday-shifts:read',
       'daily-availability:read', 'daily-availability:manage-own', 'schedule-blocks:read',
     ],
   },

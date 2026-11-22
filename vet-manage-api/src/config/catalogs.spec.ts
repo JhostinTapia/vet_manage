@@ -35,6 +35,25 @@ describe('Catálogos de permisos y roles', () => {
     }
   });
 
+  // Matriz de roles y permisos del Módulo 1, sección 2.4: especies (HU-13 a HU-16) y razas (HU-17 a HU-20).
+  const manage = ['create', 'read', 'update', 'change-status'];
+  describe.each(['species', 'breeds'])('permisos de %s', (catalog) => {
+    it.each([
+      ['administrator', []],
+      ['manager', ['read']],
+      ['veterinarian', manage],
+      ['veterinary_technician', ['read']],
+      ['receptionist', ['read']],
+      ['cashier', []],
+      ['warehouse_keeper', []],
+      ['client', []],
+    ])('%s sigue la matriz', (role, actions) => {
+      const granted = [...keysOf(role)].filter((key) => key.startsWith(`${catalog}:`));
+
+      expect(granted.sort()).toEqual(actions.map((action) => `${catalog}:${action}`).sort());
+    });
+  });
+
   it('el Administrador gestiona usuarios y auditoría pero no clientes ni pacientes', () => {
     const admin = keysOf('administrator');
 

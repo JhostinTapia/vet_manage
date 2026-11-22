@@ -190,6 +190,13 @@ export class UserRegistrationService {
       action: AUDIT_ACTIONS.register,
       module: AUDIT_MODULES.users,
       affectedRecord: describePerson(person),
+      newValue: {
+        identification: person.identification,
+        firstName: person.firstName,
+        lastName: person.lastName,
+        email: person.email,
+        roles: roles.map((role) => role.displayName).sort((a, b) => a.localeCompare(b, 'es')),
+      },
     });
 
     return { person, user, passwordAssigned, existingPerson: Boolean(found) };

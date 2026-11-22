@@ -12,6 +12,7 @@ import { SpeciesRepository } from './repositories/species.repository.js';
 import { ListActiveBreedsService } from './services/breeds/list-active-breeds.service.js';
 import { RegisterBreedService } from './services/breeds/register-breed.service.js';
 import { RegisterPatientService } from './services/patients/register-patient.service.js';
+import { SearchPatientsService } from './services/patients/search-patients.service.js';
 import { ListActiveSpeciesService } from './services/species/list-active-species.service.js';
 import { RegisterSpeciesService } from './services/species/register-species.service.js';
 
@@ -27,6 +28,7 @@ import { RegisterSpeciesService } from './services/species/register-species.serv
     RegisterBreedService,
     ListActiveBreedsService,
     RegisterPatientService,
+    SearchPatientsService,
   ],
   exports: [SpeciesRepository, BreedRepository, RegisterSpeciesService, ListActiveSpeciesService, RegisterBreedService],
 })

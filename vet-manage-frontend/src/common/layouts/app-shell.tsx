@@ -3,6 +3,7 @@ import type { ComponentType } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
 import logo from '../../assets/logo.jpeg';
 import { useAuth } from '../../modules/auth/auth-context';
+import { CATALOG_PERMISSIONS } from '../../modules/catalogs/catalog-tabs';
 import { SCHEDULING_SECTIONS } from '../../modules/scheduling/navigation';
 import {
   BoxIcon,
@@ -23,13 +24,14 @@ import {
 import './app-shell.css';
 import { UserMenu } from './user-menu';
 
-type NavItem = { label: string; to: string; icon: ComponentType<{ size?: number }>; permission?: string };
+// permission puede ser una lista: basta con tener uno de esos permisos.
+type NavItem = { label: string; to: string; icon: ComponentType<{ size?: number }>; permission?: string | readonly string[] };
 
 // Cada sección se muestra únicamente si el usuario tiene su permiso de lectura.
 const mainNavigation: NavItem[] = [
   { label: 'Resumen', to: '/', icon: HomeIcon },
   { label: 'Pacientes', to: '/pets', icon: PawIcon, permission: 'pets:read' },
-  { label: 'Catálogos', to: '/catalogs', icon: FolderIcon },
+  { label: 'Catálogos', to: '/catalogs', icon: FolderIcon, permission: CATALOG_PERMISSIONS },
   { label: 'Clientes', to: '/clients', icon: UsersIcon, permission: 'clients:read' },
 ];
 
@@ -68,7 +70,9 @@ export function AppShell() {
   const [inventoryOpen, setInventoryOpen] = useState(true);
   const [schedulingOpen, setSchedulingOpen] = useState(true);
   const { hasPermission } = useAuth();
-  const visible = (items: NavItem[]) => items.filter((item) => !item.permission || hasPermission(item.permission));
+  const allowed = (permission: NavItem['permission']) =>
+    !permission || (typeof permission === 'string' ? hasPermission(permission) : permission.some(hasPermission));
+  const visible = (items: NavItem[]) => items.filter((item) => allowed(item.permission));
   const visibleScheduling = visible(schedulingNavigation);
 
   return (

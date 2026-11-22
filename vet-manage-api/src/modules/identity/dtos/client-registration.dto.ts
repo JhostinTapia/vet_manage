@@ -13,9 +13,8 @@ export class ClientRegistrationDto {
   @IsString()
   email: string;
 
-  @IsOptional()
   @IsString()
-  phone?: string;
+  phone: string;
 
   @IsOptional()
   @IsString()

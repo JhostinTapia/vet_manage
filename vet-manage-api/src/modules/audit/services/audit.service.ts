@@ -7,6 +7,8 @@ export type AuditEntry = {
   action: AuditAction;
   module: AuditModule;
   affectedRecord: string;
+  previousValue?: Prisma.InputJsonValue;
+  newValue?: Prisma.InputJsonValue;
 };
 
 @Injectable()
@@ -29,6 +31,8 @@ export class AuditService {
         action: entry.action,
         module: entry.module,
         affectedRecord: entry.affectedRecord,
+        ...(entry.previousValue !== undefined ? { previousValue: entry.previousValue } : {}),
+        ...(entry.newValue !== undefined ? { newValue: entry.newValue } : {}),
       },
     });
   }

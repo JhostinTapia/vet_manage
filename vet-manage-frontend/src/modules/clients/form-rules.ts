@@ -3,15 +3,15 @@ import { ApiError } from '../../infrastructure/api/http-client';
 import { CLIENT_ROLE } from './types';
 import type { RegisteredClient, RegisterClientInput } from './types';
 
-export const MISSING_FIELDS = 'Complete los campos obligatorios';
-export const INVALID_IDENTIFICATION = 'La cédula debe tener 10 dígitos válidos';
-export const INVALID_EMAIL = 'Ingrese un correo electrónico válido';
-export const INVALID_PHONE = 'Ingrese un teléfono válido';
+export const MISSING_FIELDS = 'Por favor, complete todos los campos obligatorios';
+export const INVALID_IDENTIFICATION = 'Número de cédula no válido';
+export const INVALID_EMAIL = 'Por favor, ingrese un correo y número de teléfono válido';
+export const INVALID_PHONE = 'Por favor, ingrese un correo y número de teléfono válido';
 export const INVALID_ADDRESS = 'Dirección no válida';
 export const MAIL_FAILED = 'Cliente registrado, pero no se pudo enviar el correo. Verifique la dirección y reenvíe las credenciales';
-const REGISTERED = 'Cliente registrado correctamente';
+const REGISTERED = 'Cliente registrado exitosamente';
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
-const PHONE_PATTERN = /^\+?\d{7,15}$/;
+const PHONE_PATTERN = /^09\d{8}$/;
 const ADDRESS_MAX = 255;
 
 export type FieldName = 'identification' | 'firstName' | 'lastName' | 'email' | 'phone' | 'address' | 'roles';
@@ -27,6 +27,7 @@ export function validateRegistration(form: Form): { errors: FieldErrors; missing
     ['firstName', form.firstName.trim()],
     ['lastName', form.lastName.trim()],
     ['email', form.email.trim()],
+    ['phone', form.phone.trim()],
   ];
   for (const [field, value] of required) {
     if (!value) {
@@ -36,7 +37,7 @@ export function validateRegistration(form: Form): { errors: FieldErrors; missing
   }
   if (!errors.identification && !isValidIdentification(form.identification.trim())) errors.identification = INVALID_IDENTIFICATION;
   if (!errors.email && !EMAIL_PATTERN.test(form.email.trim())) errors.email = INVALID_EMAIL;
-  if (form.phone.trim() && !PHONE_PATTERN.test(form.phone.trim())) errors.phone = INVALID_PHONE;
+  if (!errors.phone && !PHONE_PATTERN.test(form.phone.trim())) errors.phone = INVALID_PHONE;
   if (form.address.trim().length > ADDRESS_MAX) errors.address = INVALID_ADDRESS;
   return { errors, missing };
 }
@@ -48,7 +49,7 @@ export function buildClientInput(form: Form): RegisterClientInput {
     firstName: form.firstName.trim(),
     lastName: form.lastName.trim(),
     email: form.email.trim(),
-    phone: form.phone.trim() || undefined,
+    phone: form.phone.trim(),
     address: form.address.trim() || undefined,
     roles: [CLIENT_ROLE],
   };
@@ -61,8 +62,9 @@ export function describeApiError(cause: unknown): { message: string; errors: Fie
   }
   const errors: FieldErrors = {};
   if (cause.code === 'CLIENT_IDENTIFICATION_TAKEN' || cause.code === 'CLIENT_INVALID_IDENTIFICATION') errors.identification = cause.message;
-  else if (cause.code === 'CLIENT_EMAIL_TAKEN' || cause.code === 'CLIENT_INVALID_EMAIL') errors.email = cause.message;
-  else if (cause.code === 'CLIENT_INVALID_PHONE') errors.phone = cause.message;
+  else if (cause.code === 'CLIENT_EMAIL_TAKEN') errors.email = cause.message;
+  else if (cause.code === 'CLIENT_INVALID_EMAIL') errors.email = INVALID_EMAIL;
+  else if (cause.code === 'CLIENT_INVALID_PHONE') errors.phone = INVALID_PHONE;
   else if (cause.code === 'CLIENT_INVALID_ADDRESS') errors.address = cause.message;
   else if (cause.code === 'CLIENT_INVALID_NAME') {
     errors.firstName = cause.message;
@@ -73,12 +75,12 @@ export function describeApiError(cause: unknown): { message: string; errors: Fie
       if ((fields as string[]).includes(field)) errors[field as FieldName] = cause.message;
     }
   }
-  return { message: cause.message, errors };
+  const message = cause.code === 'CLIENT_INVALID_EMAIL' || cause.code === 'CLIENT_INVALID_PHONE' ? INVALID_EMAIL : cause.message;
+  return { message, errors };
 }
 
 // Aviso que se muestra tras registrar: advertencia si faltó enviar las credenciales; éxito en los demás casos.
 export function registrationOutcome(client: Pick<RegisteredClient, 'existingPerson' | 'passwordAssigned' | 'credentialsSent'>): { type: 'success' | 'warning'; message: string } {
   if (client.passwordAssigned && !client.credentialsSent) return { type: 'warning', message: MAIL_FAILED };
-  const reused = client.existingPerson ? ' La persona ya existía: se agregaron los roles a su cuenta.' : '';
-  return { type: 'success', message: `${REGISTERED}.${reused}` };
+  return { type: 'success', message: REGISTERED };
 }

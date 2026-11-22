@@ -4,6 +4,7 @@ import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import configuration from '../../src/config/configuration.js';
+import { ROLES } from '../../src/config/roles.catalog.js';
 import { GlobalExceptionFilter } from '../../src/common/errors/global-exception.filter.js';
 import { PetsModule } from '../../src/modules/pets/pets.module.js';
 import { SpeciesRepository } from '../../src/modules/pets/repositories/species.repository.js';
@@ -178,5 +179,25 @@ describe('BreedController (e2e)', () => {
     permissions = new Set(['breeds:create']);
 
     await request(app.getHttpServer()).get('/pets/species/active').set('Authorization', 'Bearer t').expect(403);
+  });
+
+  // Matriz de roles, sección 2.4: el Administrador no tiene acceso a razas.
+  const adminPermissions = () =>
+    new Set<string>(ROLES.find((role) => role.name === 'administrator')?.permissions ?? []);
+
+  it('POST /pets/breeds rejects the Administrator (403)', async () => {
+    permissions = adminPermissions();
+
+    await post({ name: 'Labrador', speciesId: ACTIVE }).expect(403);
+  });
+
+  it('GET /pets/species/:speciesId/breeds requires authentication (401)', async () => {
+    await request(app.getHttpServer()).get(`/pets/species/${ACTIVE}/breeds`).expect(401);
+  });
+
+  it('GET /pets/species/:speciesId/breeds rejects the Administrator (403)', async () => {
+    permissions = adminPermissions();
+
+    await request(app.getHttpServer()).get(`/pets/species/${ACTIVE}/breeds`).set('Authorization', 'Bearer t').expect(403);
   });
 });

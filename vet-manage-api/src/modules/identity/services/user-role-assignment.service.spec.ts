@@ -32,7 +32,7 @@ function baseUser(overrides: Partial<{ status: string; userRoles: unknown[] }> =
         id: 'ur-rec',
         roleId: 'role-rec',
         expiresAt: null,
-        role: { name: 'receptionist', isActive: true },
+        role: { name: 'receptionist', displayName: 'Recepcionista', isActive: true },
       },
       ...(overrides.userRoles ?? []),
     ],
@@ -118,15 +118,15 @@ describe('UserRoleAssignmentService.update', () => {
   describe('auditoría', () => {
     const unchangedTx = (): Tx => ({
       user: { findUnique: vi.fn().mockResolvedValue(baseUser()), count: vi.fn() },
-      role: { findMany: vi.fn().mockResolvedValue([{ id: 'role-rec', name: 'receptionist' }]) },
+      role: { findMany: vi.fn().mockResolvedValue([{ id: 'role-rec', name: 'receptionist', displayName: 'Recepcionista' }]) },
       userRole: { create: vi.fn(), update: vi.fn(), deleteMany: vi.fn() },
     });
 
     it('registra "Asignar roles" en la transacción cuando cambian los roles', async () => {
       const tx = unchangedTx();
       tx.role.findMany.mockResolvedValue([
-        { id: 'role-rec', name: 'receptionist' },
-        { id: 'role-cash', name: 'cashier' },
+        { id: 'role-rec', name: 'receptionist', displayName: 'Recepcionista' },
+        { id: 'role-cash', name: 'cashier', displayName: 'Cajero' },
       ]);
       const { service, audit } = build(tx, {});
 
@@ -138,14 +138,16 @@ describe('UserRoleAssignmentService.update', () => {
         action: 'Asignar roles',
         module: 'Usuarios',
         affectedRecord: '1710034065 - María López',
+        previousValue: ['Recepcionista'],
+        newValue: ['Cajero', 'Recepcionista'],
       });
     });
 
     it('registra la acción antes de aplicar los cambios de roles', async () => {
       const tx = unchangedTx();
       tx.role.findMany.mockResolvedValue([
-        { id: 'role-rec', name: 'receptionist' },
-        { id: 'role-cash', name: 'cashier' },
+        { id: 'role-rec', name: 'receptionist', displayName: 'Recepcionista' },
+        { id: 'role-cash', name: 'cashier', displayName: 'Cajero' },
       ]);
       const { service, audit } = build(tx, {});
 
@@ -157,14 +159,20 @@ describe('UserRoleAssignmentService.update', () => {
     it('registra la acción cuando solo se quita un rol', async () => {
       const tx = unchangedTx();
       tx.user.findUnique.mockResolvedValue(baseUser({
-        userRoles: [{ id: 'ur-cash', roleId: 'role-cash', expiresAt: null, role: { name: 'cashier', isActive: true } }],
+        userRoles: [{ id: 'ur-cash', roleId: 'role-cash', expiresAt: null, role: { name: 'cashier', displayName: 'Cajero', isActive: true } }],
       }));
       const { service, audit } = build(tx, {});
 
       await service.update('u-1', ['receptionist'], 'admin-1');
 
       expect(tx.userRole.deleteMany).toHaveBeenCalled();
-      expect(audit.record).toHaveBeenCalledTimes(1);
+      expect(audit.record).toHaveBeenCalledWith(
+        tx,
+        expect.objectContaining({
+          previousValue: ['Cajero'],
+          newValue: ['Recepcionista'],
+        }),
+      );
     });
 
     it('no registra nada cuando se guardan los mismos roles', async () => {

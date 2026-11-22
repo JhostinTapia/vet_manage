@@ -7,6 +7,8 @@ model AuditLog {
   action         String   @db.VarChar(50)
   module         String   @db.VarChar(50)
   affectedRecord String   @map("affected_record") @db.VarChar(255)
+  previousValue  Json?    @map("previous_value")
+  newValue       Json?    @map("new_value")
 
   user User @relation(fields: [userId], references: [id], onDelete: Restrict)
 

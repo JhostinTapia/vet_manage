@@ -96,8 +96,8 @@ export function ClientRegisterPage() {
                 <input value={form.identification} inputMode="numeric" maxLength={10} placeholder="10 dígitos" autoComplete="off"
                   aria-invalid={Boolean(errors.identification)} onChange={(event) => update('identification', event.target.value.replace(/\D/g, ''))} />
               </Field>
-              <Field label="Teléfono" hint="Opcional" error={errors.phone} icon={<PhoneIcon size={16} />}>
-                <input type="tel" value={form.phone} maxLength={16} placeholder="0991234567" autoComplete="off"
+              <Field label="Teléfono" required error={errors.phone} icon={<PhoneIcon size={16} />}>
+                <input type="tel" value={form.phone} placeholder="0991234567" autoComplete="off"
                   aria-invalid={Boolean(errors.phone)} onChange={(event) => update('phone', event.target.value)} />
               </Field>
               <Field label="Nombres" required error={errors.firstName} icon={<UserIcon size={16} />}>

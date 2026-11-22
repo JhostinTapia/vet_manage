@@ -3,6 +3,7 @@ import { AppShell } from '../common/layouts/app-shell';
 import { RequireAuth } from '../modules/auth/components/require-auth';
 import { RequirePermission } from '../modules/auth/components/require-permission';
 import { LoginPage } from '../modules/auth/pages/login-page';
+import { CATALOG_PERMISSIONS } from '../modules/catalogs/catalog-tabs';
 import { CatalogsPage } from '../modules/catalogs/pages/catalogs-page';
 import { ClientRegisterPage } from '../modules/clients/pages/client-register-page';
 import { ClientsPage } from '../modules/clients/pages/clients-page';
@@ -28,8 +29,8 @@ export function AppRouter() {
       <Route element={<RequireAuth />}>
         <Route element={<AppShell />}>
           <Route index element={<DashboardPage />} />
-          <Route path="pets" element={<PatientsPage />} />
-          <Route path="catalogs" element={<CatalogsPage />} />
+          <Route path="pets" element={<RequirePermission permission="pets:read"><PatientsPage /></RequirePermission>} />
+          <Route path="catalogs" element={<RequirePermission permission={CATALOG_PERMISSIONS}><CatalogsPage /></RequirePermission>} />
           <Route path="clients" element={<RequirePermission permission="clients:read"><ClientsPage /></RequirePermission>} />
           <Route path="clients/new" element={<RequirePermission permission="clients:create"><ClientRegisterPage /></RequirePermission>} />
           <Route path="appointments" element={<ComingSoonPage />} />

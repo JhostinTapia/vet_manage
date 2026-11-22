@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { PawIcon, PlusIcon } from '../../../common/components/icons';
 import { useToast } from '../../../common/components/toast-context';
+import { useAuth } from '../../auth/auth-context';
 import { SpeciesForm } from '../components/species-form';
 import { speciesApi } from '../services/species.service';
 import type { RegisterSpeciesDraft } from '../types';
@@ -9,6 +10,7 @@ export function SpeciesPage() {
   const [isModalOpen, setModalOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const { showToast } = useToast();
+  const { hasPermission } = useAuth();
 
   useEffect(() => {
     if (!isModalOpen) return;
@@ -37,12 +39,14 @@ export function SpeciesPage() {
 
   return (
     <div>
-      <div className="species-toolbar">
-        <button type="button" className="button button--primary" onClick={() => setModalOpen(true)}>
-          <PlusIcon size={16} />
-          Nueva especie
-        </button>
-      </div>
+      {hasPermission('species:create') && (
+        <div className="species-toolbar">
+          <button type="button" className="button button--primary" onClick={() => setModalOpen(true)}>
+            <PlusIcon size={16} />
+            Nueva especie
+          </button>
+        </div>
+      )}
 
       <div className="catalog-empty" role="status">
         <span className="catalog-empty__icon">

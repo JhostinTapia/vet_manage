@@ -34,9 +34,9 @@ export type ClientPetRecord = {
 };
 
 const CLIENT_ROLE_NAME = 'client';
-const MAX_SEARCH_VARIANTS = 64;
+export const MAX_SEARCH_VARIANTS = 64;
 
-const ACCENT_EQUIVALENTS: Record<string, string[]> = {
+export const ACCENT_EQUIVALENTS: Record<string, string[]> = {
   a: ['a', 'á'],
   e: ['e', 'é'],
   i: ['i', 'í'],

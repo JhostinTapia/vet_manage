@@ -7,7 +7,7 @@ export type RegisterClientInput = {
   firstName: string;
   lastName: string;
   email: string;
-  phone?: string;
+  phone: string;
   address?: string;
   roles: string[];
 };

@@ -9,6 +9,11 @@ import { speciesApi } from '../services/species.service';
 vi.mock('../services/breed.service', () => ({ breedApi: { registerBreed: vi.fn() } }));
 vi.mock('../services/species.service', () => ({ speciesApi: { listActiveSpecies: vi.fn() } }));
 
+let permissions = new Set<string>();
+vi.mock('../../auth/auth-context', () => ({
+  useAuth: () => ({ hasPermission: (permission: string) => permissions.has(permission) }),
+}));
+
 const showToast = vi.fn();
 
 function renderPage() {
@@ -22,6 +27,7 @@ function renderPage() {
 describe('BreedsPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    permissions = new Set(['breeds:read', 'breeds:create', 'species:read']);
     vi.mocked(speciesApi.listActiveSpecies).mockResolvedValue([{ id: 'sp-1', name: 'Canino' }]);
   });
 
@@ -63,5 +69,12 @@ describe('BreedsPage', () => {
 
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     expect(breedApi.registerBreed).not.toHaveBeenCalled();
+  });
+
+  it('oculta "Nueva raza" a quien solo consulta razas', () => {
+    permissions = new Set(['breeds:read']);
+    renderPage();
+
+    expect(screen.queryByRole('button', { name: /nueva raza/i })).not.toBeInTheDocument();
   });
 });

@@ -2,6 +2,7 @@ import { Logger } from '@nestjs/common';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiException } from '../../../common/errors/api-exception.js';
 import { isValidPassword } from '../../../common/security/password-policy.js';
+import type { ClientRegistrationDto } from '../dtos/client-registration.dto.js';
 import { ClientRegistrationService, CLIENT_MESSAGES } from './client-registration.service.js';
 
 const CLIENT_ROLE = { id: 'r-client', name: 'client', displayName: 'Cliente' };
@@ -17,7 +18,7 @@ const valid = {
 
 function build() {
   const tx = {
-    person: { findUnique: vi.fn(), findFirst: vi.fn(), create: vi.fn() },
+    person: { findUnique: vi.fn(), findFirst: vi.fn(), create: vi.fn(), update: vi.fn() },
     user: { create: vi.fn(), update: vi.fn() },
     userRole: { findMany: vi.fn(async () => []), create: vi.fn(async () => ({})), update: vi.fn(async () => ({})) },
     client: {
@@ -27,15 +28,26 @@ function build() {
         status: 'ACTIVE',
       })),
     },
+    patient: { create: vi.fn(), update: vi.fn(), delete: vi.fn(), deleteMany: vi.fn() },
   };
   tx.person.findUnique.mockResolvedValue(null);
   tx.person.findFirst.mockResolvedValue(null);
   tx.person.create.mockImplementation(async ({ data }) => ({ id: 'p1', ...data }));
+  tx.person.update.mockImplementation(async ({ data }: { data: Record<string, unknown> }) => ({
+    id: 'p9',
+    identification: valid.identification,
+    firstName: 'Ana',
+    lastName: 'Ruiz',
+    email: 'ana@cliente.com',
+    phone: null,
+    address: null,
+    ...data,
+  }));
   tx.user.create.mockImplementation(async ({ data }) => ({ id: 'u1', status: 'ACTIVE', ...data, userRoles: [] }));
 
   const prisma = {
     role: {
-      findFirst: vi.fn(async () => CLIENT_ROLE),
+      findFirst: vi.fn(async (): Promise<typeof CLIENT_ROLE | null> => CLIENT_ROLE),
       findMany: vi.fn(async () => [CLIENT_ROLE]),
     },
     $transaction: vi.fn((callback: (transaction: typeof tx) => unknown) => callback(tx)),
@@ -110,9 +122,16 @@ describe('ClientRegistrationService', () => {
       expect(JSON.stringify(client)).not.toContain(password);
     });
 
-    it('acepta el teléfono vacío', async () => {
-      await ctx.service.register({ ...valid, phone: '  ' }, 'admin-1');
-      expect(ctx.tx.person.create.mock.calls[0][0].data.phone).toBeNull();
+    it('rechaza el teléfono vacío como campo obligatorio', async () => {
+      const error = await rejection(ctx.service.register({ ...valid, phone: '  ' }, 'admin-1'));
+
+      expect(error).toMatchObject({
+        statusCode: 400,
+        message: 'Por favor, complete todos los campos obligatorios',
+        code: 'CLIENT_MISSING_FIELDS',
+        errors: ['phone'],
+      });
+      expect(ctx.prisma.$transaction).not.toHaveBeenCalled();
     });
 
     it('acepta la dirección vacía', async () => {
@@ -137,6 +156,7 @@ describe('ClientRegistrationService', () => {
       email: 'ana@cliente.com',
       phone: null,
       address: null,
+      client: null,
       user: { id: 'u9', password: 'hash-actual', status: 'ACTIVE', userRoles: [{ role: { category: 'CLIENT' } }] },
       ...overrides,
     });
@@ -161,6 +181,47 @@ describe('ClientRegistrationService', () => {
       expect(ctx.mail.send).not.toHaveBeenCalled();
       expect(message).toBe(CLIENT_MESSAGES.registered);
       expect(result).toMatchObject({ existingPerson: true, passwordAssigned: false, credentialsSent: false, email: 'ana@cliente.com' });
+    });
+
+    it('registra como cliente a un personal sin cliente reutilizando su persona y cuenta', async () => {
+      const foundPerson = client({ client: null, user: { id: 'u9', password: 'hash-actual' } });
+      ctx.tx.person.findUnique.mockResolvedValue(foundPerson);
+      ctx.tx.person.update.mockImplementation(async ({ data }: { data: Record<string, unknown> }) => ({ ...foundPerson, ...data }));
+
+      const { message, client: result } = await ctx.service.register(valid, 'admin-1');
+
+      expect(ctx.tx.person.create).not.toHaveBeenCalled();
+      expect(ctx.tx.user.create).not.toHaveBeenCalled();
+      expect(ctx.tx.user.update).not.toHaveBeenCalled();
+      expect(ctx.tx.person.update).toHaveBeenCalledWith({ where: { id: 'p9' }, data: { address: 'Av. Principal 123' } });
+      expect(ctx.tx.userRole.create).toHaveBeenCalledWith({ data: { userId: 'u9', roleId: 'r-client', assignedById: 'admin-1' } });
+      expect(ctx.tx.client.upsert).toHaveBeenCalledWith({
+        where: { personId: 'p9' },
+        create: { personId: 'p9', status: 'ACTIVE' },
+        update: {},
+      });
+      expect(ctx.mail.send).not.toHaveBeenCalled();
+      expect(message).toBe(CLIENT_MESSAGES.registered);
+      expect(result).toMatchObject({
+        existingPerson: true,
+        passwordAssigned: false,
+        credentialsSent: false,
+        firstName: 'Ana',
+        lastName: 'Ruiz',
+        email: 'ana@cliente.com',
+        phone: null,
+        address: 'Av. Principal 123',
+      });
+      expect(foundPerson.firstName).toBe('Ana');
+      expect(foundPerson.email).toBe('ana@cliente.com');
+    });
+
+    it('no sobrescribe una dirección existente al reutilizar la persona', async () => {
+      ctx.tx.person.findUnique.mockResolvedValue(client({ client: null, address: 'Dirección previa' }));
+
+      await ctx.service.register(valid, 'admin-1');
+
+      expect(ctx.tx.person.update).not.toHaveBeenCalled();
     });
 
     it('crea la cuenta y envía las credenciales al correo guardado cuando la persona no tiene cuenta', async () => {
@@ -206,17 +267,23 @@ describe('ClientRegistrationService', () => {
       ['identification', { identification: undefined }],
       ['firstName', { firstName: '' }],
       ['lastName', { lastName: undefined }],
+      ['phone', { phone: '  ' }],
     ])('rechaza si falta %s', async (field, override) => {
-      const error = await rejection(ctx.service.register({ ...valid, ...override }, 'admin-1'));
+      const error = await rejection(ctx.service.register({ ...valid, ...override } as ClientRegistrationDto, 'admin-1'));
 
-      expect(error).toMatchObject({ statusCode: 400, message: 'Complete los campos obligatorios', code: 'CLIENT_MISSING_FIELDS', errors: [field] });
+      expect(error).toMatchObject({
+        statusCode: 400,
+        message: 'Por favor, complete todos los campos obligatorios',
+        code: 'CLIENT_MISSING_FIELDS',
+        errors: [field],
+      });
       expect(ctx.prisma.$transaction).not.toHaveBeenCalled();
       expect(ctx.mail.send).not.toHaveBeenCalled();
     });
 
-    it('lista todos los campos faltantes', async () => {
-      const error = await rejection(ctx.service.register({}, 'admin-1'));
-      expect(error.errors).toEqual(['identification', 'firstName', 'lastName', 'email']);
+    it('lista todos los campos faltantes, incluido el teléfono', async () => {
+      const error = await rejection(ctx.service.register({} as ClientRegistrationDto, 'admin-1'));
+      expect(error.errors).toEqual(['identification', 'firstName', 'lastName', 'email', 'phone']);
     });
   });
 
@@ -234,12 +301,7 @@ describe('ClientRegistrationService', () => {
     });
 
     it('no registra nada cuando el registro se rechaza', async () => {
-      ctx.tx.person.findUnique.mockResolvedValue({
-        id: 'p2', identification: valid.identification,
-        user: { id: 'u2', password: 'h', userRoles: [{ role: { category: 'STAFF' } }] },
-      });
-
-      await rejection(ctx.service.register(valid, 'recep-1'));
+      await rejection(ctx.service.register({ ...valid, identification: '11045' }, 'recep-1'));
 
       expect(ctx.audit.record).not.toHaveBeenCalled();
     });
@@ -251,23 +313,42 @@ describe('ClientRegistrationService', () => {
     });
   });
 
-  it('rechaza la cédula del cliente ya registrada', async () => {
-    ctx.tx.person.findUnique.mockResolvedValue({
-      id: 'p2', identification: valid.identification,
-      user: { id: 'u2', password: 'h', userRoles: [{ role: { category: 'STAFF' } }] },
-    });
+  it.each(['ACTIVE', 'INACTIVE', 'DEACTIVATED'] as const)(
+    'rechaza la cédula de un cliente ya registrado con estado %s sin tocar sus pacientes',
+    async (status) => {
+      const patients = [{ id: 'pet-1', name: 'Firulais' }];
+      const existing = {
+        id: 'p2',
+        identification: valid.identification,
+        client: { id: 'c-viejo', status },
+        patients,
+        user: { id: 'u2', password: 'h', userRoles: [{ role: { category: 'STAFF' } }] },
+      };
+      ctx.tx.person.findUnique.mockResolvedValue(existing);
 
-    const error = await rejection(ctx.service.register(valid, 'admin-1'));
+      const error = await rejection(ctx.service.register(valid, 'admin-1'));
 
-    expect(error).toMatchObject({ statusCode: 409, message: 'Número de cédula ya registrado', code: 'CLIENT_IDENTIFICATION_TAKEN' });
-    expect(ctx.tx.userRole.create).not.toHaveBeenCalled();
-    expect(ctx.tx.client.upsert).not.toHaveBeenCalled();
-  });
+      expect(error).toMatchObject({
+        statusCode: 409,
+        message: 'Número de cédula ya registrado',
+        code: 'CLIENT_IDENTIFICATION_TAKEN',
+      });
+      expect(ctx.tx.userRole.create).not.toHaveBeenCalled();
+      expect(ctx.tx.client.upsert).not.toHaveBeenCalled();
+      expect(ctx.tx.patient.create).not.toHaveBeenCalled();
+      expect(ctx.tx.patient.update).not.toHaveBeenCalled();
+      expect(ctx.tx.patient.delete).not.toHaveBeenCalled();
+      expect(ctx.tx.patient.deleteMany).not.toHaveBeenCalled();
+      expect(existing.client.id).toBe('c-viejo');
+      expect(existing.patients).toBe(patients);
+      expect(existing.patients[0]).toBe(patients[0]);
+    },
+  );
 
   it('rechaza la cédula con formato inválido', async () => {
     const error = await rejection(ctx.service.register({ ...valid, identification: '11045' }, 'admin-1'));
 
-    expect(error).toMatchObject({ statusCode: 400, message: 'La cédula debe tener 10 dígitos válidos', code: 'CLIENT_INVALID_IDENTIFICATION' });
+    expect(error).toMatchObject({ statusCode: 400, message: 'Número de cédula no válido', code: 'CLIENT_INVALID_IDENTIFICATION' });
   });
 
   it('rechaza el correo ya registrado', async () => {
@@ -306,13 +387,30 @@ describe('ClientRegistrationService', () => {
 
   describe('formatos', () => {
     it.each([
-      ['correo', { email: 'ana@' }, 'Ingrese un correo electrónico válido', 'CLIENT_INVALID_EMAIL'],
-      ['teléfono', { phone: '12ab' }, 'Ingrese un teléfono válido', 'CLIENT_INVALID_PHONE'],
-      ['nombre', { firstName: 'x'.repeat(101) }, 'Los nombres y apellidos no pueden superar 100 caracteres', 'CLIENT_INVALID_NAME'],
-      ['dirección', { address: 'x'.repeat(256) }, 'Dirección no válida', 'CLIENT_INVALID_ADDRESS'],
-    ])('rechaza %s inválido', async (_name, override, message, code) => {
+      ['correo', { email: 'ana@' }, 'CLIENT_INVALID_EMAIL', ['email']],
+      ['teléfono alfabético', { phone: '12ab' }, 'CLIENT_INVALID_PHONE', ['phone']],
+      ['teléfono de 9 dígitos', { phone: '099123456' }, 'CLIENT_INVALID_PHONE', ['phone']],
+      ['teléfono de 11 dígitos', { phone: '09912345678' }, 'CLIENT_INVALID_PHONE', ['phone']],
+      ['teléfono con prefijo distinto de 09', { phone: '0123456789' }, 'CLIENT_INVALID_PHONE', ['phone']],
+      ['teléfono con prefijo internacional', { phone: '+593991234567' }, 'CLIENT_INVALID_PHONE', ['phone']],
+      ['nombre', { firstName: 'x'.repeat(101) }, 'CLIENT_INVALID_NAME', ['firstName', 'lastName']],
+      ['dirección', { address: 'x'.repeat(256) }, 'CLIENT_INVALID_ADDRESS', ['address']],
+    ])('rechaza %s', async (_name, override, code, fields) => {
       const error = await rejection(ctx.service.register({ ...valid, ...override }, 'admin-1'));
-      expect(error).toMatchObject({ statusCode: 400, message, code });
+
+      const message = code === 'CLIENT_INVALID_EMAIL' || code === 'CLIENT_INVALID_PHONE'
+        ? 'Por favor, ingrese un correo y número de teléfono válido'
+        : code === 'CLIENT_INVALID_NAME'
+          ? 'Los nombres y apellidos no pueden superar 100 caracteres'
+          : 'Dirección no válida';
+      expect(error).toMatchObject({ statusCode: 400, message, code, errors: fields });
+      expect(ctx.prisma.$transaction).not.toHaveBeenCalled();
+    });
+
+    it('acepta un teléfono de 10 dígitos con prefijo 09', async () => {
+      await ctx.service.register({ ...valid, phone: '0999999999' }, 'admin-1');
+
+      expect(ctx.tx.person.create.mock.calls[0][0].data.phone).toBe('0999999999');
     });
   });
 

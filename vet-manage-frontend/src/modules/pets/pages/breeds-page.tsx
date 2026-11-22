@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { PawIcon, PlusIcon } from '../../../common/components/icons';
 import { useToast } from '../../../common/components/toast-context';
+import { useAuth } from '../../auth/auth-context';
 import { BreedForm } from '../components/breed-form';
 import { breedApi } from '../services/breed.service';
 import { speciesApi } from '../services/species.service';
@@ -12,6 +13,7 @@ export function BreedsPage() {
   const [species, setSpecies] = useState<SpeciesOption[]>([]);
   const [speciesLoading, setSpeciesLoading] = useState(false);
   const { showToast } = useToast();
+  const { hasPermission } = useAuth();
 
   const loadSpecies = useCallback(async () => {
     setSpeciesLoading(true);
@@ -61,12 +63,14 @@ export function BreedsPage() {
 
   return (
     <div>
-      <div className="species-toolbar">
-        <button type="button" className="button button--primary" onClick={openModal}>
-          <PlusIcon size={16} />
-          Nueva raza
-        </button>
-      </div>
+      {hasPermission('breeds:create') && (
+        <div className="species-toolbar">
+          <button type="button" className="button button--primary" onClick={openModal}>
+            <PlusIcon size={16} />
+            Nueva raza
+          </button>
+        </div>
+      )}
 
       <div className="catalog-empty" role="status">
         <span className="catalog-empty__icon">
