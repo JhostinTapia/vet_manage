@@ -57,23 +57,6 @@ export function WorkSchedulesPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<WorkScheduleFormData>({ ...EMPTY_FORM });
-  const [previewSchedule, setPreviewSchedule] = useState<WorkSchedule | null>(null);
-  const [previewDate, setPreviewDate] = useState('');
-  const [preview, setPreview] = useState<Awaited<ReturnType<typeof schedulingApi.listWorkScheduleSlots>> | null>(null);
-  const [previewLoading, setPreviewLoading] = useState(false);
-
-  const loadPreview = async () => {
-    if (!previewSchedule || !previewDate) return;
-    setPreviewLoading(true);
-    setPreview(null);
-    try {
-      setPreview(await schedulingApi.listWorkScheduleSlots(previewSchedule.id, previewDate));
-    } catch (err) {
-      showToast(err instanceof ApiError ? err.message : 'Ocurrió un error inesperado', 'error');
-    } finally {
-      setPreviewLoading(false);
-    }
-  };
 
   const loadSchedules = useCallback(async () => {
     setLoading(true);
@@ -163,7 +146,7 @@ export function WorkSchedulesPage() {
       await loadSchedules();
     } catch (err) {
       if (err instanceof ApiError) {
-        showToast(err.status === 403 ? 'No tiene permisos para esta acción' : err.message, 'error');
+        showToast(err.message, 'error');
       } else {
         showToast('Ocurrió un error inesperado', 'error');
       }
@@ -256,7 +239,6 @@ export function WorkSchedulesPage() {
                   <th>Sucursal</th>
                   <th>Hora inicio</th>
                   <th>Hora fin</th>
-                  <th>Turnos base</th>
                   {canManage && <th className="work-schedules-actions-heading">Acciones</th>}
                 </tr>
               </thead>
@@ -268,11 +250,6 @@ export function WorkSchedulesPage() {
                     <td>{s.sucursalNombre}</td>
                     <td><span className="time-cell">{s.horaInicio}</span></td>
                     <td><span className="time-cell">{s.horaFin}</span></td>
-                    <td><button type="button" className="button button--secondary button--small" onClick={() => {
-                      setPreviewSchedule(s);
-                      setPreviewDate('');
-                      setPreview(null);
-                    }}>Ver turnos</button></td>
                     {canManage && (
                       <td className="work-schedules-actions">
                         <button type="button" className="button button--secondary button--small" onClick={() => openEditModal(s)}>Editar</button>
@@ -286,30 +263,6 @@ export function WorkSchedulesPage() {
           </div>
         )}
       </div>
-
-      {previewSchedule && (
-        <div className="catalog-card" aria-label="Turnos base del horario">
-          <h3>Turnos base · {previewSchedule.veterinarioNombre} · {previewSchedule.sucursalNombre}</h3>
-          <p>Franjas de 30 minutos de la jornada. La reserva de citas comprueba además ocupaciones y bloqueos.</p>
-          <label className="field">
-            <span>Fecha de atención</span>
-            <input type="date" value={previewDate} disabled={previewLoading} onChange={e => {
-              setPreviewDate(e.target.value);
-              setPreview(null);
-            }} />
-          </label>
-          <button type="button" className="button button--primary" disabled={!previewDate || previewLoading} onClick={() => void loadPreview()}>
-            {previewLoading ? 'Consultando…' : 'Consultar turnos'}
-          </button>
-          {preview && <>
-            <p>{preview.usaJornadaCompleta ? 'Sin disponibilidad diaria registrada: se utiliza toda la jornada.' : 'Turnos según la fecha y disponibilidad diaria registrada.'}</p>
-            <p>{preview.turnos.length} turnos base</p>
-            {preview.turnos.length ? <ul aria-label="Turnos de la jornada" style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', listStyle: 'none', padding: 0 }}>
-              {preview.turnos.map(t => <li className="day-pill" key={t.inicio}>{t.inicio} – {t.fin}</li>)}
-            </ul> : <p>No hay turnos para esta fecha en este horario.</p>}
-          </>}
-        </div>
-      )}
 
       {modalOpen && (
         <div className="modal-overlay" onClick={closeModal}>

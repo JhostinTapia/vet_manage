@@ -1,8 +1,0 @@
-[4m>>>> Executing external compose provider "/usr/libexec/docker/cli-plugins/docker-compose". Please see podman-compose(1) for how to disable this message. <<<<
-
-[0m
-> vet-manage-api@0.0.1 lint
-> oxlint --type-aware src/ test/
-
-Found 0 warnings and 0 errors.
-Finished in 6.0s on 194 files with 111 rules using 8 threads.

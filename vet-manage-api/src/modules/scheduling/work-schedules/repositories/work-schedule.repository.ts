@@ -39,12 +39,6 @@ export class WorkScheduleRepository {
     });
   }
 
-  findDailyAvailability(horarioBaseId: string, fecha: Date) {
-    return this.prisma.disponibilidadDiaria.findMany({
-      where: { horarioBaseId, fecha },
-    });
-  }
-
   findOverlapping(
     veterinarioId: string,
     diaSemana: string,

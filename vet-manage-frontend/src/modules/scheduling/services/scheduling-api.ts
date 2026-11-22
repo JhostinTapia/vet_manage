@@ -27,11 +27,6 @@ export const schedulingApi = {
   listVeterinarians() {
     return getJson<VeterinarianOption[]>('/scheduling/work-schedules/veterinarians');
   },
-  listWorkScheduleSlots(id: string, fecha: string) {
-    return getJson<{ fecha: string; usaJornadaCompleta: boolean; turnos: { inicio: string; fin: string }[] }>(
-      `/scheduling/work-schedules/${id}/slots?${new URLSearchParams({ fecha })}`,
-    );
-  },
   createWorkSchedule(data: WorkScheduleFormData) {
     return postJson<WorkSchedule, WorkScheduleFormData>('/scheduling/work-schedules', data);
   },
