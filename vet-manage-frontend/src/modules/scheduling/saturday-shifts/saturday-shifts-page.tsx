@@ -16,7 +16,7 @@ export function SaturdayShiftsPage() {
   const [veterinarians, setVeterinarians] = useState<VeterinarianOption[]>([]);
   const [shifts, setShifts] = useState<SaturdayShift[]>([]);
   const [sucursalId, setSucursalId] = useState('');
-  const [fechas, setFechas] = useState('2026-11-07,2026-11-14,2026-11-21');
+  const [fechas, setFechas] = useState(['2026-11-07', '2026-11-14', '2026-11-21']);
   const [veterinarioIds, setVeterinarioIds] = useState<string[]>([]);
   const [substituteId, setSubstituteId] = useState('');
   const [replacementId, setReplacementId] = useState('');
@@ -48,10 +48,15 @@ export function SaturdayShiftsPage() {
       showToast('Sucursal y veterinarios elegibles son obligatorios.', 'error');
       return;
     }
+    const fechasValidas = fechas.filter(Boolean);
+    if (fechasValidas.length === 0) {
+      showToast('Debes agregar al menos una fecha de sábado.', 'error');
+      return;
+    }
     try {
       await schedulingApi.generateSaturdayShifts({
         sucursalId,
-        fechas: fechas.split(',').map((value) => value.trim()).filter(Boolean),
+        fechas: fechasValidas,
         veterinarioIds,
       });
       showToast('Turnos de sábado generados correctamente', 'success');
@@ -97,7 +102,46 @@ export function SaturdayShiftsPage() {
             <div className="catalog-card__heading"><div><span className="eyebrow">Planificación</span><h3>Generar rotación</h3><p>Organiza la atención de los próximos sábados.</p></div></div>
             <div className="saturday-shifts-form">
               <label className="field"><span>Sucursal</span><select value={sucursalId} onChange={(event) => setSucursalId(event.target.value)}><option value="">Seleccione</option>{branches.map((branch) => <option key={branch.id} value={branch.id}>{branch.nombre}</option>)}</select></label>
-              <label className="field"><span>Fechas de los sábados</span><input value={fechas} onChange={(event) => setFechas(event.target.value)} aria-describedby="saturday-dates-help" /><small id="saturday-dates-help">Formato AAAA-MM-DD, separadas por comas.</small></label>
+              <fieldset className="field saturday-shifts-dates">
+                <legend>Fechas de los sábados</legend>
+                <div className="saturday-shifts-date-fields">
+                  {fechas.map((fecha, index) => (
+                    <div className="saturday-shifts-date-field" key={index}>
+                      <label htmlFor={`saturday-date-${index}`}>Sábado {index + 1}</label>
+                      <input
+                        id={`saturday-date-${index}`}
+                        type="date"
+                        value={fecha}
+                        aria-describedby="saturday-dates-help"
+                        onChange={(event) => {
+                          const newDate = event.target.value;
+                          setFechas((current) => {
+                            const updated = [...current];
+                            updated[index] = newDate;
+                            return updated;
+                          });
+                        }}
+                      />
+                      <button
+                        type="button"
+                        className="button button--ghost button--small"
+                        aria-label={`Eliminar sábado ${index + 1}`}
+                        onClick={() => setFechas((current) => current.filter((_, i) => i !== index))}
+                      >
+                        Eliminar
+                      </button>
+                    </div>
+                  ))}
+                </div>
+                <button
+                  type="button"
+                  className="button button--secondary"
+                  onClick={() => setFechas((current) => [...current, ''])}
+                >
+                  Agregar fecha
+                </button>
+                <small id="saturday-dates-help">Selecciona cada sábado en el calendario.</small>
+              </fieldset>
               <div className="saturday-shifts-vets">
                 <label className="field" htmlFor="saturday-veterinarian-selector">
                   <span>Veterinarios de la rotación</span>

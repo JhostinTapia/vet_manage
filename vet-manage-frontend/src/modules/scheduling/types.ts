@@ -62,6 +62,25 @@ export type SaturdayShift = {
   horaFin: string;
 };
 
+// Prisma serializa las fechas y horas como ISO; GET incluye estas relaciones.
+export type SaturdayShiftRecord = {
+  id: string;
+  fecha: string;
+  justificacion: string | null;
+  sucursalId: string;
+  horarioBaseId: string;
+};
+
+export type SaturdayShiftResponse = SaturdayShiftRecord & {
+  sucursal: { id: string; nombre: string };
+  horarioBase: {
+    veterinarioId: string;
+    horaInicio: string;
+    horaFin: string;
+    veterinario: { person: { firstName: string; lastName: string } };
+  };
+};
+
 export type GenerateSaturdayShiftsData = {
   sucursalId: string;
   fechas: string[];
