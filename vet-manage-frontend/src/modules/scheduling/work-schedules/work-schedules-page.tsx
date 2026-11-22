@@ -41,7 +41,7 @@ const EMPTY_FORM: WorkScheduleFormData = {
 
 export function WorkSchedulesPage() {
   const { hasPermission } = useAuth();
-  const { showToast } = useToast();
+  const { showToast, confirm } = useToast();
   const canManage = hasPermission('work-schedules:manage');
 
   const [schedules, setSchedules] = useState<WorkSchedule[]>([]);
@@ -154,7 +154,7 @@ export function WorkSchedulesPage() {
   }, [form, editingId, closeModal, loadSchedules, showToast]);
 
   const handleDelete = useCallback(async (id: string) => {
-    if (!window.confirm('¿Está seguro de retirar este horario?')) return;
+    if (!await confirm('¿Está seguro de retirar este horario?', 'Sí, retirar horario', 'danger')) return;
 
     try {
       await schedulingApi.deleteWorkSchedule(id);
@@ -167,7 +167,7 @@ export function WorkSchedulesPage() {
         showToast('Ocurrió un error inesperado', 'error');
       }
     }
-  }, [loadSchedules, showToast]);
+  }, [confirm, loadSchedules, showToast]);
 
   return (
     <section className="inventory-page work-schedules-page">
@@ -253,7 +253,7 @@ export function WorkSchedulesPage() {
                     {canManage && (
                       <td className="work-schedules-actions">
                         <button type="button" className="button button--secondary button--small" onClick={() => openEditModal(s)}>Editar</button>
-                        <button type="button" className="button button--danger button--small" onClick={() => handleDelete(s.id)}>Eliminar</button>
+                        <button type="button" className="button work-schedules-delete button--small" onClick={() => handleDelete(s.id)}>Eliminar</button>
                       </td>
                     )}
                   </tr>
