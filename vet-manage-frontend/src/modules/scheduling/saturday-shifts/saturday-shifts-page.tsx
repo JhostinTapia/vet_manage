@@ -9,6 +9,7 @@ import {
   getEligibleVeterinarians,
   getSaturdaysInRange,
   JUSTIFICACION_MAX,
+  normalizeSaturdayShift,
   type SaturdayEligible,
 } from './saturday-shifts-utils';
 import '../work-schedules/work-schedules.css';
@@ -44,7 +45,8 @@ export function SaturdayShiftsPage() {
 
   const loadShifts = useCallback(async () => {
     try {
-      setShifts(await schedulingApi.listSaturdayShifts(sucursalId ? { sucursalId } : undefined));
+      const loaded = await schedulingApi.listSaturdayShifts(sucursalId ? { sucursalId } : undefined);
+      setShifts(loaded.map((shift) => normalizeSaturdayShift(shift)).filter((shift): shift is SaturdayShift => Boolean(shift)));
     } catch (cause) {
       showToast(cause instanceof ApiError ? cause.message : 'No se pudieron cargar los turnos.', 'error');
     }
@@ -81,7 +83,9 @@ export function SaturdayShiftsPage() {
   useEffect(() => {
     let active = true;
     schedulingApi.listSaturdayShifts(sucursalId ? { sucursalId } : undefined)
-      .then((loaded) => { if (active) setShifts(loaded); })
+      .then((loaded) => {
+        if (active) setShifts(loaded.map((shift) => normalizeSaturdayShift(shift)).filter((shift): shift is SaturdayShift => Boolean(shift)));
+      })
       .catch((cause) => {
         if (active) showToast(cause instanceof ApiError ? cause.message : 'No se pudieron cargar los turnos.', 'error');
       });

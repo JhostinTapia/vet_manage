@@ -1,4 +1,4 @@
-import type { WorkSchedule } from '../types';
+import type { SaturdayShift, WorkSchedule } from '../types';
 
 export type SaturdayEligible = {
   id: string;
@@ -49,4 +49,60 @@ export function getEligibleVeterinarians(schedules: WorkSchedule[], sucursalId: 
     }
   }
   return [...map.values()].sort((a, b) => a.name.localeCompare(b.name, 'es'));
+}
+
+function dbTimeToClock(value: unknown): string {
+  if (typeof value !== 'string') return '';
+  const match = /^\d{4}-\d{2}-\d{2}T(\d{2}):(\d{2})/.exec(value);
+  return match ? `${match[1]}:${match[2]}` : '';
+}
+
+export function normalizeSaturdayShift(raw: unknown): SaturdayShift | null {
+  if (!raw || typeof raw !== 'object') return null;
+  const record = raw as {
+    id?: unknown;
+    fecha?: unknown;
+    justificacion?: unknown;
+    sucursalId?: unknown;
+    sucursalNombre?: unknown;
+    veterinarioId?: unknown;
+    veterinarioNombre?: unknown;
+    horaInicio?: unknown;
+    horaFin?: unknown;
+    sucursal?: { id?: unknown; nombre?: unknown };
+    horarioBase?: {
+      veterinarioId?: unknown;
+      horaInicio?: unknown;
+      horaFin?: unknown;
+      veterinario?: { person?: { firstName?: unknown; lastName?: unknown } };
+    };
+  };
+  const id = typeof record.id === 'string' ? record.id : '';
+  if (!id) return null;
+  const sucursal = record.sucursal;
+  const horarioBase = record.horarioBase;
+  const person = horarioBase?.veterinario?.person;
+  return {
+    id,
+    fecha: typeof record.fecha === 'string' ? record.fecha : '',
+    justificacion: typeof record.justificacion === 'string' ? record.justificacion : null,
+    sucursalId: typeof record.sucursalId === 'string'
+      ? record.sucursalId
+      : typeof sucursal?.id === 'string' ? sucursal.id : '',
+    sucursalNombre: typeof record.sucursalNombre === 'string'
+      ? record.sucursalNombre
+      : typeof sucursal?.nombre === 'string' ? sucursal.nombre : '',
+    veterinarioId: typeof record.veterinarioId === 'string'
+      ? record.veterinarioId
+      : typeof horarioBase?.veterinarioId === 'string' ? horarioBase.veterinarioId : '',
+    veterinarioNombre: typeof record.veterinarioNombre === 'string'
+      ? record.veterinarioNombre
+      : [person?.firstName, person?.lastName].filter((value): value is string => typeof value === 'string').join(' ').trim(),
+    horaInicio: typeof record.horaInicio === 'string'
+      ? record.horaInicio
+      : dbTimeToClock(horarioBase?.horaInicio),
+    horaFin: typeof record.horaFin === 'string'
+      ? record.horaFin
+      : dbTimeToClock(horarioBase?.horaFin),
+  };
 }

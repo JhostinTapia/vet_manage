@@ -170,4 +170,26 @@ describe('SaturdayShiftsPage', () => {
     await user.selectOptions(await screen.findByRole('combobox', { name: /^sucursal/i }), 'loja');
     expect(await screen.findByText('No tiene permiso para consultar los horarios base de los veterinarios.')).toBeInTheDocument();
   });
+
+  it('muestra sucursal, veterinario y jornada desde el JSON real anidado', async () => {
+    vi.mocked(schedulingApi.listSaturdayShifts).mockResolvedValue([{
+      id: 'turno-real',
+      horarioBaseId: 'base-v3',
+      sucursalId: 'loja',
+      fecha: '2026-11-21T00:00:00.000Z',
+      justificacion: null,
+      sucursal: { id: 'loja', nombre: 'Loja HU-024' },
+      horarioBase: {
+        id: 'base-v3',
+        veterinarioId: 'v3',
+        horaInicio: '1970-01-01T08:00:00.000Z',
+        horaFin: '1970-01-01T12:00:00.000Z',
+        veterinario: { person: { firstName: 'V3', lastName: 'HU024' } },
+      },
+    }] as never);
+    renderPage();
+    expect(await screen.findByText('Loja HU-024')).toBeInTheDocument();
+    expect(await screen.findByText('V3 HU024')).toBeInTheDocument();
+    expect(await screen.findByText('08:00–12:00')).toBeInTheDocument();
+  });
 });
