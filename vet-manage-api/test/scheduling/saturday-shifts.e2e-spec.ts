@@ -78,6 +78,7 @@ describe('CP-024 pruebas reales de persistencia en vet_manage_hu024', () => {
   });
 
   it('CP-024-01 genera V1-V2-V1 y conserva una sola asignación por fecha', async () => {
+    await prisma.turnoSabado.deleteMany({ where: { sucursalId: lojaId } });
     const shifts = await service.generate({
       sucursalId: lojaId,
       fechas: ['2026-11-07', '2026-11-14', '2026-11-21'],
@@ -87,7 +88,13 @@ describe('CP-024 pruebas reales de persistencia en vet_manage_hu024', () => {
     expect(await prisma.turnoSabado.count({ where: { sucursalId: lojaId, fecha: { gte: new Date('2026-11-07T00:00:00.000Z'), lte: new Date('2026-11-21T00:00:00.000Z') } } })).toBe(3);
   });
 
-  it('CP-024-02 y CP-024-03 sustituyen y permiten repetir V1', async () => {
+  it('CP-024-02 sustituir manualmente al veterinario de turno', async () => {
+    await prisma.turnoSabado.deleteMany({ where: { sucursalId: lojaId } });
+    await service.generate({
+      sucursalId: lojaId,
+      fechas: ['2026-11-07', '2026-11-14', '2026-11-21'],
+      veterinarioIds: [v1Id, v2Id],
+    });
     const target = await prisma.turnoSabado.findUniqueOrThrow({
       where: { sucursalId_fecha: { sucursalId: lojaId, fecha: new Date('2026-11-14T00:00:00.000Z') } },
     });
@@ -95,7 +102,18 @@ describe('CP-024 pruebas reales de persistencia en vet_manage_hu024', () => {
     const byV3 = await prisma.turnoSabado.findUniqueOrThrow({ where: { id: target.id } });
     expect(byV3.justificacion).toBe('Permiso del veterinario asignado');
     expect((await prisma.horarioBase.findUniqueOrThrow({ where: { id: byV3.horarioBaseId } })).veterinarioId).toBe(v3Id);
+  });
 
+  it('CP-024-03 sustituir repitiendo al profesional de la semana anterior', async () => {
+    await prisma.turnoSabado.deleteMany({ where: { sucursalId: lojaId } });
+    await service.generate({
+      sucursalId: lojaId,
+      fechas: ['2026-11-07', '2026-11-14', '2026-11-21'],
+      veterinarioIds: [v1Id, v2Id],
+    });
+    const target = await prisma.turnoSabado.findUniqueOrThrow({
+      where: { sucursalId_fecha: { sucursalId: lojaId, fecha: new Date('2026-11-14T00:00:00.000Z') } },
+    });
     await service.substitute(target.id, { veterinarioId: v1Id, justificacion: 'Permiso del veterinario asignado' });
     const byV1 = await prisma.turnoSabado.findUniqueOrThrow({ where: { id: target.id } });
     expect((await prisma.horarioBase.findUniqueOrThrow({ where: { id: byV1.horarioBaseId } })).veterinarioId).toBe(v1Id);
@@ -144,9 +162,11 @@ describe('CP-024 pruebas reales de persistencia en vet_manage_hu024', () => {
   });
 
   it('CP-024-07 conserva V2 y no cambia ni cancela la cita', async () => {
-    await prisma.turnoSabado.update({
-      where: { sucursalId_fecha: { sucursalId: lojaId, fecha: new Date('2026-11-14T00:00:00.000Z') } },
-      data: { horarioBaseId: (await prisma.horarioBase.findFirstOrThrow({ where: { veterinarioId: v2Id, sucursalId: lojaId, diaSemana: 'SABADO' } })).id },
+    await prisma.turnoSabado.deleteMany({ where: { sucursalId: lojaId } });
+    await service.generate({
+      sucursalId: lojaId,
+      fechas: ['2026-11-14'],
+      veterinarioIds: [v2Id],
     });
     const owner = await prisma.person.create({
       data: {
@@ -189,7 +209,7 @@ describe('CP-024 pruebas reales de persistencia en vet_manage_hu024', () => {
       where: { sucursalId_fecha: { sucursalId: lojaId, fecha: new Date('2026-11-14T00:00:00.000Z') } },
     });
     await expect(service.substitute(target.id, { veterinarioId: v3Id, justificacion: 'Permiso del veterinario asignado' }))
-      .rejects.toThrow();
+      .rejects.toThrow('El cambio afecta una cita existente');
     const unchanged = await prisma.cita.findUniqueOrThrow({ where: { id: appointment.id } });
     expect(unchanged.estado).toBe('CONFIRMADA');
     expect(unchanged.veterinarioId).toBe(v2Id);
