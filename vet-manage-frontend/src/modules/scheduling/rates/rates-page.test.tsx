@@ -1,6 +1,7 @@
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { ToastContext } from '../../../common/components/toast-context';
 import { ApiError } from '../../../infrastructure/api/http-client';
 import { AuthContext, type AuthContextValue } from '../../auth/auth-context';
 import type { SessionProfile } from '../../auth/types';
@@ -68,7 +69,11 @@ function renderPage(
     logout: vi.fn(async () => undefined),
     hasPermission: (permission) => permissions.includes(permission),
   };
-  return render(<AuthContext.Provider value={auth}><RatesPage /></AuthContext.Provider>);
+  return render(
+    <ToastContext.Provider value={{ showToast: vi.fn(), dismissToast: vi.fn(), confirm: vi.fn(async () => true) }}>
+      <AuthContext.Provider value={auth}><RatesPage /></AuthContext.Provider>
+    </ToastContext.Provider>,
+  );
 }
 
 async function submitAmount(value?: string) {

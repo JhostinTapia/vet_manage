@@ -42,7 +42,7 @@ function availability(jornadas: MyAvailabilityJornada[]): MyAvailability {
 
 function renderPage() {
   return render(
-    <ToastContext.Provider value={{ showToast, dismissToast: vi.fn() }}>
+    <ToastContext.Provider value={{ showToast, dismissToast: vi.fn(), confirm: vi.fn(async () => true) }}>
       <MyAvailabilityPage />
     </ToastContext.Provider>,
   );

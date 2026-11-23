@@ -12,7 +12,7 @@ vi.mock('../../auth/auth-context', () => ({
 
 function renderPage() {
   return render(
-    <ToastContext.Provider value={{ showToast: vi.fn(), dismissToast: vi.fn() }}>
+      <ToastContext.Provider value={{ showToast: vi.fn(), dismissToast: vi.fn(), confirm: vi.fn(async () => true) }}>
       <SpeciesPage />
     </ToastContext.Provider>,
   );

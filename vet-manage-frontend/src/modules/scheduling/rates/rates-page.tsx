@@ -7,7 +7,7 @@ import { ratesApi, type Rate, type RateService } from './rates-api';
 import { useToast } from '../../../common/components/toast-context';
 
 
-export const INVALID_RATE_MESSAGE = 'Ingrese un importe mayor a cero con hasta dos decimales ';
+export const INVALID_RATE_MESSAGE = 'Ingrese un importe mayor a cero con hasta dos decimales';
 export const REQUIRED_RATE_MESSAGE = 'El campo tarifa es obligatorio';
 export const FORBIDDEN_RATE_MESSAGE = 'No tiene permisos para esta acción';
 
@@ -239,6 +239,7 @@ export function RatesPage() {
                     <td>
                       <button
                         type="button"
+                        aria-label={service.estado ? 'Inactivar servicio' : 'Activar servicio'}
                         className={`button button--small ${service.estado ? 'button--danger-soft' : 'button--success-soft'
                           }`}
                         onClick={() => {

@@ -273,3 +273,6 @@ button { cursor: pointer; }
 .auth-loading { display: grid; place-items: center; min-height: 100vh; color: #8a96a3; font-size: 13px; }
 .batch-entry-summary { display: grid; gap: 4px; margin-bottom: 18px; padding: 16px 20px; border-color: #cfe9d9; background: #f4fbf7; color: #2f5f45; font-size: 12px; }.batch-entry-summary strong { font-size: 13px; }
 .rates-form { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px 8px; margin-bottom: 18px; }.rates-form .field { flex: 0 0 100%; }
+.detail-table th[scope="row"] { width: 220px; color: #99a4b0; font-size: 10px; text-transform: uppercase; letter-spacing: .07em; }
+.detail-table td { color: #26323d; }
+.detail-table td small { display: inline; color: #9aa4ae; font-size: 10px; }
