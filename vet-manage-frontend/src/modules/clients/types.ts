@@ -14,6 +14,36 @@ export type RegisterClientInput = {
 
 export type ClientStatus = 'ACTIVE' | 'INACTIVE' | 'DEACTIVATED';
 
+// Datos editables del cliente (HU-02); la cédula no se envía porque no se puede cambiar.
+export type UpdateClientInput = {
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  address: string;
+};
+
+export type UpdatedClient = {
+  id: string;
+  identification: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string | null;
+  address: string | null;
+  status: ClientStatus;
+};
+
+export type InactivatedClient = {
+  id: string;
+  status: 'INACTIVE';
+};
+
+export type ActivatedClient = {
+  id: string;
+  status: 'ACTIVE';
+};
+
 export type ClientListItem = {
   id: string;
   personId: string;

@@ -1,8 +1,13 @@
-import { getJson, postJson, putJson } from '../../../infrastructure/api/http-client';
+import { getJson, patchJson, postJson, putJson } from '../../../infrastructure/api/http-client';
 import type {
   AssignableRole,
+  ChangeableUserStatus,
+  ChangedUserStatus,
   RegisteredUser,
   RegisterUserInput,
+  UpdatedUser,
+  UpdateUserInput,
+  UserDetail,
   UserPage,
   UserQuery,
   UserRoleAssignment,
@@ -32,10 +37,19 @@ export const usersApi = {
   register(input: RegisterUserInput) {
     return postJson<RegisteredUser, RegisterUserInput>('/users', input);
   },
+  get(userId: string) {
+    return getJson<UserDetail>(`/users/${userId}`);
+  },
+  update(userId: string, input: UpdateUserInput) {
+    return patchJson<UpdatedUser, UpdateUserInput>(`/users/${userId}`, input);
+  },
   getRoleAssignment(userId: string) {
     return getJson<UserRoleAssignment>(`/users/${userId}/role-assignment`);
   },
   updateRoleAssignment(userId: string, roles: string[]) {
     return putJson<UserRoleAssignment, { roles: string[] }>(`/users/${userId}/role-assignment`, { roles });
+  },
+  changeStatus(userId: string, status: ChangeableUserStatus) {
+    return patchJson<ChangedUserStatus, { status: ChangeableUserStatus }>(`/users/${userId}/status`, { status });
   },
 };

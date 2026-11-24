@@ -31,7 +31,7 @@ const block: ScheduleBlock = {
 
 function renderPage() {
   return render(
-    <ToastContext.Provider value={{ showToast, dismissToast: vi.fn() }}>
+      <ToastContext.Provider value={{ showToast, dismissToast: vi.fn(), confirm: vi.fn(async () => true) }}>
       <MemoryRouter><BlocksPage /></MemoryRouter>
     </ToastContext.Provider>,
   );

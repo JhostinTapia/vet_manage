@@ -5,6 +5,7 @@ import logo from '../../assets/logo.jpeg';
 import { useAuth } from '../../modules/auth/auth-context';
 import { CATALOG_PERMISSIONS } from '../../modules/catalogs/catalog-tabs';
 import { SCHEDULING_SECTIONS } from '../../modules/scheduling/navigation';
+import { NotificationsBell } from '../../modules/notifications/components/notifications-bell';
 import {
   BoxIcon,
   CalendarIcon,
@@ -54,6 +55,7 @@ const schedulingNavigation: NavItem[] = SCHEDULING_SECTIONS.map(({ label, path, 
 
 const inventoryNavigation: NavItem[] = [
   { label: 'Productos', to: '/inventory/products', icon: PackageIcon, permission: 'inventory:read' },
+  { label: 'Proveedores', to: '/inventory/suppliers', icon: UsersIcon, permission: 'suppliers:read' },
   { label: 'Categorías', to: '/inventory/categories', icon: FolderIcon, permission: 'inventory:read' },
   { label: 'Marcas', to: '/inventory/brands', icon: TagIcon, permission: 'inventory:read' },
   { label: 'Entrada de lotes', to: '/inventory/batches/new', icon: BoxIcon, permission: 'inventory:register-entry' },
@@ -155,6 +157,7 @@ export function AppShell() {
           )}
         </nav>
 
+        <NotificationsBell />
         <UserMenu />
       </aside>
 

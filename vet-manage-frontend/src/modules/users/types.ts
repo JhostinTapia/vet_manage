@@ -22,6 +22,12 @@ export type RegisteredUser = {
 };
 
 export type UserStatus = 'ACTIVE' | 'INACTIVE' | 'DEACTIVATED';
+export type ChangeableUserStatus = 'ACTIVE' | 'INACTIVE';
+
+export type ChangedUserStatus = {
+  id: string;
+  status: ChangeableUserStatus;
+};
 
 export type UserListItem = {
   id: string;
@@ -32,6 +38,29 @@ export type UserListItem = {
   roles: { name: string; displayName: string }[];
   status: UserStatus;
 };
+
+// Datos de un usuario para su ficha y su formulario de edición (HU-53).
+export type UserDetail = {
+  id: string;
+  identification: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string | null;
+  status: UserStatus;
+  roles: RoleRef[];
+};
+
+// La cédula no se envía porque no se puede cambiar.
+export type UpdateUserInput = {
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+};
+
+// noticeSent: true o false si el correo cambió y se intentó avisar al anterior; null si el correo no cambió.
+export type UpdatedUser = UserDetail & { noticeSent: boolean | null };
 
 export type UserQuery = {
   q?: string;

@@ -40,4 +40,24 @@ export class SpeciesRepository {
       orderBy: { name: 'asc' },
     });
   }
+
+  async findAll(): Promise<Species[]> {
+    return this.prisma.species.findMany({
+      orderBy: { name: 'asc' },
+    });
+  }
+
+  async update(
+    id: string,
+    data: { name: string; description: string | null },
+    tx?: Prisma.TransactionClient,
+  ): Promise<Species> {
+    return (tx ?? this.prisma).species.update({
+      where: { id },
+      data: {
+        name: data.name.trim(),
+        description: data.description,
+      },
+    });
+  }
 }

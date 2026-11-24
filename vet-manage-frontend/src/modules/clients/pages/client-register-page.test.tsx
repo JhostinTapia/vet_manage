@@ -33,7 +33,7 @@ const registeredClient: RegisteredClient = {
 
 function renderPage() {
   return render(
-    <ToastContext.Provider value={{ showToast, dismissToast: vi.fn() }}>
+    <ToastContext.Provider value={{ showToast, dismissToast: vi.fn(), confirm: vi.fn(async () => true) }}>
       <MemoryRouter>
         <ClientRegisterPage />
       </MemoryRouter>
@@ -64,6 +64,15 @@ describe('ClientRegisterPage', () => {
     const phone = screen.getByLabelText(/Teléfono/);
     expect(phone.closest('label')).toHaveTextContent('*');
     expect(phone.closest('label')).not.toHaveTextContent('Opcional');
+  });
+
+  it('solo deja escribir números en el teléfono', async () => {
+    const user = userEvent.setup();
+    renderPage();
+
+    await user.type(screen.getByLabelText(/Teléfono/), '09a9b1-23 4567xyz');
+
+    expect(screen.getByLabelText(/Teléfono/)).toHaveValue('0991234567');
   });
 
   it('resalta el teléfono inválido y muestra el mensaje contractual', async () => {

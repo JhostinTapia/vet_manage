@@ -45,7 +45,7 @@ const patientPage = (overrides: Record<string, unknown> = {}) => ({
 
 function renderPage() {
   return render(
-    <ToastContext.Provider value={{ showToast, dismissToast: vi.fn() }}>
+      <ToastContext.Provider value={{ showToast, dismissToast: vi.fn(), confirm: vi.fn(async () => true) }}>
       <PatientsPage />
     </ToastContext.Provider>,
   );

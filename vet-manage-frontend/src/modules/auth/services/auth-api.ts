@@ -1,5 +1,5 @@
 import { getJson, postJson } from '../../../infrastructure/api/http-client';
-import type { LoginCredentials, LoginResult, SessionProfile } from '../types';
+import type { ChangePasswordInput, LoginCredentials, LoginResult, SessionProfile } from '../types';
 
 export const authApi = {
   login(credentials: LoginCredentials) {
@@ -10,5 +10,8 @@ export const authApi = {
   },
   me() {
     return getJson<SessionProfile>('/auth/me');
+  },
+  changePassword(input: ChangePasswordInput) {
+    return postJson<null, ChangePasswordInput>('/auth/change-password', input);
   },
 };

@@ -32,7 +32,7 @@ function toFeedback(cause: unknown): Feedback {
 }
 
 export function LoginPage() {
-  const { status, login } = useAuth();
+  const { status, session, login } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [email, setEmail] = useState('');
@@ -43,7 +43,9 @@ export function LoginPage() {
   const [submitting, setSubmitting] = useState(false);
 
   const from = (location.state as { from?: string } | null)?.from ?? '/';
-  if (status === 'authenticated') return <Navigate to={from} replace />;
+  if (status === 'authenticated') {
+    return <Navigate to={session?.mustChangePassword ? '/change-password' : from} replace />;
+  }
 
   const trimmedEmail = email.trim();
   const emailError = emailTouched && trimmedEmail && !EMAIL_PATTERN.test(trimmedEmail) ? INVALID_EMAIL : null;
@@ -64,8 +66,8 @@ export function LoginPage() {
     setSubmitting(true);
     setFeedback(null);
     try {
-      await login({ email: trimmedEmail, password });
-      navigate(from, { replace: true });
+      const profile = await login({ email: trimmedEmail, password });
+      navigate(profile.mustChangePassword ? '/change-password' : from, { replace: true });
     } catch (cause) {
       setPassword('');
       setFeedback(toFeedback(cause));

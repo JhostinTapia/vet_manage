@@ -31,6 +31,14 @@ const PHONE_PATTERN = /^09\d{8}$/;
 const NAME_MAX = 100;
 const EMAIL_MAX = 255;
 const ADDRESS_MAX = 255;
+
+// Límites del contacto del cliente; también los usa la actualización de clientes (HU-02).
+export const CLIENT_CONTACT_LIMITS = {
+  phonePattern: PHONE_PATTERN,
+  nameMax: NAME_MAX,
+  emailMax: EMAIL_MAX,
+  addressMax: ADDRESS_MAX,
+} as const;
 const CLIENT_ROLE_NAME = 'client';
 
 export type RegisteredClient = {

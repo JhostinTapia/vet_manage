@@ -24,7 +24,7 @@ export function CatalogsPage() {
   const activeTab = tabs.some((tab) => tab.id === selectedTab) ? selectedTab : tabs[0]?.id;
 
   return (
-    <section className="inventory-page">
+    <section className="catalogs-page">
       <div className="page-heading">
         <div>
           <span className="eyebrow">Configuración</span>

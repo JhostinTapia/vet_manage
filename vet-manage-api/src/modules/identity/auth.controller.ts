@@ -4,9 +4,11 @@ import type { CookieOptions, Request, Response } from 'express';
 import { ApiException } from '../../common/errors/api-exception.js';
 import { success } from '../../common/errors/api-response.js';
 import { Authenticated } from './decorators/require-permissions.decorator.js';
+import { ChangePasswordDto } from './dtos/change-password.dto.js';
 import { LoginDto } from './dtos/login.dto.js';
 import { AccessService } from './services/access.service.js';
 import { AuthService } from './services/auth.service.js';
+import { ChangePasswordService } from './services/change-password.service.js';
 import type { SessionMeta } from './services/session.service.js';
 import type { AuthenticatedRequest } from './types/authenticated-request.js';
 import type { AuthSession, LoginResult } from './types/session-profile.js';
@@ -17,6 +19,7 @@ export const REFRESH_COOKIE = 'vetmanage_refresh';
 export class AuthController {
   constructor(
     private readonly auth: AuthService,
+    private readonly changePasswordService: ChangePasswordService,
     private readonly access: AccessService,
     private readonly config: ConfigService,
   ) {}
@@ -54,6 +57,15 @@ export class AuthController {
     const profile = request.user && (await this.access.getSessionProfile(request.user.id));
     if (!profile) throw ApiException.unauthorized();
     return success(profile);
+  }
+
+  @Post('change-password')
+  @HttpCode(200)
+  @Authenticated()
+  async changePassword(@Body() input: ChangePasswordDto, @Req() request: AuthenticatedRequest) {
+    if (!request.user) throw ApiException.unauthorized();
+    const { message } = await this.changePasswordService.changePassword(request.user.id, input);
+    return success(null, message);
   }
 
   // Guarda el refresh token en una cookie httpOnly y devuelve el resto de la sesión.

@@ -14,7 +14,7 @@ const showToast = vi.fn();
 
 function renderPage() {
   return render(
-    <ToastContext.Provider value={{ showToast, dismissToast: vi.fn() }}>
+      <ToastContext.Provider value={{ showToast, dismissToast: vi.fn(), confirm: vi.fn(async () => true) }}>
       <MemoryRouter initialEntries={['/appointments/blocks/new']}>
         <Routes>
           <Route path="/appointments/blocks" element={<h1>Lista de bloqueos</h1>} />

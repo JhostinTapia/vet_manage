@@ -12,9 +12,31 @@ function build() {
     total: 0,
     totalPages: 0,
   }));
-  const listPets = vi.fn(async () => []);
+  const listPets = vi.fn(async (): Promise<unknown[]> => []);
+  const inactivate = vi.fn(async () => ({
+    message: 'Cliente inactivado correctamente',
+    client: { id: 'c1', status: 'INACTIVE' as const },
+  }));
+  const activate = vi.fn(async () => ({
+    message: 'Cliente activado correctamente',
+    client: { id: 'c1', status: 'ACTIVE' as const },
+  }));
+  const update = vi.fn(async () => ({
+    message: 'Datos actualizados correctamente',
+    client: { id: 'c1', firstName: 'Carlos' },
+  }));
   const service = { list, listPets };
-  return { controller: new ClientsController(service as never), service, list, listPets };
+  const statusChange = { inactivate, activate };
+  const updateClient = { update };
+  return {
+    controller: new ClientsController(service as never, statusChange as never, updateClient as never),
+    service,
+    list,
+    listPets,
+    inactivate,
+    activate,
+    update,
+  };
 }
 
 describe('ClientsController', () => {
@@ -61,5 +83,54 @@ describe('ClientsController', () => {
 
     expect(ctx.listPets).toHaveBeenCalledWith('c1');
     expect(result).toEqual(success(pets));
+  });
+
+  it('exige el permiso clients:inactivate al inactivar un cliente', () => {
+    const method = Object.getOwnPropertyDescriptor(ClientsController.prototype, 'inactivate')?.value;
+    const permissions = Reflect.getMetadata(PERMISSIONS_METADATA, method as object);
+
+    expect(permissions).toEqual(['clients:inactivate']);
+  });
+
+  it('delega la inactivación con el usuario autenticado y devuelve la envoltura success', async () => {
+    const result = await ctx.controller.inactivate('c1', { user: { id: 'u1', personId: 'p1' } } as never);
+
+    expect(ctx.inactivate).toHaveBeenCalledWith('c1', 'u1');
+    expect(result).toEqual(success({ id: 'c1', status: 'INACTIVE' }, 'Cliente inactivado correctamente'));
+  });
+
+  it('exige el permiso clients:activate al activar un cliente (HU-05)', () => {
+    const method = Object.getOwnPropertyDescriptor(ClientsController.prototype, 'activate')?.value;
+    const permissions = Reflect.getMetadata(PERMISSIONS_METADATA, method as object);
+
+    expect(permissions).toEqual(['clients:activate']);
+  });
+
+  it('delega la activación con el usuario autenticado y devuelve la envoltura success', async () => {
+    const result = await ctx.controller.activate('c1', { user: { id: 'u1', personId: 'p1' } } as never);
+
+    expect(ctx.activate).toHaveBeenCalledWith('c1', 'u1');
+    expect(result).toEqual(success({ id: 'c1', status: 'ACTIVE' }, 'Cliente activado correctamente'));
+  });
+
+  it('rechaza la activación sin usuario autenticado', async () => {
+    await expect(ctx.controller.activate('c1', {} as never)).rejects.toMatchObject({ statusCode: 401 });
+    expect(ctx.activate).not.toHaveBeenCalled();
+  });
+
+  it('exige el permiso clients:update al actualizar un cliente', () => {
+    const method = Object.getOwnPropertyDescriptor(ClientsController.prototype, 'update')?.value;
+    const permissions = Reflect.getMetadata(PERMISSIONS_METADATA, method as object);
+
+    expect(permissions).toEqual(['clients:update']);
+  });
+
+  it('delega la actualización con el usuario autenticado y devuelve la envoltura success', async () => {
+    const dto = { firstName: 'Carlos', phone: '0992222222' };
+
+    const result = await ctx.controller.update('c1', dto, { user: { id: 'u1', personId: 'p1' } } as never);
+
+    expect(ctx.update).toHaveBeenCalledWith('c1', dto, 'u1');
+    expect(result).toEqual(success({ id: 'c1', firstName: 'Carlos' }, 'Datos actualizados correctamente'));
   });
 });

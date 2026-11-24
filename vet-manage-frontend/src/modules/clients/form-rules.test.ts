@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { ApiError } from '../../infrastructure/api/http-client';
 import {
-  buildClientInput, describeApiError, INVALID_ADDRESS, INVALID_EMAIL, INVALID_IDENTIFICATION, INVALID_PHONE,
-  MAIL_FAILED, MISSING_FIELDS, registrationOutcome, validateRegistration,
+  buildClientInput, buildClientUpdateInput, describeApiError, INVALID_ADDRESS, INVALID_EMAIL, INVALID_IDENTIFICATION,
+  INVALID_PHONE, isEmailLocked, MAIL_FAILED, MISSING_FIELDS, registrationOutcome, sanitizePhone, toEditForm,
+  validateClientUpdate,
+  validateRegistration,
 } from './form-rules';
 import type { Form } from './form-rules';
 
@@ -147,5 +149,72 @@ describe('registrationOutcome', () => {
       type: 'success',
       message: 'Cliente registrado exitosamente',
     });
+  });
+});
+
+describe('validateClientUpdate', () => {
+  const edit = { firstName: 'Carlos', lastName: 'Pérez', email: 'cperez@correo.com', phone: '0992222222', address: '' };
+
+  it('no reporta errores con los datos completos y no valida la cédula', () => {
+    expect(validateClientUpdate(edit)).toEqual({ errors: {}, missing: false });
+  });
+
+  it('marca los obligatorios vacíos', () => {
+    const result = validateClientUpdate({ ...edit, firstName: ' ', phone: '' });
+
+    expect(result.missing).toBe(true);
+    expect(result.errors).toEqual({ firstName: MISSING_FIELDS, phone: MISSING_FIELDS });
+  });
+
+  it.each([[{ email: 'carlos@' }, 'email'], [{ phone: '0991' }, 'phone']])('rechaza el formato de %j', (override, field) => {
+    expect(validateClientUpdate({ ...edit, ...override }).errors).toEqual({ [field]: INVALID_EMAIL });
+  });
+});
+
+describe('buildClientUpdateInput y toEditForm', () => {
+  it('recorta los datos y no incluye la cédula', () => {
+    expect(buildClientUpdateInput({ firstName: ' Carlos ', lastName: 'Pérez ', email: ' cperez@correo.com', phone: '0992222222 ', address: '  ' }))
+      .toEqual({ firstName: 'Carlos', lastName: 'Pérez', email: 'cperez@correo.com', phone: '0992222222', address: '' });
+  });
+
+  it('llena el formulario con los datos del cliente, sin nulos', () => {
+    expect(toEditForm({ firstName: 'Carlos', lastName: 'Pérez', email: 'c@x.com', phone: null, address: null }))
+      .toEqual({ firstName: 'Carlos', lastName: 'Pérez', email: 'c@x.com', phone: '', address: '' });
+  });
+});
+
+describe('isEmailLocked', () => {
+  it('bloquea el correo si la persona tiene un rol del personal', () => {
+    expect(isEmailLocked({ roles: [{ name: 'client', displayName: 'Cliente' }, { name: 'manager', displayName: 'Gerente' }] })).toBe(true);
+  });
+
+  it('permite cambiar el correo de un cliente que solo es cliente', () => {
+    expect(isEmailLocked({ roles: [{ name: 'client', displayName: 'Cliente' }] })).toBe(false);
+  });
+});
+
+describe('describeApiError en la edición', () => {
+  it('resalta el correo bloqueado del personal', () => {
+    const locked = new ApiError('Solo el Administrador puede cambiarlo', 409, { code: 'CLIENT_EMAIL_LOCKED', errors: ['email'] });
+
+    expect(describeApiError(locked)).toEqual({ message: locked.message, errors: { email: locked.message } });
+  });
+
+  it('muestra el mensaje de un cliente dado de baja sin resaltar campos', () => {
+    const deactivated = new ApiError('No se puede actualizar un cliente dado de baja', 409, { code: 'CLIENT_DEACTIVATED' });
+
+    expect(describeApiError(deactivated)).toEqual({ message: deactivated.message, errors: {} });
+  });
+});
+
+describe('sanitizePhone', () => {
+  it.each([
+    ['09a9b1c', '0991'],
+    ['099 222-2222', '0992222222'],
+    ['+593992222222', '593992222222'],
+    ['09922222229999', '09922222229999'],
+    ['abc', ''],
+  ])('convierte %j en %j', (value, expected) => {
+    expect(sanitizePhone(value)).toBe(expected);
   });
 });
