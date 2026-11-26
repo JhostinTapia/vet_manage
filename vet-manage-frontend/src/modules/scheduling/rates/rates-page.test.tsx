@@ -31,11 +31,6 @@ vi.mock('./rates-api', () => ({
   },
 }));
 
-const toast = { showToast: vi.fn(), confirm: vi.fn(async () => true) };
-vi.mock('../../../common/components/toast-context', () => ({
-  useToast: () => toast,
-}));
-
 function makeRate(id: string, amount: number, active = true) {
   return {
     id,
