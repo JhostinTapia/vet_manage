@@ -9,6 +9,9 @@ export type ClientWithPerson = {
   personId: string;
   status: ClientStatus;
   createdAt: Date;
+  deactivatedAt: Date | null;
+  deactivationReason: string | null;
+  deactivatedBy: { person: { firstName: string; lastName: string } } | null;
   person: {
     identification: string;
     firstName: string;
@@ -104,6 +107,7 @@ export class ClientsRepository {
       this.prisma.client.findMany({
         where,
         include: {
+          deactivatedBy: { select: { person: { select: { firstName: true, lastName: true } } } },
           person: {
             include: {
               user: {

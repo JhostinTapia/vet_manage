@@ -38,8 +38,14 @@ model Client {
   createdAt DateTime     @default(now()) @map("created_at")
   updatedAt DateTime     @updatedAt @map("updated_at")
 
-  person   Person    @relation(fields: [personId], references: [id], onDelete: Restrict)
-  patients Patient[]
+  // Baja definitiva (HU-03): cuándo, quién y por qué. Nulos mientras el cliente no esté de baja.
+  deactivatedAt      DateTime? @map("deactivated_at")
+  deactivatedById    String?   @map("deactivated_by_id") @db.Uuid
+  deactivationReason String?   @map("deactivation_reason") @db.VarChar(500)
+
+  person        Person    @relation(fields: [personId], references: [id], onDelete: Restrict)
+  deactivatedBy User?     @relation("ClientDeactivatedBy", fields: [deactivatedById], references: [id], onDelete: Restrict)
+  patients      Patient[]
 
   @@index([status])
   @@map("clients")
@@ -67,6 +73,7 @@ model User {
   createdRoles      Role[]        @relation("RoleCreatedBy")
   assignedUserRoles UserRole[]    @relation("UserRoleAssignedBy")
   auditLogs         AuditLog[]
+  deactivatedClients Client[]     @relation("ClientDeactivatedBy")
 
   // agendamiento de Citas
   horariosBase            HorarioBase[]    @relation("HorarioBaseVeterinario")

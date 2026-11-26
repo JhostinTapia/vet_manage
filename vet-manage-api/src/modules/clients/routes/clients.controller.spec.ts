@@ -26,7 +26,11 @@ function build() {
     client: { id: 'c1', firstName: 'Carlos' },
   }));
   const service = { list, listPets };
-  const statusChange = { inactivate, activate };
+  const deactivate = vi.fn(async () => ({
+    message: 'Cliente dado de baja correctamente',
+    client: { id: 'c1', status: 'DEACTIVATED' as const, deactivatedAt: '2026-11-24T15:00:00.000Z', deactivationReason: 'Se mudó' },
+  }));
+  const statusChange = { inactivate, activate, deactivate };
   const updateClient = { update };
   return {
     controller: new ClientsController(service as never, statusChange as never, updateClient as never),
@@ -35,6 +39,7 @@ function build() {
     listPets,
     inactivate,
     activate,
+    deactivate,
     update,
   };
 }
@@ -132,5 +137,27 @@ describe('ClientsController', () => {
 
     expect(ctx.update).toHaveBeenCalledWith('c1', dto, 'u1');
     expect(result).toEqual(success({ id: 'c1', firstName: 'Carlos' }, 'Datos actualizados correctamente'));
+  });
+
+  describe('deactivate (HU-03)', () => {
+    it('exige el permiso clients:deactivate', () => {
+      const method = Object.getOwnPropertyDescriptor(ClientsController.prototype, 'deactivate')?.value;
+      expect(Reflect.getMetadata(PERMISSIONS_METADATA, method as object)).toEqual(['clients:deactivate']);
+    });
+
+    it('delega la baja con el motivo y el usuario autenticado y devuelve la envoltura success', async () => {
+      const result = await ctx.controller.deactivate('c1', { reason: 'Se mudó' }, { user: { id: 'u1', personId: 'p1' } } as never);
+
+      expect(ctx.deactivate).toHaveBeenCalledWith('c1', 'Se mudó', 'u1');
+      expect(result).toEqual(success(
+        { id: 'c1', status: 'DEACTIVATED', deactivatedAt: '2026-11-24T15:00:00.000Z', deactivationReason: 'Se mudó' },
+        'Cliente dado de baja correctamente',
+      ));
+    });
+
+    it('responde 401 si no hay usuario autenticado', async () => {
+      await expect(ctx.controller.deactivate('c1', { reason: 'x' }, {} as never)).rejects.toMatchObject({ statusCode: 401 });
+      expect(ctx.deactivate).not.toHaveBeenCalled();
+    });
   });
 });

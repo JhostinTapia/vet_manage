@@ -15,6 +15,7 @@ export const PATIENT_MESSAGES = {
   missing: 'Por favor, complete todos los campos obligatorios',
   clientRequired: 'Debe seleccionar un cliente registrado',
   clientUnavailable: 'El cliente seleccionado no está disponible',
+  clientDeactivated: 'El cliente está desactivado',
   invalidBirthDate: 'Fecha de nacimiento inválida',
   invalidMeasures: 'El peso y la talla deben ser valores numéricos mayores que cero',
   invalidGender: 'El sexo debe ser Macho o Hembra',
@@ -86,6 +87,8 @@ export class RegisterPatientService {
     // El dueño se valida con el servicio de clientes, no con su tabla.
     const client = await this.clientsService.findById(data.clientId);
     if (!client) throw fail(PATIENT_MESSAGES.clientRequired, 404, ['clientId'], 'PATIENT_CLIENT_NOT_FOUND');
+    // HU-03: un cliente dado de baja se identifica como desactivado; uno inactivo mantiene el mensaje de HU-07.
+    if (client.status === 'DEACTIVATED') throw fail(PATIENT_MESSAGES.clientDeactivated, 409, ['clientId'], 'PATIENT_CLIENT_DEACTIVATED');
     if (client.status !== 'ACTIVE') throw fail(PATIENT_MESSAGES.clientUnavailable, 409, ['clientId'], 'PATIENT_CLIENT_UNAVAILABLE');
 
     const species = await this.speciesRepository.findById(data.speciesId);

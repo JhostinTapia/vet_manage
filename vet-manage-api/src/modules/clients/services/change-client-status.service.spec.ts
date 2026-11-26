@@ -164,4 +164,131 @@ describe('ChangeClientStatusService', () => {
       expect(audit.record).not.toHaveBeenCalled();
     });
   });
+
+  describe('deactivate (HU-03 Dar de baja un cliente)', () => {
+    const NOW = new Date('2026-11-24T15:00:00.000Z');
+
+    // Positivos
+    it.each([
+      ['ACTIVE', 'Activo'],
+      ['INACTIVE', 'Inactivo'],
+    ])('da de baja un cliente %s, guarda fecha, responsable y motivo y audita "Dar de baja"', async (status, label) => {
+      vi.useFakeTimers();
+      vi.setSystemTime(NOW);
+      const tx = baseTx({ status });
+      const { service, audit } = build(tx);
+
+      const result = await service.deactivate('c-1', 'Se mudó de ciudad', 'u-manager');
+
+      expect(result).toEqual({
+        message: 'Cliente dado de baja correctamente',
+        client: { id: 'c-1', status: 'DEACTIVATED', deactivatedAt: NOW.toISOString(), deactivationReason: 'Se mudó de ciudad' },
+      });
+      expect(tx.client.update).toHaveBeenCalledWith({
+        where: { id: 'c-1' },
+        data: { status: 'DEACTIVATED', deactivatedAt: NOW, deactivatedById: 'u-manager', deactivationReason: 'Se mudó de ciudad' },
+      });
+      expect(audit.record).toHaveBeenCalledWith(tx, {
+        actorId: 'u-manager',
+        action: 'Dar de baja',
+        module: 'Clientes',
+        affectedRecord: '1104567890 - Juan Pérez',
+        previousValue: { status: label },
+        newValue: { status: 'De baja', reason: 'Se mudó de ciudad' },
+      });
+      vi.useRealTimers();
+    });
+
+    it('guarda el motivo sin espacios al inicio ni al final', async () => {
+      const tx = baseTx();
+      const { service } = build(tx);
+
+      await service.deactivate('c-1', '   Solicitud del cliente  ', 'u-vet');
+
+      expect(tx.client.update.mock.calls[0][0].data.deactivationReason).toBe('Solicitud del cliente');
+    });
+
+    // Negativos
+    it.each([
+      ['sin motivo', undefined],
+      ['con motivo vacío', ''],
+      ['con motivo solo con espacios', '    '],
+    ])('rechaza la baja %s (400) sin abrir la transacción', async (_, reason) => {
+      const tx = baseTx();
+      const { service, audit, prisma } = build(tx);
+
+      const error = await service.deactivate('c-1', reason, 'u-manager').catch((e: unknown) => e);
+
+      expect(error).toBeInstanceOf(ApiException);
+      expect(error).toMatchObject({ statusCode: 400, message: 'Ingrese el motivo de la baja', errors: ['reason'] });
+      expect(prisma.$transaction).not.toHaveBeenCalled();
+      expect(audit.record).not.toHaveBeenCalled();
+    });
+
+    it('devuelve 404 si el cliente no existe y no audita', async () => {
+      const tx = baseTx();
+      tx.client.findUnique.mockResolvedValue(null);
+      const { service, audit } = build(tx);
+
+      await expect(service.deactivate('c-missing', 'Motivo', 'u-manager')).rejects.toMatchObject({
+        statusCode: 404,
+        message: 'Cliente no encontrado',
+      });
+      expect(tx.client.update).not.toHaveBeenCalled();
+      expect(audit.record).not.toHaveBeenCalled();
+    });
+
+    it('rechaza un cliente ya dado de baja con «El cliente está desactivado» (409) sin cambiar nada', async () => {
+      const tx = baseTx({ status: 'DEACTIVATED' });
+      const { service, audit } = build(tx);
+
+      await expect(service.deactivate('c-1', 'Motivo', 'u-manager')).rejects.toMatchObject({
+        statusCode: 409,
+        message: 'El cliente está desactivado',
+      });
+      expect(tx.client.update).not.toHaveBeenCalled();
+      expect(audit.record).not.toHaveBeenCalled();
+    });
+
+    it('si falla la auditoría, la baja falla (misma transacción)', async () => {
+      const tx = baseTx();
+      const { service, audit } = build(tx);
+      audit.record.mockRejectedValueOnce(new Error('fallo de auditoría'));
+
+      await expect(service.deactivate('c-1', 'Motivo', 'u-manager')).rejects.toThrow('fallo de auditoría');
+    });
+
+    // Valor límite
+    it.each([
+      ['1 carácter', 'X'],
+      ['500 caracteres', 'm'.repeat(500)],
+    ])('acepta un motivo de %s', async (_, reason) => {
+      const tx = baseTx();
+      const { service } = build(tx);
+
+      const result = await service.deactivate('c-1', reason, 'u-manager');
+
+      expect(result.client.deactivationReason).toBe(reason);
+    });
+
+    it('rechaza un motivo de 501 caracteres (400)', async () => {
+      const tx = baseTx();
+      const { service, prisma } = build(tx);
+
+      await expect(service.deactivate('c-1', 'm'.repeat(501), 'u-manager')).rejects.toMatchObject({
+        statusCode: 400,
+        message: 'El motivo no puede superar 500 caracteres',
+      });
+      expect(prisma.$transaction).not.toHaveBeenCalled();
+    });
+
+    it('cuenta los 500 caracteres sin los espacios exteriores', async () => {
+      const tx = baseTx();
+      const { service } = build(tx);
+
+      await expect(service.deactivate('c-1', `  ${'m'.repeat(500)}  `, 'u-manager')).resolves.toMatchObject({
+        client: { status: 'DEACTIVATED' },
+      });
+    });
+  });
 });
