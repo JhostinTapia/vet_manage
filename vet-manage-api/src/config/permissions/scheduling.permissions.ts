@@ -16,4 +16,6 @@ export const SCHEDULING_PERMISSIONS = define([
   ['rates:read', 'Consultar tarifas'],
   ['rates:manage', 'Mantener el catálogo de tarifas'],
   ['resources:read-availability', 'Consultar recursos disponibles'],
+  ['appointments:read', 'Consultar citas'],
+  ['appointments:cancel', 'Cancelar citas sin pagos aprobados'],
 ]);

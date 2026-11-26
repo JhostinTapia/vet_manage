@@ -5,7 +5,8 @@ export type SchedulingPath =
   | 'saturday-shifts'
   | 'my-availability'
   | 'blocks'
-  | 'rates';
+  | 'rates'
+  | 'appointments';
 
 export type SchedulingSection = {
   label: string;
@@ -15,6 +16,12 @@ export type SchedulingSection = {
 };
 
 export const SCHEDULING_SECTIONS: SchedulingSection[] = [
+  {
+    label: 'Citas',
+    path: 'appointments',
+    permission: 'appointments:read',
+    description: 'Consulta y cancelación de citas registradas.',
+  },
   {
     label: 'Recursos disponibles',
     path: 'resources',
