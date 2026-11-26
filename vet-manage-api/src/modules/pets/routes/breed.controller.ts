@@ -1,14 +1,15 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Param, ParseUUIDPipe, Patch, Post, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, HttpStatus, Param, ParseUUIDPipe, Patch, Post, Query, Req, UseGuards } from '@nestjs/common';
 import { ApiException } from '../../../common/errors/api-exception.js';
 import { success } from '../../../common/errors/api-response.js';
 import { JwtAuthGuard } from '../../identity/guards/jwt-auth.guard.js';
 import { PermissionsGuard } from '../../identity/guards/permissions.guard.js';
 import { RequirePermissions } from '../../identity/decorators/require-permissions.decorator.js';
 import type { AuthenticatedRequest } from '../../identity/types/authenticated-request.js';
+import { ListBreedsQueryDto } from '../dtos/breeds/list-breeds-query.dto.js';
 import { RegisterBreedDto } from '../dtos/breeds/register-breed.dto.js';
 import { UpdateBreedDto } from '../dtos/breeds/update-breed.dto.js';
-import { BreedRepository } from '../repositories/breed.repository.js';
 import { ChangeBreedStatusService } from '../services/breeds/change-breed-status.service.js';
+import { FindBreedsService } from '../services/breeds/find-breeds.service.js';
 import { ListActiveBreedsService } from '../services/breeds/list-active-breeds.service.js';
 import { RegisterBreedService } from '../services/breeds/register-breed.service.js';
 import { UpdateBreedService } from '../services/breeds/update-breed.service.js';
@@ -19,15 +20,25 @@ export class BreedController {
     private readonly registerBreedService: RegisterBreedService,
     private readonly listActiveBreedsService: ListActiveBreedsService,
     private readonly updateBreedService: UpdateBreedService,
+    private readonly findBreedsService: FindBreedsService,
     private readonly changeBreedStatusService: ChangeBreedStatusService,
-    private readonly breedRepository: BreedRepository,
   ) {}
 
+  // Listado con búsqueda por nombre y filtro por especie (HU-20). Sin filtros devuelve todas las razas.
   @Get('breeds')
   @UseGuards(JwtAuthGuard, PermissionsGuard)
   @RequirePermissions('breeds:read')
-  async listBreeds() {
-    return success(await this.breedRepository.findAll(), 'Razas consultadas correctamente');
+  async listBreeds(@Query() query: ListBreedsQueryDto) {
+    const { breeds, message } = await this.findBreedsService.list(query);
+    return success(breeds, message);
+  }
+
+  // Detalle de una raza en solo lectura (HU-20).
+  @Get('breeds/:id')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @RequirePermissions('breeds:read')
+  async getBreed(@Param('id', ParseUUIDPipe) id: string) {
+    return success(await this.findBreedsService.findById(id), 'Raza consultada correctamente');
   }
 
   @Post('breeds')

@@ -17,6 +17,22 @@ export class BreedRepository {
     });
   }
 
+  // Listado con filtros combinables (HU-20): nombre sin mayúsculas ni tildes y especie.
+  // Incluye razas activas e inactivas.
+  async findByFilters(filters: { nameVariants?: string[]; speciesId?: string }): Promise<BreedWithSpecies[]> {
+    const where: Prisma.BreedWhereInput = {
+      ...(filters.speciesId ? { speciesId: filters.speciesId } : {}),
+      ...(filters.nameVariants?.length
+        ? { OR: filters.nameVariants.map((variant) => ({ name: { contains: variant, mode: 'insensitive' as const } })) }
+        : {}),
+    };
+    return this.prisma.breed.findMany({
+      where,
+      include: { species: { select: { id: true, name: true } } },
+      orderBy: { name: 'asc' },
+    });
+  }
+
   // Búsqueda sin distinguir mayúsculas dentro de la especie
   async findByNameInSpecies(speciesId: string, name: string): Promise<Breed | null> {
     return this.prisma.breed.findFirst({

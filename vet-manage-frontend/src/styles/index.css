@@ -250,6 +250,16 @@ button { cursor: pointer; }
 .species-table__status { width: 12%; white-space: nowrap; }
 .species-table__actions { width: 10%; white-space: nowrap; text-align: right; }
 .breeds-table__name { width: 20%; }
+/* HU-20: búsqueda, filtro por especie y detalle de raza */
+.breeds-filters { align-items: center; flex-wrap: wrap; }
+.breeds-filters__species { min-height: 42px; min-width: 200px; padding: 0 12px; border: 1px solid #e1e7ed; border-radius: 10px; color: #26323d; background: #fff; font-size: 12px; }
+.breeds-name-link { padding: 0; border: 0; color: inherit; background: none; font: inherit; text-align: left; cursor: pointer; }
+.breeds-name-link:hover strong, .breeds-name-link:focus-visible strong { color: #416fe7; text-decoration: underline; }
+.breed-detail { display: grid; gap: 14px; margin: 0; }
+.breed-detail div { display: grid; grid-template-columns: 120px 1fr; gap: 12px; align-items: baseline; }
+.breed-detail dt { color: #99a4b0; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; }
+.breed-detail dd { margin: 0; color: #26323d; font-size: 13px; }
+@media (max-width: 640px) { .breeds-filters__species { width: 100%; } .breed-detail div { grid-template-columns: 1fr; gap: 4px; } }
 .breeds-table__species { width: 14%; white-space: nowrap; }
 .breeds-table__description { width: 34%; }
 .breeds-table__date { width: 12%; white-space: nowrap; }
