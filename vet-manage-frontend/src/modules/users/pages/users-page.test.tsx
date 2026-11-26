@@ -15,6 +15,7 @@ vi.mock('../services/users-api', () => ({
     list: vi.fn(),
     assignableRoles: vi.fn(),
     changeStatus: vi.fn(),
+    deactivate: vi.fn(),
     get: vi.fn(),
     update: vi.fn(),
   },
@@ -428,6 +429,134 @@ describe('UsersPage', () => {
       const closeButtons = within(dialog).getAllByRole('button', { name: 'Cerrar' });
       await userEvent.click(closeButtons[closeButtons.length - 1]);
       expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    });
+  });
+
+  describe('Dar de baja usuario (HU-61)', () => {
+    it('muestra Dar de baja en activos e inactivos y oculta Dar de baja y Gestionar roles en dados de baja', async () => {
+      vi.mocked(usersApi.list).mockResolvedValue({
+        items: [
+          makeUser('1', 'Luis', 'Torres', 'ACTIVE'),
+          makeUser('2', 'Ana', 'Aguilar', 'INACTIVE'),
+          makeUser('3', 'Carlos', 'Baja', 'DEACTIVATED'),
+        ],
+        total: 3,
+        page: 1,
+        pageSize: 20,
+      });
+
+      renderPage();
+      const rows = within(await screen.findByRole('table', { name: 'Usuarios' })).getAllByRole('row').slice(1);
+
+      expect(within(rows[0]).getByRole('button', { name: 'Dar de baja' })).toBeInTheDocument();
+      expect(within(rows[0]).getByRole('link', { name: 'Gestionar roles' })).toBeInTheDocument();
+      expect(within(rows[1]).getByRole('button', { name: 'Dar de baja' })).toBeInTheDocument();
+      expect(within(rows[2]).queryByRole('button', { name: 'Dar de baja' })).not.toBeInTheDocument();
+      expect(within(rows[2]).queryByRole('link', { name: 'Gestionar roles' })).not.toBeInTheDocument();
+    });
+
+    it('oculta Dar de baja cuando no tiene el permiso users:deactivate', async () => {
+      renderPage({ hasPermission: (permission) => permission === 'users:read' });
+      await screen.findByRole('table', { name: 'Usuarios' });
+
+      expect(screen.queryByRole('button', { name: 'Dar de baja' })).not.toBeInTheDocument();
+    });
+
+    it('exige motivo obligatorio y cancela sin llamar a la API', async () => {
+      renderPage();
+      await screen.findByText('Luis Mena');
+
+      const buttons = screen.getAllByRole('button', { name: 'Dar de baja' });
+      await userEvent.click(buttons[1]);
+      const dialog = screen.getByRole('dialog', { name: 'Dar de baja usuario' });
+
+      await userEvent.click(within(dialog).getByRole('button', { name: 'Confirmar' }));
+      expect(within(dialog).getByRole('alert')).toHaveTextContent('Ingrese el motivo de la baja');
+      expect(usersApi.deactivate).not.toHaveBeenCalled();
+
+      await userEvent.click(within(dialog).getByRole('button', { name: 'Cancelar' }));
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+      expect(usersApi.deactivate).not.toHaveBeenCalled();
+    });
+
+    it('da de baja con motivo, actualiza la fila y muestra el toast de confirmación', async () => {
+      vi.mocked(usersApi.deactivate).mockResolvedValue({
+        id: '2',
+        status: 'DEACTIVATED',
+        deactivatedAt: '2026-11-26T10:00:00.000Z',
+        deactivationReason: 'Renuncia',
+        roles: [{ name: 'veterinarian', displayName: 'Veterinario' }],
+      });
+      renderPage();
+      await screen.findByText('Luis Mena');
+
+      const rows = within(screen.getByRole('table', { name: 'Usuarios' })).getAllByRole('row').slice(1);
+      await userEvent.click(within(rows[1]).getByRole('button', { name: 'Dar de baja' }));
+      const dialog = screen.getByRole('dialog', { name: 'Dar de baja usuario' });
+
+      await userEvent.type(within(dialog).getByLabelText(/Motivo de la baja/i), 'Renuncia');
+      await userEvent.click(within(dialog).getByRole('button', { name: 'Confirmar' }));
+
+      await waitFor(() => {
+        expect(usersApi.deactivate).toHaveBeenCalledWith('2', 'Renuncia');
+      });
+      expect(await screen.findByRole('status')).toHaveTextContent('Usuario dado de baja correctamente');
+      expect(within(rows[1]).getByText('De baja')).toBeInTheDocument();
+      expect(within(rows[1]).queryByRole('button', { name: 'Dar de baja' })).not.toBeInTheDocument();
+    });
+
+    it('muestra errores de negocio del backend en toast al intentar dar de baja', async () => {
+      vi.mocked(usersApi.deactivate).mockRejectedValue(new Error('No puede dar de baja su propia cuenta'));
+      renderPage();
+      await screen.findByText('Luis Mena');
+
+      const rows = within(screen.getByRole('table', { name: 'Usuarios' })).getAllByRole('row').slice(1);
+      await userEvent.click(within(rows[1]).getByRole('button', { name: 'Dar de baja' }));
+      const dialog = screen.getByRole('dialog', { name: 'Dar de baja usuario' });
+
+      await userEvent.type(within(dialog).getByLabelText(/Motivo de la baja/i), 'Prueba');
+      await userEvent.click(within(dialog).getByRole('button', { name: 'Confirmar' }));
+
+      expect(await screen.findByRole('alert')).toHaveTextContent('No puede dar de baja su propia cuenta');
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    });
+
+    it('conserva el rol Cliente cuando la persona también es Cliente', async () => {
+      vi.mocked(usersApi.list).mockResolvedValue({
+        items: [
+          {
+            ...makeUser('10', 'Ana', 'Ruiz', 'ACTIVE'),
+            roles: [
+              { name: 'cashier', displayName: 'Cajero' },
+              { name: 'client', displayName: 'Cliente' },
+            ],
+          },
+        ],
+        total: 1,
+        page: 1,
+        pageSize: 20,
+      });
+      vi.mocked(usersApi.deactivate).mockResolvedValue({
+        id: '10',
+        status: 'ACTIVE',
+        deactivatedAt: null,
+        deactivationReason: null,
+        roles: [{ name: 'client', displayName: 'Cliente' }],
+      });
+      renderPage();
+      await screen.findByText('Ana Ruiz');
+
+      await userEvent.click(screen.getByRole('button', { name: 'Dar de baja' }));
+      const dialog = screen.getByRole('dialog', { name: 'Dar de baja usuario' });
+      await userEvent.type(within(dialog).getByLabelText(/Motivo de la baja/i), 'Renuncia');
+      await userEvent.click(within(dialog).getByRole('button', { name: 'Confirmar' }));
+
+      const row = within(screen.getByRole('table', { name: 'Usuarios' })).getAllByRole('row')[1];
+      await waitFor(() => {
+        expect(within(row).getByText('Cliente')).toBeInTheDocument();
+      });
+      expect(within(row).queryByText(/Cajero/)).not.toBeInTheDocument();
+      expect(within(row).getByText('Activo')).toBeInTheDocument();
     });
   });
 });

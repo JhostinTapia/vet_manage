@@ -85,6 +85,17 @@
   background: #dcfce7;
   border-color: #86efac;
 }
+.users-icon-btn--deactivate {
+  color: #7f1d1d;
+  background: #fef2f2;
+  border-color: #fecaca;
+}
+.users-icon-btn--deactivate:hover,
+.users-icon-btn--deactivate:focus-visible {
+  color: #450a0a;
+  background: #fee2e2;
+  border-color: #f87171;
+}
 .users-icon-btn[data-tooltip]::after {
   content: attr(data-tooltip);
   position: absolute;
@@ -155,6 +166,11 @@
   color: #1f7a53;
   background: #e8f7f0;
   border-color: #bfead5;
+}
+.users-modal__icon--deactivate {
+  color: #991b1b;
+  background: #fee2e2;
+  border-color: #fca5a5;
 }
 .users-modal__title-wrap {
   flex: 1;
@@ -264,6 +280,30 @@
 }
 .users-modal__confirm--activate:hover:not(:disabled) {
   background: #186242;
+}
+.users-modal__confirm--deactivate {
+  background: #991b1b;
+}
+.users-modal__confirm--deactivate:hover:not(:disabled) {
+  background: #7f1d1d;
+}
+.users-modal__field textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #d7e0ea;
+  border-radius: 10px;
+  font: inherit;
+  font-size: 13.5px;
+  color: #152232;
+  resize: vertical;
+}
+.users-modal__field textarea[aria-invalid='true'] {
+  border-color: #dc2626;
+}
+.users-modal__error {
+  color: #c2414b;
+  font-size: 12px;
+  font-weight: 600;
 }
 @keyframes users-modal-fade {
   from { opacity: 0; }

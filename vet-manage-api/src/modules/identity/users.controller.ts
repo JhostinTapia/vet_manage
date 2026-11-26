@@ -3,11 +3,13 @@ import { ApiException } from '../../common/errors/api-exception.js';
 import { success } from '../../common/errors/api-response.js';
 import { RequirePermissions } from './decorators/require-permissions.decorator.js';
 import { ChangeUserStatusDto } from './dtos/change-user-status.dto.js';
+import { DeactivateUserDto } from './dtos/deactivate-user.dto.js';
 import { QueryUsersDto } from './dtos/query-users.dto.js';
 import { RegisterUserDto } from './dtos/register-user.dto.js';
 import { UpdateUserDto } from './dtos/update-user.dto.js';
 import { UpdateUserRoleAssignmentDto } from './dtos/update-user-role-assignment.dto.js';
 import { ChangeUserStatusService } from './services/change-user-status.service.js';
+import { DeactivateUserService } from './services/deactivate-user.service.js';
 import { UpdateUserService } from './services/update-user.service.js';
 import { USER_DETAIL_MESSAGES, UserDetailService } from './services/user-detail.service.js';
 import { UserQueryService } from './services/user-query.service.js';
@@ -24,6 +26,7 @@ export class UsersController {
     private readonly statusChange: ChangeUserStatusService,
     private readonly detail: UserDetailService,
     private readonly updateUser: UpdateUserService,
+    private readonly deactivation: DeactivateUserService,
   ) {}
 
   @Get()
@@ -91,6 +94,18 @@ export class UsersController {
   ) {
     if (!request.user) throw ApiException.unauthorized();
     const { message, user } = await this.statusChange.changeStatus(id, input.status, request.user.id);
+    return success(user, message);
+  }
+
+  @Patch(':id/deactivate')
+  @RequirePermissions('users:deactivate')
+  async deactivate(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() input: DeactivateUserDto,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    if (!request.user) throw ApiException.unauthorized();
+    const { message, user } = await this.deactivation.deactivate(id, input, request.user.id);
     return success(user, message);
   }
 }

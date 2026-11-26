@@ -26,6 +26,7 @@ import { UserQueryService } from './services/user-query.service.js';
 import { UserRegistrationService } from './services/user-registration.service.js';
 import { ClientRegistrationService } from './services/client-registration.service.js';
 import { ChangeUserStatusService } from './services/change-user-status.service.js';
+import { DeactivateUserService } from './services/deactivate-user.service.js';
 import { UserRoleAssignmentService } from './services/user-role-assignment.service.js';
 import { UserDetailService } from './services/user-detail.service.js';
 import { UpdateUserService } from './services/update-user.service.js';
@@ -60,6 +61,7 @@ import { RolePermissionsService } from './services/role-permissions.service.js';
     UserQueryService,
     UserRoleAssignmentService,
     ChangeUserStatusService,
+    DeactivateUserService,
     UserDetailService,
     UpdateUserService,
     RolePermissionsService,
