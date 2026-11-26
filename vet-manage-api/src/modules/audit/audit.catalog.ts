@@ -5,6 +5,8 @@ export const AUDIT_ACTIONS = {
   inactivate: 'Inactivar',
   activate: 'Activar',
   changePassword: 'Cambiar contraseña',
+  requestPasswordReset: 'Solicitar recuperación',
+  resetPassword: 'Restablecer contraseña',
   update: 'Actualizar',
   managePermissions: 'Actualizar permisos',
 } as const;

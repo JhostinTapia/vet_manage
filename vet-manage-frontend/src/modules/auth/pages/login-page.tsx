@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { FormEvent, ReactNode } from 'react';
-import { Navigate, useLocation, useNavigate } from 'react-router-dom';
+import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import logo from '../../../assets/logo.jpeg';
 import { ApiError } from '../../../infrastructure/api/http-client';
 import { useAuth } from '../auth-context';
@@ -10,6 +10,7 @@ const MISSING_FIELDS = 'Ingrese su correo y contraseña';
 const INVALID_EMAIL = 'Ingrese un correo electrónico válido';
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 const CURRENT_YEAR = new Date().getFullYear();
+export const PASSWORD_RESET_DONE = 'Contraseña actualizada. Inicie sesión con su nueva contraseña';
 
 type Feedback = { kind: 'error' | 'warning' | 'locked'; message: string };
 
@@ -42,7 +43,9 @@ export function LoginPage() {
   const [feedback, setFeedback] = useState<Feedback | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  const from = (location.state as { from?: string } | null)?.from ?? '/';
+  const navigationState = location.state as { from?: string; passwordReset?: boolean } | null;
+  const from = navigationState?.from ?? '/';
+  const passwordReset = Boolean(navigationState?.passwordReset);
   if (status === 'authenticated') {
     return <Navigate to={session?.mustChangePassword ? '/change-password' : from} replace />;
   }
@@ -110,6 +113,13 @@ export function LoginPage() {
           <h1 id="login-title">Inicia sesión</h1>
           <p className="login-subtitle">Ingresa con el correo y la contraseña de tu cuenta.</p>
 
+          {passwordReset && !feedback && (
+            <div className="login-alert login-alert--success" role="status">
+              <span className="login-alert__icon"><CheckIcon /></span>
+              <p>{PASSWORD_RESET_DONE}</p>
+            </div>
+          )}
+
           {feedback && (
             <div className={`login-alert login-alert--${feedback.kind}`} role="alert">
               <span className="login-alert__icon">{feedback.kind === 'locked' ? <LockIcon /> : <AlertIcon />}</span>
@@ -163,7 +173,11 @@ export function LoginPage() {
             </button>
           </form>
 
-          <p className="login-help">¿Olvidaste tu contraseña? Comunícate con el administrador del sistema.</p>
+          <p className="login-help">
+            <Link className="login-help__link" to="/forgot-password" state={{ email: trimmedEmail }}>
+              ¿Olvidó su contraseña?
+            </Link>
+          </p>
         </div>
         <footer className="login-footer">© {CURRENT_YEAR} VetManage · Gestión veterinaria</footer>
       </section>
