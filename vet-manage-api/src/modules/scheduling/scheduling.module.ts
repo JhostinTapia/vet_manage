@@ -1,3 +1,4 @@
+import { AppointmentsModule } from './appointments/appointments.module.js';
 import { Module } from '@nestjs/common';
 import { BranchesModule } from './branches/branches.module.js';
 import { DailyAvailabilityModule } from './daily-availability/daily-availability.module.js';
@@ -10,6 +11,7 @@ import { WorkSchedulesModule } from './work-schedules/work-schedules.module.js';
 // Cada sección de la agenda tiene su propia carpeta y módulo; este archivo solo los agrupa.
 @Module({
   imports: [
+    AppointmentsModule,
     BranchesModule,
     WorkSchedulesModule,
     SaturdayShiftsModule,
