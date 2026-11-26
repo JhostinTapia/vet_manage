@@ -1,5 +1,6 @@
 // El menú y las rutas de la agenda se generan desde esta lista; cada sección exige su permiso.
 export type SchedulingPath =
+  | 'calendar'
   | 'resources'
   | 'work-schedules'
   | 'saturday-shifts'
@@ -15,6 +16,7 @@ export type SchedulingSection = {
 };
 
 export const SCHEDULING_SECTIONS: SchedulingSection[] = [
+  { label: 'Calendario de citas', path: 'calendar', permission: 'calendar:read', description: 'Citas y disponibilidad por sucursal en día, semana y mes.' },
   {
     label: 'Recursos disponibles',
     path: 'resources',

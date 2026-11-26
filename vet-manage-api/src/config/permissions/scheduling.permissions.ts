@@ -3,6 +3,7 @@ import type { PermissionDefinition } from '../permissions.catalog.js';
 const define = (entries: readonly [PermissionDefinition['key'], string][]): readonly PermissionDefinition[] => entries.map(([key, displayName]) => ({ key, displayName, description: `Permite: ${displayName.toLowerCase()}`, visible: true }));
 
 export const SCHEDULING_PERMISSIONS = define([
+  ['calendar:read', 'Consultar calendario y detalle de citas'],
   ['branches:read', 'Consultar sucursales, salas y servicios'],
   ['work-schedules:read', 'Consultar horarios base de atención'],
   ['work-schedules:manage', 'Definir horarios base de atención'],

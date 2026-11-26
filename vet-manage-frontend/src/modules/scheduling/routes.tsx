@@ -10,7 +10,10 @@ import { ResourcesPage } from './resources/resources-page';
 import { SaturdayShiftsPage } from './saturday-shifts/saturday-shifts-page';
 import { WorkSchedulesPage } from './work-schedules/work-schedules-page';
 
+import { CalendarPage } from './calendar/calendar-page';
+
 const PAGES: Record<SchedulingPath, ComponentType> = {
+  calendar: CalendarPage,
   resources: ResourcesPage,
   'work-schedules': WorkSchedulesPage,
   'saturday-shifts': SaturdayShiftsPage,
