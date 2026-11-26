@@ -4,6 +4,7 @@ import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { describe, beforeAll, afterAll, it, expect, vi } from 'vitest';
 import configuration from '../../src/config/configuration.js';
+import { ROLES } from '../../src/config/roles.catalog.js';
 import { GlobalExceptionFilter } from '../../src/common/errors/global-exception.filter.js';
 import { PetsModule } from '../../src/modules/pets/pets.module.js';
 import { SpeciesRepository } from '../../src/modules/pets/repositories/species.repository.js';
@@ -177,5 +178,32 @@ describe('SpeciesController (e2e)', () => {
       .expect(403);
 
     expect(res.body.success).toBe(false);
+  });
+
+  // Matriz de roles, sección 2.4: el Administrador no tiene acceso a especies.
+  const adminPermissions = () =>
+    new Set<string>(ROLES.find((role) => role.name === 'administrator')?.permissions ?? []);
+
+  it('POST /pets/species - rechaza al Administrador (403)', async () => {
+    access.getPermissionKeys.mockResolvedValueOnce(adminPermissions());
+
+    await request(app.getHttpServer())
+      .post('/pets/species')
+      .set('Authorization', 'Bearer test-token')
+      .send({ name: 'Equino' })
+      .expect(403);
+  });
+
+  it('GET /pets/species/active - rechaza la solicitud sin autenticación (401)', async () => {
+    await request(app.getHttpServer()).get('/pets/species/active').expect(401);
+  });
+
+  it('GET /pets/species/active - rechaza al Administrador (403)', async () => {
+    access.getPermissionKeys.mockResolvedValueOnce(adminPermissions());
+
+    await request(app.getHttpServer())
+      .get('/pets/species/active')
+      .set('Authorization', 'Bearer test-token')
+      .expect(403);
   });
 });

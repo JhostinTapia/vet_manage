@@ -1,11 +1,14 @@
 import { useEffect, useState } from 'react';
-import type { FormEvent, ReactNode } from 'react';
+import type { FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   CheckIcon, HomeIcon, IdCardIcon, InfoIcon, MailIcon, PawIcon, PhoneIcon, ShieldIcon, UserIcon,
 } from '../../../common/components/icons';
+import { ClientField as Field } from '../components/client-field';
 import { useToast } from '../../../common/components/toast-context';
-import { buildClientInput, describeApiError, MISSING_FIELDS, registrationOutcome, validateRegistration } from '../form-rules';
+import {
+  buildClientInput, describeApiError, MISSING_FIELDS, registrationOutcome, sanitizePhone, validateRegistration,
+} from '../form-rules';
 import type { FieldErrors, Form } from '../form-rules';
 import { clientsApi } from '../services/clients-api';
 import { CLIENT_ROLE } from '../types';
@@ -96,9 +99,9 @@ export function ClientRegisterPage() {
                 <input value={form.identification} inputMode="numeric" maxLength={10} placeholder="10 dígitos" autoComplete="off"
                   aria-invalid={Boolean(errors.identification)} onChange={(event) => update('identification', event.target.value.replace(/\D/g, ''))} />
               </Field>
-              <Field label="Teléfono" hint="Opcional" error={errors.phone} icon={<PhoneIcon size={16} />}>
-                <input type="tel" value={form.phone} maxLength={16} placeholder="0991234567" autoComplete="off"
-                  aria-invalid={Boolean(errors.phone)} onChange={(event) => update('phone', event.target.value)} />
+              <Field label="Teléfono" required error={errors.phone} icon={<PhoneIcon size={16} />}>
+                <input type="tel" inputMode="numeric" value={form.phone} placeholder="0991234567" autoComplete="off"
+                  aria-invalid={Boolean(errors.phone)} onChange={(event) => update('phone', sanitizePhone(event.target.value))} />
               </Field>
               <Field label="Nombres" required error={errors.firstName} icon={<UserIcon size={16} />}>
                 <input value={form.firstName} maxLength={100} placeholder="Nombres completos" aria-invalid={Boolean(errors.firstName)}
@@ -154,18 +157,5 @@ export function ClientRegisterPage() {
         </div>
       </form>
     </section>
-  );
-}
-
-function Field({ label, required, hint, error, icon, className = '', children }: {
-  label: string; required?: boolean; hint?: string; error?: string; icon: ReactNode; className?: string; children: ReactNode;
-}) {
-  return (
-    <label className={`field ${className}`}>
-      <span>{label}{required && <b> *</b>}</span>
-      <span className="input-icon">{icon}{children}</span>
-      {hint && !error && <small>{hint}</small>}
-      {error && <small className="field-error">{error}</small>}
-    </label>
   );
 }

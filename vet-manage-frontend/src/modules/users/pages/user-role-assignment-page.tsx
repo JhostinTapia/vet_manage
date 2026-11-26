@@ -111,7 +111,18 @@ export function UserRoleAssignmentPage() {
       </div>
 
       <div className="register-form">
-        <div className="register-form__grid">
+        {data.user.status === 'DEACTIVATED' ? (
+          <div className="register-card">
+            <div className="inline-notice inline-notice--error" role="note">
+              Este usuario fue dado de baja: sus roles no se pueden modificar.
+            </div>
+            <div className="register-form__actions">
+              <Link className="button button--ghost" to="/users">Volver a usuarios</Link>
+            </div>
+          </div>
+        ) : (
+          <>
+            <div className="register-form__grid">
           <div className="register-card">
             <header className="register-card__header">
               <span className="register-card__icon"><ShieldIcon size={18} /></span>
@@ -179,6 +190,8 @@ export function UserRoleAssignmentPage() {
             {saving ? 'Guardando…' : 'Guardar cambios'}
           </button>
         </div>
+          </>
+        )}
       </div>
     </section>
   );

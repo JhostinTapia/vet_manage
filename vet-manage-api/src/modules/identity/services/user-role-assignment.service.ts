@@ -85,7 +85,7 @@ export class UserRoleAssignmentService {
               id: true,
               roleId: true,
               expiresAt: true,
-              role: { select: { name: true, isActive: true } },
+              role: { select: { name: true, displayName: true, isActive: true } },
             },
           },
         },
@@ -97,7 +97,7 @@ export class UserRoleAssignmentService {
 
       const desiredRoles = await tx.role.findMany({
         where: { name: { in: finalNames }, isActive: true, category: 'STAFF' },
-        select: { id: true, name: true },
+        select: { id: true, name: true, displayName: true },
       });
       if (desiredRoles.length !== finalNames.length) {
         throw new ApiException(ROLE_ASSIGNMENT_MESSAGES.invalidRoles, 400, [], 'USER_INVALID_ROLES');
@@ -140,11 +140,20 @@ export class UserRoleAssignmentService {
 
       // Se registra antes de aplicar los cambios para que el rol guardado sea el que tenía el actor.
       if (toAdd.length > 0 || toRenew.length > 0 || toRemove.length > 0) {
+        const previousValue = effectiveNow
+          .map((assignment) => assignment.role.displayName)
+          .sort((a, b) => a.localeCompare(b, 'es'));
+        const newValue = desiredRoles
+          .map((role) => role.displayName)
+          .sort((a, b) => a.localeCompare(b, 'es'));
+
         await this.audit.record(tx, {
           actorId,
           action: AUDIT_ACTIONS.assignRoles,
           module: AUDIT_MODULES.users,
           affectedRecord: describePerson(user.person),
+          previousValue,
+          newValue,
         });
       }
 

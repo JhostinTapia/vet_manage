@@ -105,6 +105,14 @@ export const PlusIcon = (props: IconProps) => (
   <Icon {...props}><path d="M12 5v14M5 12h14" /></Icon>
 );
 
+export const BellIcon = (props: IconProps) => (
+  <Icon {...props}><path d="M6 9a6 6 0 0 1 12 0c0 3.6 1.5 5.5 1.5 5.5h-15S6 12.6 6 9Z" /><path d="M10 18a2 2 0 0 0 4 0" /></Icon>
+);
+
+export const ArrowRightIcon = (props: IconProps) => (
+  <Icon {...props}><path d="M4 12h15M13 6l6 6-6 6" /></Icon>
+);
+
 export const ScaleIcon = (props: IconProps) => (
   <Icon {...props}><rect x="3.5" y="4" width="17" height="16.5" rx="3" /><path d="M8 9.5a5.5 5.5 0 0 1 8 0l-2.2 2.2a2.5 2.5 0 0 0-3.6 0Z" /></Icon>
 );

@@ -1,6 +1,7 @@
 import type { ComponentType } from 'react';
 import { Route } from 'react-router-dom';
 import { RequirePermission } from '../auth/components/require-permission';
+import { BlockRegisterPage } from './blocks/block-register-page';
 import { BlocksPage } from './blocks/blocks-page';
 import { MyAvailabilityPage } from './my-availability/my-availability-page';
 import { SCHEDULING_SECTIONS, type SchedulingPath } from './navigation';
@@ -18,14 +19,21 @@ const PAGES: Record<SchedulingPath, ComponentType> = {
   rates: RatesPage,
 };
 
-// Rutas de la agenda, cada una protegida con el permiso de su sección.
-export const schedulingRoutes = SCHEDULING_SECTIONS.map(({ path, permission }) => {
-  const Page = PAGES[path];
-  return (
-    <Route
-      key={path}
-      path={`appointments/${path}`}
-      element={<RequirePermission permission={permission}><Page /></RequirePermission>}
-    />
-  );
-});
+// Páginas de una sección que no aparecen en el menú, como los formularios de registro.
+const SUBPAGES: { path: string; permission: string; Page: ComponentType }[] = [
+  { path: 'blocks/new', permission: 'schedule-blocks:create', Page: BlockRegisterPage },
+];
+
+const routes = [
+  ...SCHEDULING_SECTIONS.map(({ path, permission }) => ({ path, permission, Page: PAGES[path] })),
+  ...SUBPAGES,
+];
+
+// Rutas de la agenda, cada una protegida con su permiso.
+export const schedulingRoutes = routes.map(({ path, permission, Page }) => (
+  <Route
+    key={path}
+    path={`appointments/${path}`}
+    element={<RequirePermission permission={permission}><Page /></RequirePermission>}
+  />
+));

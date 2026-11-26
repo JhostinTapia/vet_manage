@@ -4,6 +4,16 @@ export type CatalogItem = {
   description?: string | null;
 };
 
+export type ProductSearchFilters = {
+  categoryId?: string;
+  brandId?: string;
+  batchCode?: string;
+};
+
+export type InventoryCategory = CatalogItem & {
+  vatRate: string | null;
+};
+
 export type Product = {
   id: string;
   code: string;
@@ -43,6 +53,16 @@ export type BatchEntryResult = {
     availableQuantity: number;
   };
   product: { id: string; code: string; name: string; stock: number };
+};
+
+export type BatchDetail = {
+  id: string;
+  productId: string;
+  code: string;
+  expirationDate: string;
+  initialQuantity: number;
+  availableQuantity: number;
+  product: { id: string; code: string; name: string };
 };
 
 export type ExpirationAlert = {

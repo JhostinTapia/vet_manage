@@ -1,10 +1,12 @@
-import { Body, Controller, Get, Param, Patch, Post, Query } from '@nestjs/common';
+import { Body, Controller, Get, Param, ParseUUIDPipe, Patch, Post, Query } from '@nestjs/common';
 import { success } from '../../common/errors/api-response.js';
+import { RequirePermissions } from '../identity/decorators/require-permissions.decorator.js';
 import { CreateCatalogItemDto } from './dtos/create-catalog-item.dto.js';
 import { CreateProductDto } from './dtos/create-product.dto.js';
+import { ListProductsQueryDto } from './dtos/list-products-query.dto.js';
 import { RegisterBatchEntryDto } from './dtos/register-batch-entry.dto.js';
+import { UpdateCategoryVatDto } from './dtos/update-category-vat.dto.js';
 import { UpdateBatchExpirationDto } from './dtos/update-batch-expiration.dto.js';
-import { RequirePermissions } from '../identity/decorators/require-permissions.decorator.js';
 import { InventoryService } from './services/inventory.service.js';
 
 @Controller('inventory')
@@ -29,6 +31,12 @@ export class InventoryController {
     return success(await this.inventoryService.updateCategory(id, input), 'Categoría actualizada correctamente');
   }
 
+  @Patch('categories/:id/vat')
+  @RequirePermissions('inventory:configure-vat')
+  async updateCategoryVat(@Param('id', ParseUUIDPipe) id: string, @Body() input: UpdateCategoryVatDto) {
+    return success(await this.inventoryService.updateCategoryVat(id, input.vatRate), 'IVA actualizado correctamente');
+  }
+
   @Get('brands')
   @RequirePermissions('inventory:read')
   async listBrands() {
@@ -49,14 +57,21 @@ export class InventoryController {
 
   @Get('products')
   @RequirePermissions('inventory:read')
-  async listProducts(@Query('search') search?: string) {
-    return success(await this.inventoryService.listProducts(search));
+  async listProducts(@Query() filtros: ListProductsQueryDto) {
+    const productos = await this.inventoryService.listProducts(filtros);
+    return success(productos, productos.length === 0 ? 'No se encontraron productos' : undefined);
   }
 
   @Get('expiration-alerts')
   @RequirePermissions('inventory:read')
   async listExpirationAlerts() {
     return success(await this.inventoryService.listExpirationAlerts());
+  }
+
+  @Get('batches/:id')
+  @RequirePermissions('inventory:read')
+  async getBatch(@Param('id') id: string) {
+    return success(await this.inventoryService.getBatch(id));
   }
 
   @Patch('batches/:id/expiration-date')

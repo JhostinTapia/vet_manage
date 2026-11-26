@@ -151,6 +151,16 @@ describe('Asignación de roles (e2e)', () => {
     expect(names).toEqual(expect.arrayContaining(['receptionist', 'cashier']));
     const active = await access.getActiveRoles(userId);
     expect(active.map((r) => r.name)).toEqual(expect.arrayContaining(['receptionist', 'cashier']));
+
+    const auditRecord = await prisma.auditLog.findFirst({
+      where: { action: 'Asignar roles', affectedRecord: { endsWith: 'Carlos Pérez' } },
+      orderBy: { occurredAt: 'desc' },
+    });
+    expect(auditRecord).toMatchObject({
+      module: 'Usuarios',
+      previousValue: ['Recepcionista'],
+      newValue: ['Cajero', 'Recepcionista'],
+    });
   });
 
   it('quita un rol y cambia de función reemplazando el conjunto', async () => {

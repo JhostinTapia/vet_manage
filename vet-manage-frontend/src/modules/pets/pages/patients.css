@@ -1,11 +1,36 @@
 .patients-page { max-width: 1180px; margin: 0 auto; }
 
-.patients-placeholder { display: grid; justify-items: center; gap: 8px; padding: 90px 20px; border: 1px dashed #dce3e9; border-radius: 15px; background: #fff; color: #8a96a3; font-size: 12px; text-align: center; }
-.patients-placeholder__icon { display: grid; place-items: center; width: 52px; height: 52px; margin-bottom: 6px; border-radius: 15px; color: #416fe7; background: #edf2ff; }
-.patients-placeholder strong { color: #26323d; font-size: 15px; }
+.patients-filters { display: flex; flex-wrap: wrap; gap: 12px; align-items: end; margin-bottom: 18px; }
+.patients-filter { flex: 1 1 320px; }
+.patients-filter > span { color: #596674; }
+.patients-filter-actions { display: flex; gap: 8px; }
+.patients-search-button { min-height: 42px; }
+.patients-empty-state { display: grid; justify-items: center; gap: 14px; padding: 60px 20px; }
+.patients-table td { vertical-align: middle; }
+.patients-table .code-pill { white-space: nowrap; }
+.patients-table tbody tr { cursor: pointer; }
+.patients-table tbody tr:hover { background: #f8fafc; }
+.patients-row-button { padding: 0; border: 0; background: transparent; color: #26323d; font: inherit; font-weight: 750; cursor: pointer; text-align: left; }
+.patients-row-button:hover { color: #416fe7; }
+.status-badge--deactivated { color: #c95e65; background: #fff0f0; }
+.patients-pagination { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 16px; color: #8a96a3; font-size: 12px; font-weight: 650; }
+.patients-pagination__controls { display: flex; align-items: center; gap: 12px; }
 
 /* Modal ancho: el modal base mide 460px, demasiado estrecho para dos columnas. */
 .modal-card.patient-modal { width: min(820px, 100%); }
+.patient-detail { width: min(720px, 100%); }
+.patient-detail__grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px 20px; margin: 0; }
+.patient-detail__grid div { display: grid; gap: 4px; padding: 10px 12px; border: 1px solid #eef1f4; border-radius: 10px; background: #fbfcfd; }
+.patient-detail__grid dt { color: #99a4b0; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
+.patient-detail__grid dd { margin: 0; color: #26323d; font-size: 13px; font-weight: 650; }
+.patient-detail__actions { display: flex; justify-content: flex-end; margin-top: 22px; }
+
+@media (max-width: 640px) {
+  .patients-filter-actions { width: 100%; }
+  .patients-filter-actions .button { flex: 1; }
+  .patient-detail__grid { grid-template-columns: 1fr; }
+  .patients-pagination { align-items: flex-start; flex-direction: column; }
+}
 .patient-modal__title { display: flex; gap: 14px; align-items: center; }
 .patient-modal__icon { display: grid; flex: none; place-items: center; width: 42px; height: 42px; border-radius: 12px; color: #416fe7; background: #edf2ff; }
 

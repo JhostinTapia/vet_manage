@@ -176,6 +176,14 @@ describe('Registro de usuarios (e2e)', () => {
       action: 'Registrar',
       module: 'Usuarios',
       affectedRecord: `${payload.identification} - María López`,
+      previousValue: null,
+      newValue: {
+        identification: payload.identification,
+        firstName: 'María',
+        lastName: 'López',
+        email: payload.email,
+        roles: [staffRole.displayName],
+      },
     });
   });
 

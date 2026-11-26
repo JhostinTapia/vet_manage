@@ -2,6 +2,32 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ListClientsQueryDto } from '../dtos/list-clients-query.dto.js';
 import { ClientsRepository, type ClientWithPerson } from './clients.repository.js';
 
+type SearchCondition = {
+  identification?: unknown;
+  firstName?: unknown;
+  lastName?: unknown;
+};
+
+type FindManyArgs = {
+  where: {
+    status?: string;
+    person: {
+      user: { userRoles: { some: unknown } };
+      OR: SearchCondition[];
+    };
+  };
+  include: {
+    person: {
+      include: {
+        user: { include: { userRoles: { where: unknown } } };
+      };
+    };
+  };
+  orderBy: unknown;
+  skip: number;
+  take: number;
+};
+
 const clientRecord = (): ClientWithPerson => ({
   id: 'c1',
   personId: 'p1',
@@ -21,7 +47,7 @@ const clientRecord = (): ClientWithPerson => ({
 });
 
 function build() {
-  const findMany = vi.fn(async () => [clientRecord()]);
+  const findMany = vi.fn(async (_args: FindManyArgs) => [clientRecord()]);
   const count = vi.fn(async () => 1);
   const prisma = {
     client: { findMany, count },

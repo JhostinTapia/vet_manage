@@ -67,9 +67,9 @@ export const ROLES: readonly RoleDefinition[] = [
       'users:change-status', 'users:deactivate',
       'roles:manage-permissions', 'audit:read', 'audit:export',
       'inventory:read',
-      ...catalogManagement('species'),
-      ...catalogManagement('breeds'),
+      // Especies y razas: el Administrador no tiene acceso (matriz de roles, sección 2.4).
       ...schedulingAdmin,
+      'inventory:configure-vat',
     ],
   },
   {
@@ -81,6 +81,7 @@ export const ROLES: readonly RoleDefinition[] = [
       ...clientsAndPetsFull,
       'species:read', 'breeds:read',
       'inventory:read', 'inventory:manage-products', 'inventory:manage-categories', 'inventory:manage-brands',
+      'suppliers:create', 'suppliers:read', 'suppliers:update', 'suppliers:deactivate',
       ...procedureCatalog,
       ...schedulingAdmin,
     ],

@@ -237,6 +237,7 @@ export function RatesPage() {
                     <td>
                       <button
                         type="button"
+                        aria-label={service.estado ? 'Inactivar servicio' : 'Activar servicio'}
                         className={`button button--small ${service.estado ? 'button--danger-soft' : 'button--success-soft'
                           }`}
                         onClick={() => {

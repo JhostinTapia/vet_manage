@@ -60,4 +60,21 @@ describe('AuditService.record', () => {
 
     await expect(new AuditService().record(tx as never, entry)).rejects.toThrow('fallo de base de datos');
   });
+
+  it('guarda previousValue y newValue cuando se proporcionan', async () => {
+    const tx = buildTx([{ displayName: 'Administrador' }]);
+
+    await new AuditService().record(tx as never, {
+      ...entry,
+      previousValue: ['Recepcionista'],
+      newValue: ['Cajero', 'Recepcionista'],
+    });
+
+    expect(tx.auditLog.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        previousValue: ['Recepcionista'],
+        newValue: ['Cajero', 'Recepcionista'],
+      }),
+    });
+  });
 });

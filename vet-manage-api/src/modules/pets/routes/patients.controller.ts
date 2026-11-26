@@ -1,4 +1,4 @@
-import { Body, Controller, HttpCode, HttpStatus, Post, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, HttpStatus, Post, Query, Req, UseGuards } from '@nestjs/common';
 import { ApiException } from '../../../common/errors/api-exception.js';
 import { success } from '../../../common/errors/api-response.js';
 import { JwtAuthGuard } from '../../identity/guards/jwt-auth.guard.js';
@@ -6,11 +6,23 @@ import { PermissionsGuard } from '../../identity/guards/permissions.guard.js';
 import { RequirePermissions } from '../../identity/decorators/require-permissions.decorator.js';
 import type { AuthenticatedRequest } from '../../identity/types/authenticated-request.js';
 import { RegisterPatientDto } from '../dtos/patients/register-patient.dto.js';
+import { SearchPatientsQueryDto } from '../dtos/patients/search-patients-query.dto.js';
 import { PATIENT_MESSAGES, RegisterPatientService } from '../services/patients/register-patient.service.js';
+import { SearchPatientsService } from '../services/patients/search-patients.service.js';
 
 @Controller('pets')
 export class PatientsController {
-  constructor(private readonly registerPatientService: RegisterPatientService) {}
+  constructor(
+    private readonly registerPatientService: RegisterPatientService,
+    private readonly searchPatientsService: SearchPatientsService,
+  ) {}
+
+  // Recepcionista, Gerente, Veterinario y Técnico tienen pets:read.
+  @Get()
+  @RequirePermissions('pets:read')
+  async listPatients(@Query() query: SearchPatientsQueryDto) {
+    return success(await this.searchPatientsService.search(query));
+  }
 
   // Recepcionista, Gerente y Veterinario tienen pets:create.
   @Post()

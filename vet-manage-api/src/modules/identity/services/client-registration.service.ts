@@ -14,12 +14,12 @@ import { PasswordHasher } from './password-hasher.service.js';
 import { generateTemporaryPassword } from './temporary-password.js';
 
 export const CLIENT_MESSAGES = {
-  registered: 'Cliente registrado correctamente',
+  registered: 'Cliente registrado exitosamente',
   mailFailed: 'Cliente registrado, pero no se pudo enviar el correo. Verifique la dirección y reenvíe las credenciales',
-  missing: 'Complete los campos obligatorios',
-  invalidIdentification: 'La cédula debe tener 10 dígitos válidos',
-  invalidEmail: 'Ingrese un correo electrónico válido',
-  invalidPhone: 'Ingrese un teléfono válido',
+  missing: 'Por favor, complete todos los campos obligatorios',
+  invalidIdentification: 'Número de cédula no válido',
+  invalidEmail: 'Por favor, ingrese un correo y número de teléfono válido',
+  invalidPhone: 'Por favor, ingrese un correo y número de teléfono válido',
   invalidName: 'Los nombres y apellidos no pueden superar 100 caracteres',
   missingClientRole: 'No se encontró el rol de cliente activo',
   invalidAddress: 'Dirección no válida',
@@ -27,10 +27,18 @@ export const CLIENT_MESSAGES = {
   emailTaken: 'El correo ya se encuentra registrado',
 } as const;
 
-const PHONE_PATTERN = /^\+?\d{7,15}$/;
+const PHONE_PATTERN = /^09\d{8}$/;
 const NAME_MAX = 100;
 const EMAIL_MAX = 255;
 const ADDRESS_MAX = 255;
+
+// Límites del contacto del cliente; también los usa la actualización de clientes (HU-02).
+export const CLIENT_CONTACT_LIMITS = {
+  phonePattern: PHONE_PATTERN,
+  nameMax: NAME_MAX,
+  emailMax: EMAIL_MAX,
+  addressMax: ADDRESS_MAX,
+} as const;
 const CLIENT_ROLE_NAME = 'client';
 
 export type RegisteredClient = {
@@ -142,18 +150,12 @@ export class ClientRegistrationService {
     const found = await tx.person.findUnique({
       where: { identification: data.identification },
       include: {
-        user: {
-          include: {
-            userRoles: {
-              where: { OR: [{ expiresAt: null }, { expiresAt: { gt: now } }], role: { isActive: true } },
-              select: { role: { select: { category: true } } },
-            },
-          },
-        },
+        client: { select: { id: true } },
+        user: { select: { id: true, password: true, status: true } },
       },
     });
 
-    if (found?.user?.userRoles.some(({ role }) => role.category === 'STAFF')) {
+    if (found?.client) {
       throw new ApiException(CLIENT_MESSAGES.identificationTaken, 409, [], 'CLIENT_IDENTIFICATION_TAKEN');
     }
 
@@ -165,7 +167,7 @@ export class ClientRegistrationService {
       if (emailOwner) throw new ApiException(CLIENT_MESSAGES.emailTaken, 409, [], 'CLIENT_EMAIL_TAKEN');
     }
 
-    const person = found ?? await tx.person.create({
+    let person = found ?? await tx.person.create({
       data: {
         identification: data.identification,
         firstName: data.firstName,
@@ -175,6 +177,10 @@ export class ClientRegistrationService {
         address: data.address,
       },
     });
+
+    if (found && !found.address && data.address) {
+      person = await tx.person.update({ where: { id: person.id }, data: { address: data.address } });
+    }
 
     const select = { id: true, status: true } as const;
     let user: { id: string; status: string };
@@ -263,6 +269,7 @@ export class ClientRegistrationService {
       !firstName && 'firstName',
       !lastName && 'lastName',
       !email && 'email',
+      !phone && 'phone',
     ].filter((field): field is string => Boolean(field));
     if (missing.length > 0) throw new ApiException(CLIENT_MESSAGES.missing, 400, missing, 'CLIENT_MISSING_FIELDS');
 

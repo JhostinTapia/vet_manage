@@ -1,11 +1,16 @@
-import { getJson, postJson } from '../../../infrastructure/api/http-client';
+import { getJson, patchJson, postJson } from '../../../infrastructure/api/http-client';
 import type {
+  ActivatedClient,
   AssignableRole,
   ClientPage,
   ClientPet,
   ClientQuery,
+  DeactivatedClient,
+  InactivatedClient,
   RegisteredClient,
   RegisterClientInput,
+  UpdateClientInput,
+  UpdatedClient,
 } from '../types';
 
 export const clientsApi = {
@@ -26,5 +31,18 @@ export const clientsApi = {
   },
   register(input: RegisterClientInput) {
     return postJson<RegisteredClient, RegisterClientInput>('/clients', input);
+  },
+  update(clientId: string, input: UpdateClientInput) {
+    return patchJson<UpdatedClient, UpdateClientInput>(`/clients/${clientId}`, input);
+  },
+  inactivate(clientId: string) {
+    return patchJson<InactivatedClient, Record<string, never>>(`/clients/${clientId}/inactivate`, {});
+  },
+  activate(clientId: string) {
+    return patchJson<ActivatedClient, Record<string, never>>(`/clients/${clientId}/activate`, {});
+  },
+  // Baja definitiva con motivo obligatorio (HU-03).
+  deactivate(clientId: string, reason: string) {
+    return patchJson<DeactivatedClient, { reason: string }>(`/clients/${clientId}/deactivate`, { reason });
   },
 };

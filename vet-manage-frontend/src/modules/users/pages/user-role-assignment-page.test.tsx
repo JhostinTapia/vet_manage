@@ -117,6 +117,17 @@ describe('UserRoleAssignmentPage', () => {
     });
   });
 
+  it('impide modificar roles cuando el usuario fue dado de baja', async () => {
+    vi.mocked(usersApi.getRoleAssignment).mockResolvedValue({
+      ...assignment(),
+      user: { id: 'u1', status: 'DEACTIVATED', fullName: 'Luis Torres' },
+    });
+    renderPage();
+
+    expect(await screen.findByText(/sus roles no se pueden modificar/i)).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Guardar cambios' })).not.toBeInTheDocument();
+  });
+
   it('impide guardar sin roles y muestra el mensaje de HU-54', async () => {
     renderPage();
     await screen.findByText('Carlos Pérez');

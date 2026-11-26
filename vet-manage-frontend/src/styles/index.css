@@ -231,7 +231,57 @@ button { cursor: pointer; }
 .product-form { overflow: hidden; }.form-section { padding: 28px 32px; border-bottom: 1px solid #eef1f4; }.form-section__heading { display: flex; gap: 13px; margin-bottom: 22px; }.section-number { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 9px; color: #416fe7; background: #edf2ff; font-size: 10px; font-weight: 800; }.form-section h3 { margin: 2px 0 4px; color: #26323d; font-size: 16px; }.form-section p { margin: 0; color: #99a4b0; font-size: 11px; }.form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }.form-grid__full { grid-column: 1 / -1; }.field { display: grid; gap: 7px; color: #596674; font-size: 12px; font-weight: 650; }.field > span b { color: #c95e65; }.field input, .field textarea, .field select { width: 100%; padding: 11px 12px; border: 1px solid #dfe6ec; border-radius: 8px; outline: none; color: #26323d; background: #fff; font-size: 12px; transition: border .2s ease, box-shadow .2s ease; }.field textarea { resize: vertical; }.field input:focus, .field textarea:focus, .field select:focus { border-color: #7d9fff; box-shadow: 0 0 0 3px #edf2ff; }.field input[aria-invalid="true"], .field select[aria-invalid="true"] { border-color: #de7c82; }.field > small { color: #9aa5b0; font-size: 10px; font-weight: 450; }.field-error { color: #c95e65 !important; }.catalog-field { display: grid; gap: 8px; align-content: start; }.create-link { width: fit-content; padding: 0; border: 0; color: #4c7dff; background: transparent; font-size: 11px; font-weight: 700; }.create-link:hover { text-decoration: underline; }.inline-create { grid-column: 1 / -1; padding: 13px; border: 1px solid #dce7ff; border-radius: 9px; background: #f8faff; }.inline-create > label { display: block; margin-bottom: 7px; color: #596674; font-size: 11px; font-weight: 700; }.inline-create__row { display: flex; gap: 8px; }.inline-create input { flex: 1; min-width: 0; padding: 8px 10px; border: 1px solid #dfe6ec; border-radius: 7px; font-size: 12px; }.currency-input { display: flex; align-items: center; border: 1px solid #dfe6ec; border-radius: 8px; overflow: hidden; }.currency-input:focus-within { border-color: #7d9fff; box-shadow: 0 0 0 3px #edf2ff; }.currency-input span { padding-left: 12px; color: #8a96a3; font-size: 12px; }.currency-input input { border: 0; }.form-actions { display: flex; justify-content: flex-end; gap: 10px; padding: 20px 32px; background: #fbfcfd; }.catalog-manager { padding: 24px; }.manager-form { display: flex; align-items: flex-end; gap: 12px; max-width: 550px; margin-bottom: 22px; }.manager-form .field { flex: 1; }.simple-list { border-top: 1px solid #eef1f4; }.simple-list__item { display: flex; align-items: center; gap: 11px; padding: 14px 2px; border-bottom: 1px solid #f1f3f5; color: #26323d; font-size: 12px; }.list-icon { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 8px; color: #416fe7; background: #edf2ff; }
 @media (max-width: 900px) { .content-grid { grid-template-columns: 1fr; } .integration-card { align-items: flex-start; flex-wrap: wrap; } .integration-card code { margin-left: 45px; } }
 .list-copy { display: grid; flex: 1; gap: 3px; }.list-copy small { color: #99a4b0; font-size: 10px; }.catalog-edit-form { display: grid; flex: 1; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto; gap: 8px; align-items: center; }.catalog-edit-form input { min-width: 0; padding: 9px 10px; border: 1px solid #dfe6ec; border-radius: 8px; outline: none; font-size: 12px; }.catalog-edit-form input:focus { border-color: #7d9fff; box-shadow: 0 0 0 3px #edf2ff; }.inline-actions { display: flex; gap: 6px; }
-.species-toolbar { display: flex; justify-content: flex-end; margin-bottom: 18px; }
+.catalogs-page { max-width: 1480px; margin: 0 auto; }
+.catalogs-page .status-badge { display: inline-flex; gap: 6px; align-items: center; border: 1px solid transparent; }
+.catalogs-page .status-badge::before { content: ''; width: 6px; height: 6px; border-radius: 999px; background: currentColor; }
+.catalogs-page .status-badge--active { color: #1f7a53; background: #e8f7f0; border-color: #bfead5; }
+.catalogs-page .status-badge--inactive { color: #c2414b; background: #fdecec; border-color: #f7c5ca; }
+.species-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 18px; }
+.species-toolbar .search-field { min-width: 220px; }
+.species-card__title { display: flex; align-items: center; gap: 12px; }
+.species-card__icon { display: grid; place-items: center; width: 38px; height: 38px; border-radius: 11px; color: #416fe7; background: #edf2ff; flex-shrink: 0; }
+.species-count-badge { display: inline-flex; align-items: center; padding: 6px 12px; border-radius: 999px; color: #416fe7; background: #edf2ff; border: 1px solid #dbe7ff; font-size: 11px; font-weight: 750; white-space: nowrap; }
+.species-table td, .breeds-table td { vertical-align: middle; }
+.species-table tbody tr, .breeds-table tbody tr { transition: background-color 140ms ease; }
+.species-table tbody tr:hover, .breeds-table tbody tr:hover { background: #f8fafd; }
+.species-table__name { width: 22%; }
+.species-table__description { width: 42%; }
+.species-table__date { width: 14%; white-space: nowrap; }
+.species-table__status { width: 12%; white-space: nowrap; }
+.species-table__actions { width: 10%; white-space: nowrap; text-align: right; }
+.breeds-table__name { width: 20%; }
+/* HU-20: búsqueda, filtro por especie y detalle de raza */
+.breeds-filters { align-items: center; flex-wrap: wrap; }
+.breeds-filters__species { min-height: 42px; min-width: 200px; padding: 0 12px; border: 1px solid #e1e7ed; border-radius: 10px; color: #26323d; background: #fff; font-size: 12px; }
+.breeds-name-link { padding: 0; border: 0; color: inherit; background: none; font: inherit; text-align: left; cursor: pointer; }
+.breeds-name-link:hover strong, .breeds-name-link:focus-visible strong { color: #416fe7; text-decoration: underline; }
+.breed-detail { display: grid; gap: 14px; margin: 0; }
+.breed-detail div { display: grid; grid-template-columns: 120px 1fr; gap: 12px; align-items: baseline; }
+.breed-detail dt { color: #99a4b0; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; }
+.breed-detail dd { margin: 0; color: #26323d; font-size: 13px; }
+@media (max-width: 640px) { .breeds-filters__species { width: 100%; } .breed-detail div { grid-template-columns: 1fr; gap: 4px; } }
+.breeds-table__species { width: 14%; white-space: nowrap; }
+.breeds-table__description { width: 34%; }
+.breeds-table__date { width: 12%; white-space: nowrap; }
+.breeds-table__status { width: 10%; white-space: nowrap; }
+.breeds-table__actions { width: 10%; white-space: nowrap; text-align: right; }
+.species-name-cell { display: inline-flex; align-items: center; gap: 10px; }
+.species-detail-trigger { padding: 0; border: 0; color: #26323d; background: transparent; font-size: 12px; font-weight: 700; text-align: left; cursor: pointer; }
+.species-detail-trigger:hover, .species-detail-trigger:focus-visible { color: #1d4ed8; text-decoration: underline; }
+.species-detail-trigger:focus-visible { outline: 2px solid #bfdbfe; outline-offset: 3px; }
+.species-detail__grid { display: grid; gap: 18px; margin: 0; }
+.species-detail__grid dt { color: #8a96a3; font-size: 11px; font-weight: 700; }
+.species-detail__grid dd { margin: 5px 0 0; color: #26323d; font-size: 13px; }
+.species-row-icon { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 9px; color: #416fe7; background: #edf2ff; flex-shrink: 0; }
+.species-desc-cell { display: inline-flex; align-items: center; gap: 7px; color: #4b5a69; }
+.species-desc-cell svg { color: #8a96a3; flex-shrink: 0; }
+.species-desc-empty { color: #9aa5b0; font-style: italic; }
+.species-date-cell { display: inline-flex; align-items: center; gap: 6px; color: #74808d; font-size: 11.5px; }
+.species-date-cell svg { color: #9aa5b0; flex-shrink: 0; }
+.species-icon-btn { position: relative; display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; padding: 0; border-radius: 9px; border: 1px solid #dce3ea; background: #fff; color: #4b5a69; cursor: pointer; transition: background-color 140ms ease, border-color 140ms ease, color 140ms ease, transform 140ms ease, box-shadow 140ms ease; }
+.species-icon-btn:hover, .species-icon-btn:focus-visible { outline: none; color: #1d4ed8; background: #eff6ff; border-color: #bfdbfe; transform: translateY(-1px); box-shadow: 0 4px 10px rgba(15, 23, 42, .08); }
+.species-icon-btn[data-tooltip]::after { content: attr(data-tooltip); position: absolute; bottom: calc(100% + 7px); right: 0; padding: 5px 9px; border-radius: 7px; background: #0f172a; color: #f8fafc; font-size: 11px; font-weight: 600; line-height: 1; white-space: nowrap; opacity: 0; pointer-events: none; transition: opacity 120ms ease; z-index: 20; }
+.species-icon-btn[data-tooltip]:hover::after, .species-icon-btn[data-tooltip]:focus-visible::after { opacity: 1; }
 .catalog-empty { display: grid; justify-items: center; gap: 12px; padding: 84px 24px; border: 1px dashed #dce3e9; border-radius: 16px; background: #fff; text-align: center; }
 .catalog-empty__icon { display: grid; place-items: center; width: 52px; height: 52px; border-radius: 14px; color: #4c7dff; background: #edf2ff; }
 .catalog-empty strong { color: #17202a; font-size: 16px; letter-spacing: -.02em; }
@@ -273,3 +323,6 @@ button { cursor: pointer; }
 .auth-loading { display: grid; place-items: center; min-height: 100vh; color: #8a96a3; font-size: 13px; }
 .batch-entry-summary { display: grid; gap: 4px; margin-bottom: 18px; padding: 16px 20px; border-color: #cfe9d9; background: #f4fbf7; color: #2f5f45; font-size: 12px; }.batch-entry-summary strong { font-size: 13px; }
 .rates-form { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px 8px; margin-bottom: 18px; }.rates-form .field { flex: 0 0 100%; }
+.detail-table th[scope="row"] { width: 220px; color: #99a4b0; font-size: 10px; text-transform: uppercase; letter-spacing: .07em; }
+.detail-table td { color: #26323d; }
+.detail-table td small { display: inline; color: #9aa4ae; font-size: 10px; }

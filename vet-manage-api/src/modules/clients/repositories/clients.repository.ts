@@ -9,6 +9,9 @@ export type ClientWithPerson = {
   personId: string;
   status: ClientStatus;
   createdAt: Date;
+  deactivatedAt: Date | null;
+  deactivationReason: string | null;
+  deactivatedBy: { person: { firstName: string; lastName: string } } | null;
   person: {
     identification: string;
     firstName: string;
@@ -34,9 +37,9 @@ export type ClientPetRecord = {
 };
 
 const CLIENT_ROLE_NAME = 'client';
-const MAX_SEARCH_VARIANTS = 64;
+export const MAX_SEARCH_VARIANTS = 64;
 
-const ACCENT_EQUIVALENTS: Record<string, string[]> = {
+export const ACCENT_EQUIVALENTS: Record<string, string[]> = {
   a: ['a', 'á'],
   e: ['e', 'é'],
   i: ['i', 'í'],
@@ -104,6 +107,7 @@ export class ClientsRepository {
       this.prisma.client.findMany({
         where,
         include: {
+          deactivatedBy: { select: { person: { select: { firstName: true, lastName: true } } } },
           person: {
             include: {
               user: {

@@ -23,6 +23,7 @@ const POODLE = '223e4567-e89b-12d3-a456-426614174001';
 const OLD_BREED = '223e4567-e89b-12d3-a456-426614174002';
 const SIAMESE = '223e4567-e89b-12d3-a456-426614174003';
 const ACTIVE_CLIENT = '323e4567-e89b-12d3-a456-426614174000';
+const ACTIVE_CLIENT_JOSE = '323e4567-e89b-12d3-a456-426614174002';
 const DEACTIVATED_CLIENT = '323e4567-e89b-12d3-a456-426614174001';
 const MISSING = '923e4567-e89b-12d3-a456-426614174999';
 
@@ -44,8 +45,9 @@ describe('PatientsController (e2e)', () => {
     { id: SIAMESE, name: 'Siamés', speciesId: CAT, isActive: true },
   ];
   const clientsDb = [
-    { id: ACTIVE_CLIENT, status: 'ACTIVE' },
-    { id: DEACTIVATED_CLIENT, status: 'DEACTIVATED' },
+    { id: ACTIVE_CLIENT, status: 'ACTIVE', person: { identification: '0961441234', firstName: 'Ana', lastName: 'Pérez' } },
+    { id: ACTIVE_CLIENT_JOSE, status: 'ACTIVE', person: { identification: '1710034065', firstName: 'José', lastName: 'López' } },
+    { id: DEACTIVATED_CLIENT, status: 'DEACTIVATED', person: { identification: '1710034065', firstName: 'José', lastName: 'López' } },
   ];
 
   const tokens = { verify: vi.fn(async () => 'user-1') };
@@ -79,6 +81,60 @@ describe('PatientsController (e2e)', () => {
       };
       patients.push(created);
       return created;
+    }),
+    // Filtrado en memoria para ejercitar DTO, guard y envelope sin base de datos.
+    searchPatients: vi.fn(async (query: { search?: string; page: number; pageSize: number }) => {
+      const asDate = (value: unknown) => {
+        if (value instanceof Date) return value;
+        const match = /^(\d{2})-(\d{2})-(\d{4})$/.exec(String(value));
+        return match ? new Date(`${match[3]}-${match[2]}-${match[1]}T00:00:00.000Z`) : new Date(0);
+      };
+      const normalize = (value: string) =>
+        value.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/ñ/g, 'n');
+
+      const records = patients.map((p) => {
+        const client = clientsDb.find((c) => c.id === p.clientId) ?? clientsDb[0];
+        return {
+          id: String(p.id),
+          code: String(p.code),
+          name: String(p.name),
+          gender: p.gender as 'MALE' | 'FEMALE',
+          birthDate: asDate(p.birthDate),
+          weightKg: p.weightKg as never,
+          heightCm: p.heightCm as never,
+          reproductiveStatus: p.reproductiveStatus as never,
+          color: (p.color as string | null) ?? null,
+          status: p.status as 'ACTIVE' | 'INACTIVE' | 'DEACTIVATED',
+          createdAt: p.createdAt as Date,
+          client: { person: client.person },
+          species: p.species as { id: string; name: string },
+          breed: p.breed as { id: string; name: string },
+        };
+      });
+
+      const term = query.search?.trim();
+      let filtered = records;
+      if (term) {
+        if (/^PAC-\d{4,6}$/i.test(term)) {
+          filtered = records.filter((record) => record.code === term.toUpperCase());
+        } else if (/^\d{5,10}$/.test(term)) {
+          filtered = records.filter((record) => record.client.person.identification.startsWith(term));
+        } else {
+          const normalized = normalize(term);
+          filtered = records.filter((record) =>
+            (normalized.length >= 2 && normalize(record.name).includes(normalized)) ||
+            (normalized.length >= 3 && normalize(record.client.person.firstName).includes(normalized)),
+          );
+        }
+      }
+
+      const sorted = [...filtered].sort(
+        (a, b) => a.name.localeCompare(b.name) || a.code.localeCompare(b.code),
+      );
+      return {
+        patients: sorted.slice((query.page - 1) * query.pageSize, query.page * query.pageSize),
+        total: sorted.length,
+      };
     }),
   };
 
@@ -268,6 +324,177 @@ describe('PatientsController (e2e)', () => {
       permissions = new Set(['pets:create']);
 
       await get(DOG).expect(403);
+    });
+  });
+
+  describe('GET /pets', () => {
+    const get = (query = '') =>
+      request(app.getHttpServer()).get(`/pets${query}`).set('Authorization', 'Bearer t');
+
+    it('devuelve el listado paginado con la estructura de la HU (200)', async () => {
+      await post(validPatient({ name: 'Firulais' })).expect(201);
+      await post(validPatient({ name: 'Luna' })).expect(201);
+
+      const res = await get().expect(200);
+
+      expect(res.body.data).toMatchObject({ page: 1, pageSize: 20, total: 2, totalPages: 1 });
+      expect(res.body.data.items.map((item: { name: string }) => item.name)).toEqual(['Firulais', 'Luna']);
+      expect(res.body.data.items[0]).toMatchObject({
+        code: expect.stringMatching(/^PAC-\d{6}$/),
+        birthDate: '10-05-2024',
+        species: { id: DOG, name: 'Canino' },
+        breed: { id: LABRADOR, name: 'Labrador' },
+        client: { identification: '0961441234', firstName: 'Ana', lastName: 'Pérez' },
+        status: 'ACTIVE',
+      });
+    });
+
+    it('busca por nombre parcial del paciente (200)', async () => {
+      await post(validPatient({ name: 'Firulais' })).expect(201);
+      await post(validPatient({ name: 'Luna' })).expect(201);
+
+      const res = await get('?search=fir').expect(200);
+      expect(res.body.data.items.map((item: { name: string }) => item.name)).toEqual(['Firulais']);
+    });
+
+    it('ignora espacios, mayúsculas y tildes (200)', async () => {
+      await post(validPatient({ name: 'José' })).expect(201);
+
+      const res = await get('?search=%20JOSE%20').expect(200);
+      expect(res.body.data.items.map((item: { name: string }) => item.name)).toEqual(['José']);
+    });
+
+    it('busca por código exacto (200)', async () => {
+      await post(validPatient({ name: 'Firulais' })).expect(201);
+
+      const res = await get('?search=pac-000001').expect(200);
+      expect(res.body.data.items).toHaveLength(1);
+      expect(res.body.data.items[0].code).toBe('PAC-000001');
+    });
+
+    it('busca por código de 4 dígitos del ejemplo de la HU (200)', async () => {
+      patients.push({
+        id: 'patient-legacy',
+        ...validPatient(),
+        code: 'PAC-0001',
+        status: 'ACTIVE',
+        createdAt: new Date('2026-11-19T12:00:00.000Z'),
+        species: speciesDb[0],
+        breed: breedsDb[0],
+      });
+
+      const res = await get('?search=pac-0001').expect(200);
+      expect(res.body.data.items).toHaveLength(1);
+      expect(res.body.data.items[0].code).toBe('PAC-0001');
+    });
+
+    it('devuelve totalPages 0 para un código inexistente (200)', async () => {
+      await post(validPatient()).expect(201);
+
+      const res = await get('?search=PAC-999999').expect(200);
+      expect(res.body.data).toMatchObject({ items: [], total: 0, totalPages: 0 });
+    });
+
+    it('busca por primer nombre del cliente con 3 o más caracteres (200)', async () => {
+      await post(validPatient({ name: 'Firulais' })).expect(201);
+      await post(validPatient({ name: 'Luna', clientId: ACTIVE_CLIENT_JOSE })).expect(201);
+
+      const res = await get('?search=ana').expect(200);
+      expect(res.body.data.items.map((item: { name: string }) => item.name)).toEqual(['Firulais']);
+    });
+
+    it('busca por primer nombre del cliente con acento (200)', async () => {
+      await post(validPatient({ name: 'Luna', clientId: ACTIVE_CLIENT_JOSE })).expect(201);
+
+      const res = await get('?search=jose').expect(200);
+      expect(res.body.data.items.map((item: { name: string }) => item.name)).toEqual(['Luna']);
+    });
+
+    it('busca por prefijo de cédula de 5 a 10 dígitos (200)', async () => {
+      await post(validPatient({ name: 'Firulais' })).expect(201);
+      await post(validPatient({ name: 'Luna', clientId: ACTIVE_CLIENT_JOSE })).expect(201);
+
+      const res = await get('?search=096144').expect(200);
+      expect(res.body.data.items.map((item: { name: string }) => item.name)).toEqual(['Firulais']);
+    });
+
+    it('trata 4 dígitos como texto de nombre y no como cédula (200)', async () => {
+      await post(validPatient({ name: 'Firulais' })).expect(201);
+
+      const res = await get('?search=0961').expect(200);
+      expect(res.body.data.items).toEqual([]);
+    });
+
+    it('combina coincidencias sin duplicar pacientes (200)', async () => {
+      await post(validPatient({ name: 'Ana' })).expect(201);
+
+      const res = await get('?search=ana').expect(200);
+      expect(res.body.data.total).toBe(1);
+      expect(res.body.data.items).toHaveLength(1);
+    });
+
+    it('muestra un listado vacío cuando no hay coincidencias (200)', async () => {
+      await post(validPatient()).expect(201);
+
+      const res = await get('?search=zzzzz').expect(200);
+      expect(res.body.data).toMatchObject({ items: [], total: 0, totalPages: 0 });
+    });
+
+    it('devuelve el listado completo con search vacío (200)', async () => {
+      await post(validPatient({ name: 'Firulais' })).expect(201);
+
+      const res = await get('?search=').expect(200);
+      expect(res.body.data.items).toHaveLength(1);
+    });
+
+    it('incluye pacientes Activo, Inactivo y Dado de baja (200)', async () => {
+      await post(validPatient({ name: 'Activo' })).expect(201);
+      patients.push({
+        ...patients[0], id: 'patient-2', code: 'PAC-000002', name: 'Inactivo', status: 'INACTIVE',
+      });
+      patients.push({
+        ...patients[0], id: 'patient-3', code: 'PAC-000003', name: 'Dado de baja', status: 'DEACTIVATED',
+      });
+
+      const res = await get().expect(200);
+      expect(res.body.data.total).toBe(3);
+      expect(res.body.data.items.map((item: { status: string }) => item.status).sort()).toEqual([
+        'ACTIVE', 'DEACTIVATED', 'INACTIVE',
+      ]);
+    });
+
+    it('devuelve la segunda página conservando el total (200)', async () => {
+      for (let i = 0; i < 21; i += 1) {
+        await post(validPatient({ name: `Paciente ${String(i).padStart(2, '0')}` })).expect(201);
+      }
+
+      const res = await get('?page=2&pageSize=20').expect(200);
+      expect(res.body.data).toMatchObject({ page: 2, pageSize: 20, total: 21, totalPages: 2 });
+      expect(res.body.data.items).toHaveLength(1);
+    });
+
+    it('rechaza un término de un carácter (400)', async () => {
+      const res = await get('?search=a').expect(400);
+      expect(res.body.message).toBe('Ingrese al menos 2 caracteres para buscar por nombre o el código del paciente');
+    });
+
+    it('rechaza page=0 y pageSize=101 (400)', async () => {
+      await get('?page=0').expect(400);
+      await get('?pageSize=101').expect(400);
+    });
+
+    it('requiere autenticación (401)', async () => {
+      await request(app.getHttpServer()).get('/pets').expect(401);
+    });
+
+    it('requiere pets:read (403)', async () => {
+      permissions = new Set(['pets:create']);
+      await get().expect(403);
+    });
+
+    it('permite consultar al Técnico Veterinario (200)', async () => {
+      permissions = permissionsOf('veterinary_technician');
+      await get().expect(200);
     });
   });
 });

@@ -7,7 +7,7 @@ const keysOf = (roleName: string) =>
 
 describe('Catálogos de permisos y roles', () => {
   it('mantiene catálogos separados por módulo y los agrega en una colección plana', () => {
-    expect(PERMISSION_CATALOGS).toHaveLength(4);
+    expect(PERMISSION_CATALOGS).toHaveLength(5);
     expect(PERMISSION_CATALOGS.every((catalog) => catalog.length > 0)).toBe(true);
     expect(PERMISSIONS.length).toBe(PERMISSION_CATALOGS.reduce((total, catalog) => total + catalog.length, 0));
     expect(PERMISSIONS.some((permission) => permission.key === 'inventory:manage-products')).toBe(true);
@@ -35,6 +35,25 @@ describe('Catálogos de permisos y roles', () => {
     }
   });
 
+  // Matriz de roles y permisos del Módulo 1, sección 2.4: especies (HU-13 a HU-16) y razas (HU-17 a HU-20).
+  const manage = ['create', 'read', 'update', 'change-status'];
+  describe.each(['species', 'breeds'])('permisos de %s', (catalog) => {
+    it.each([
+      ['administrator', []],
+      ['manager', ['read']],
+      ['veterinarian', manage],
+      ['veterinary_technician', ['read']],
+      ['receptionist', ['read']],
+      ['cashier', []],
+      ['warehouse_keeper', []],
+      ['client', []],
+    ])('%s sigue la matriz', (role, actions) => {
+      const granted = [...keysOf(role)].filter((key) => key.startsWith(`${catalog}:`));
+
+      expect(granted.sort()).toEqual(actions.map((action) => `${catalog}:${action}`).sort());
+    });
+  });
+
   it('el Administrador gestiona usuarios y auditoría pero no clientes ni pacientes', () => {
     const admin = keysOf('administrator');
 
@@ -44,11 +63,30 @@ describe('Catálogos de permisos y roles', () => {
     expect([...admin].some((key) => key.startsWith('clients:') || key.startsWith('pets:'))).toBe(false);
   });
 
+  it('el Administrador no tiene acceso a especies ni razas (matriz 2.4, HU-20)', () => {
+    const admin = keysOf('administrator');
+    expect([...admin].filter((key) => key.startsWith('breeds:') || key.startsWith('species:'))).toEqual([]);
+  });
+
+  it('solo Gerente, Veterinario, Técnico Veterinario y Recepcionista consultan razas (HU-20)', () => {
+    const withBreedRead = ['administrator', 'manager', 'veterinarian', 'veterinary_technician', 'receptionist', 'cashier', 'warehouse_keeper']
+      .filter((name) => keysOf(name).has('breeds:read'));
+    expect(withBreedRead).toEqual(['manager', 'veterinarian', 'veterinary_technician', 'receptionist']);
+  });
+
   it('el superadmin tiene todos los permisos y no es visible para administración normal', () => {
     const superadmin = ROLES.find((role) => role.name === 'superadmin');
 
     expect(superadmin?.visible).toBe(false);
     expect(keysOf('superadmin')).toEqual(new Set(PERMISSIONS.map((permission) => permission.key)));
+  });
+
+  it('solo asigna la configuración de IVA al Administrador y al Superadministrador de pruebas', () => {
+    expect(PERMISSIONS.some((permission) => permission.key === 'inventory:configure-vat')).toBe(true);
+    expect(keysOf('administrator').has('inventory:configure-vat')).toBe(true);
+    expect(keysOf('superadmin').has('inventory:configure-vat')).toBe(true);
+    expect(keysOf('manager').has('inventory:configure-vat')).toBe(false);
+    expect(keysOf('warehouse_keeper').has('inventory:configure-vat')).toBe(false);
   });
 
   it('el Recepcionista no puede dar de baja clientes ni pacientes', () => {
