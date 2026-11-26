@@ -3,7 +3,9 @@ import { AppShell } from '../common/layouts/app-shell';
 import { RequireAuth } from '../modules/auth/components/require-auth';
 import { RequirePermission } from '../modules/auth/components/require-permission';
 import { ChangePasswordPage } from '../modules/auth/pages/change-password-page';
+import { ForgotPasswordPage } from '../modules/auth/pages/forgot-password-page';
 import { LoginPage } from '../modules/auth/pages/login-page';
+import { ResetPasswordPage } from '../modules/auth/pages/reset-password-page';
 import { CATALOG_PERMISSIONS } from '../modules/catalogs/catalog-tabs';
 import { CatalogsPage } from '../modules/catalogs/pages/catalogs-page';
 import { ClientRegisterPage } from '../modules/clients/pages/client-register-page';
@@ -32,6 +34,8 @@ const router = createBrowserRouter(
   createRoutesFromElements(
     <>
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+      <Route path="/reset-password" element={<ResetPasswordPage />} />
       <Route path="/" element={<RequireAuth />}>
         <Route element={<AppShell />}>
           <Route index element={<DashboardPage />} />

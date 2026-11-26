@@ -66,4 +66,20 @@ describe('UserDetailService', () => {
     expect((error as ApiException).statusCode).toBe(404);
     expect((error as ApiException).message).toBe('Usuario no encontrado');
   });
+
+  it('incluye fecha y motivo cuando el usuario fue dado de baja', async () => {
+    const deactivatedAt = new Date('2026-11-26T10:00:00.000Z');
+    prisma.user.findUnique.mockResolvedValue({
+      ...storedUser,
+      status: 'DEACTIVATED',
+      deactivatedAt,
+      deactivationReason: 'Renuncia',
+    });
+
+    await expect(service.get('u1')).resolves.toMatchObject({
+      status: 'DEACTIVATED',
+      deactivatedAt,
+      deactivationReason: 'Renuncia',
+    });
+  });
 });

@@ -67,6 +67,11 @@ export class ClientsService {
       status: client.status,
       roles: [...roles.values()].sort((a, b) => a.displayName.localeCompare(b.displayName, 'es')),
       createdAt: client.createdAt.toISOString(),
+      deactivatedAt: client.deactivatedAt?.toISOString() ?? null,
+      deactivationReason: client.deactivationReason,
+      deactivatedBy: client.deactivatedBy
+        ? `${client.deactivatedBy.person.firstName} ${client.deactivatedBy.person.lastName}`.trim()
+        : null,
     };
   }
 }

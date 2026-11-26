@@ -5,7 +5,11 @@ import { useAuth } from '../../auth/auth-context';
 import { BreedForm } from '../components/breed-form';
 import { breedApi } from '../services/breed.service';
 import { speciesApi } from '../services/species.service';
-import type { Breed, RegisterBreedDraft, SpeciesOption } from '../types';
+import type { Breed, RegisterBreedDraft, Species, SpeciesOption } from '../types';
+
+const SEARCH_DELAY_MS = 300;
+const SEARCH_MAX = 100;
+export const NO_BREEDS_FOUND = 'No se encontraron razas con el criterio ingresado';
 
 function EditIcon() {
   return (
@@ -66,15 +70,44 @@ export function BreedsPage() {
   const { showToast, confirm } = useToast();
   const { hasPermission } = useAuth();
 
+  // HU-20: búsqueda por nombre, filtro por especie y detalle en solo lectura.
+  const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [speciesFilter, setSpeciesFilter] = useState('');
+  const [filterSpecies, setFilterSpecies] = useState<Species[]>([]);
+  const [selectedBreed, setSelectedBreed] = useState<Breed | null>(null);
+
   const canCreate = hasPermission('breeds:create');
   const canUpdate = hasPermission('breeds:update');
   const canChangeStatus = hasPermission('breeds:change-status');
   const showActions = canUpdate || canChangeStatus;
   const modalOpen = isCreateOpen || editingBreed !== null;
+  const hasFilters = debouncedSearch.trim() !== '' || speciesFilter !== '';
+
+  // Espera 300 ms sin escribir antes de consultar.
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(search), SEARCH_DELAY_MS);
+    return () => clearTimeout(timer);
+  }, [search]);
+
+  // Todas las especies (también inactivas) para poder consultar sus razas.
+  useEffect(() => {
+    let cancelled = false;
+    speciesApi.listSpecies()
+      .then((items) => {
+        if (!cancelled) setFilterSpecies([...items].sort((a, b) => a.name.localeCompare(b.name, 'es')));
+      })
+      .catch(() => {
+        if (!cancelled) setFilterSpecies([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
-    breedApi.listBreeds()
+    breedApi.listBreeds({ search: debouncedSearch, speciesId: speciesFilter || undefined })
       .then((items) => {
         if (!cancelled) {
           setBreeds(items);
@@ -93,7 +126,7 @@ export function BreedsPage() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [debouncedSearch, speciesFilter]);
 
   const loadSpecies = useCallback(async () => {
     setSpeciesLoading(true);
@@ -126,18 +159,19 @@ export function BreedsPage() {
   };
 
   useEffect(() => {
-    if (!modalOpen) return;
+    if (!modalOpen && !selectedBreed) return;
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape' && !submitting) {
         setCreateOpen(false);
         setEditingBreed(null);
+        setSelectedBreed(null);
       }
     };
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [modalOpen, submitting]);
+  }, [modalOpen, selectedBreed, submitting]);
 
   // Incluye la especie actual de la raza si estuviera inactiva, para no perder la selección al editar.
   const modalSpeciesOptions = useMemo(() => {
@@ -224,10 +258,45 @@ export function BreedsPage() {
         </div>
       )}
 
+      <div className="catalog-toolbar breeds-filters">
+        <label className="search-field">
+          <PawIcon size={15} />
+          <input
+            type="search"
+            aria-label="Buscar raza por nombre"
+            placeholder="Buscar raza por nombre"
+            maxLength={SEARCH_MAX}
+            value={search}
+            onChange={(event) => setSearch(event.target.value.slice(0, SEARCH_MAX))}
+          />
+        </label>
+        <select
+          className="breeds-filters__species"
+          aria-label="Filtrar por especie"
+          value={speciesFilter}
+          onChange={(event) => setSpeciesFilter(event.target.value)}
+        >
+          <option value="">Todas las especies</option>
+          {filterSpecies.map((option) => (
+            <option key={option.id} value={option.id}>
+              {option.isActive ? option.name : `${option.name} (inactiva)`}
+            </option>
+          ))}
+        </select>
+      </div>
+
       {listLoading ? (
         <div className="empty-state">Cargando razas…</div>
       ) : listError ? (
         <div className="inline-notice inline-notice--error" role="alert">{listError}</div>
+      ) : breeds.length === 0 && hasFilters ? (
+        <div className="catalog-empty" role="status">
+          <span className="catalog-empty__icon">
+            <PawIcon size={22} />
+          </span>
+          <strong>{NO_BREEDS_FOUND}</strong>
+          <p>Prueba con otro nombre o selecciona otra especie.</p>
+        </div>
       ) : breeds.length === 0 ? (
         <div className="catalog-empty" role="status">
           <span className="catalog-empty__icon">
@@ -272,7 +341,14 @@ export function BreedsPage() {
                         <span className="species-row-icon" aria-hidden="true">
                           <PawIcon size={15} />
                         </span>
-                        <strong>{item.name}</strong>
+                        <button
+                          type="button"
+                          className="breeds-name-link"
+                          aria-label={`Ver detalle de ${item.name}`}
+                          onClick={() => setSelectedBreed(item)}
+                        >
+                          <strong>{item.name}</strong>
+                        </button>
                       </div>
                     </td>
                     <td className="breeds-table__species">
@@ -390,6 +466,53 @@ export function BreedsPage() {
                   isLoading={submitting}
                 />
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {selectedBreed && (
+        <div
+          className="modal-overlay"
+          role="presentation"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) setSelectedBreed(null);
+          }}
+        >
+          <div className="modal-card" role="dialog" aria-modal="true" aria-labelledby="breed-detail-title">
+            <div className="modal-card__heading">
+              <div>
+                <span className="eyebrow">Detalle de raza</span>
+                <h3 id="breed-detail-title">{selectedBreed.name}</h3>
+                <p>Información registrada de la raza (solo lectura).</p>
+              </div>
+              <button type="button" className="modal-card__close" aria-label="Cerrar" onClick={() => setSelectedBreed(null)}>
+                ×
+              </button>
+            </div>
+            <div className="modal-card__body">
+              <dl className="breed-detail">
+                <div>
+                  <dt>Nombre</dt>
+                  <dd>{selectedBreed.name}</dd>
+                </div>
+                <div>
+                  <dt>Especie</dt>
+                  <dd>{selectedBreed.species?.name ?? '—'}</dd>
+                </div>
+                <div>
+                  <dt>Descripción</dt>
+                  <dd>{selectedBreed.description || 'Sin descripción'}</dd>
+                </div>
+                <div>
+                  <dt>Estado</dt>
+                  <dd>
+                    <span className={`status-badge status-badge--${selectedBreed.isActive ? 'active' : 'inactive'}`}>
+                      {selectedBreed.isActive ? 'Activa' : 'Inactiva'}
+                    </span>
+                  </dd>
+                </div>
+              </dl>
             </div>
           </div>
         </div>

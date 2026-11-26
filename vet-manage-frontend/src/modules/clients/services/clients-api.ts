@@ -5,6 +5,7 @@ import type {
   ClientPage,
   ClientPet,
   ClientQuery,
+  DeactivatedClient,
   InactivatedClient,
   RegisteredClient,
   RegisterClientInput,
@@ -39,5 +40,9 @@ export const clientsApi = {
   },
   activate(clientId: string) {
     return patchJson<ActivatedClient, Record<string, never>>(`/clients/${clientId}/activate`, {});
+  },
+  // Baja definitiva con motivo obligatorio (HU-03).
+  deactivate(clientId: string, reason: string) {
+    return patchJson<DeactivatedClient, { reason: string }>(`/clients/${clientId}/deactivate`, { reason });
   },
 };

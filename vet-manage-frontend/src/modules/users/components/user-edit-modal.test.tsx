@@ -121,12 +121,20 @@ describe('UserEditModal', () => {
   });
 
   it('muestra la ficha de solo lectura sin opción de editar (escenario 8)', () => {
-    setup(undefined, { readOnly: true, user: user({ status: 'DEACTIVATED' }) });
+    setup(undefined, {
+      readOnly: true,
+      user: user({
+        status: 'DEACTIVATED',
+        deactivatedAt: '2026-11-26T10:00:00.000Z',
+        deactivationReason: 'Renuncia',
+      }),
+    });
 
     expect(screen.getByRole('dialog', { name: 'Datos del usuario' })).toBeInTheDocument();
-    for (const label of [/cédula/i, /teléfono/i, /nombres/i, /apellidos/i, /correo electrónico/i]) {
+    for (const label of [/cédula/i, /teléfono/i, /nombres/i, /apellidos/i, /correo electrónico/i, /fecha de baja/i, /motivo de la baja/i]) {
       expect(screen.getByLabelText(label)).toBeDisabled();
     }
+    expect(screen.getByLabelText(/motivo de la baja/i)).toHaveValue('Renuncia');
     expect(screen.queryByRole('button', { name: 'Guardar' })).not.toBeInTheDocument();
     expect(screen.getByText(/dado de baja/i)).toBeInTheDocument();
   });

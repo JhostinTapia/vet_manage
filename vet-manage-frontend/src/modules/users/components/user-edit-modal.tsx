@@ -17,6 +17,12 @@ type UserEditModalProps = {
   onClose: () => void;
 };
 
+function formatDeactivatedDate(value: string | null | undefined): string {
+  if (!value) return '';
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? value : date.toLocaleString('es-EC');
+}
+
 // Edición de los datos de contacto del usuario (HU-53). La cédula se muestra, pero no se puede cambiar.
 export function UserEditModal({ user, readOnly = false, onSubmit, onClose }: UserEditModalProps) {
   const [form, setForm] = useState<EditForm>(() => toEditForm(user));
@@ -119,6 +125,20 @@ export function UserEditModal({ user, readOnly = false, onSubmit, onClose }: Use
                 <input type="email" value={form.email} maxLength={USER_FIELD_LIMITS.email} autoComplete="off" disabled={locked}
                   aria-invalid={Boolean(errors.email)} onChange={(event) => update('email', event.target.value)} />
               </Field>
+              {readOnly && (user.deactivatedAt || user.deactivationReason) && (
+                <>
+                  {user.deactivatedAt && (
+                    <Field label="Fecha de baja" icon={<InfoIcon size={16} />}>
+                      <input value={formatDeactivatedDate(user.deactivatedAt)} disabled readOnly />
+                    </Field>
+                  )}
+                  {user.deactivationReason && (
+                    <Field className="register-card__full" label="Motivo de la baja" icon={<InfoIcon size={16} />}>
+                      <input value={user.deactivationReason} disabled readOnly />
+                    </Field>
+                  )}
+                </>
+              )}
             </div>
 
             {!readOnly && (

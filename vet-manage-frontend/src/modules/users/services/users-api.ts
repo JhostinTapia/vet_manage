@@ -3,6 +3,7 @@ import type {
   AssignableRole,
   ChangeableUserStatus,
   ChangedUserStatus,
+  DeactivatedUserResult,
   RegisteredUser,
   RegisterUserInput,
   UpdatedUser,
@@ -51,5 +52,8 @@ export const usersApi = {
   },
   changeStatus(userId: string, status: ChangeableUserStatus) {
     return patchJson<ChangedUserStatus, { status: ChangeableUserStatus }>(`/users/${userId}/status`, { status });
+  },
+  deactivate(userId: string, reason: string) {
+    return patchJson<DeactivatedUserResult, { reason: string }>(`/users/${userId}/deactivate`, { reason });
   },
 };

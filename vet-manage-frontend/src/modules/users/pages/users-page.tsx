@@ -75,6 +75,15 @@ function ViewUserIcon() {
   );
 }
 
+function DeactivateUserIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <circle cx="12" cy="12" r="9" />
+      <line x1="8" y1="12" x2="16" y2="12" />
+    </svg>
+  );
+}
+
 function emptyPage(page: number, pageSize: number): UserPage {
   return { items: [], total: 0, page, pageSize };
 }
@@ -83,9 +92,10 @@ export function UsersPage() {
   const { hasPermission } = useAuth();
   const canAssignRoles = hasPermission('users:assign-roles');
   const canChangeStatus = hasPermission('users:change-status');
+  const canDeactivate = hasPermission('users:deactivate');
   const canUpdate = hasPermission('users:update');
   const canView = hasPermission('users:read');
-  const showActions = canAssignRoles || canChangeStatus || canUpdate || canView;
+  const showActions = canAssignRoles || canChangeStatus || canDeactivate || canUpdate || canView;
   const { showToast } = useToast();
   const [search, setSearch] = useState('');
   const [query, setQuery] = useState<UserQuery>({ page: 1, pageSize: 20 });
@@ -95,6 +105,10 @@ export function UsersPage() {
   const [error, setError] = useState<string | null>(null);
   const [pendingAction, setPendingAction] = useState<PendingStatusChange | null>(null);
   const [submittingStatus, setSubmittingStatus] = useState(false);
+  const [pendingDeactivation, setPendingDeactivation] = useState<UserListItem | null>(null);
+  const [deactivationReason, setDeactivationReason] = useState('');
+  const [deactivationError, setDeactivationError] = useState<string | null>(null);
+  const [submittingDeactivation, setSubmittingDeactivation] = useState(false);
   // Usuario abierto en el formulario de edición o en su ficha de solo lectura (HU-53).
   const [openedUser, setOpenedUser] = useState<{ user: UserDetail; readOnly: boolean } | null>(null);
   const [openingId, setOpeningId] = useState<string | null>(null);
@@ -171,6 +185,51 @@ export function UsersPage() {
       setPendingAction(null);
     } finally {
       setSubmittingStatus(false);
+    }
+  }
+
+  function openDeactivateModal(user: UserListItem) {
+    setPendingDeactivation(user);
+    setDeactivationReason('');
+    setDeactivationError(null);
+  }
+
+  function closeDeactivateModal() {
+    if (submittingDeactivation) return;
+    setPendingDeactivation(null);
+    setDeactivationReason('');
+    setDeactivationError(null);
+  }
+
+  async function confirmDeactivation(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!pendingDeactivation || submittingDeactivation) return;
+    const reason = deactivationReason.trim();
+    if (!reason) {
+      setDeactivationError('Ingrese el motivo de la baja');
+      return;
+    }
+
+    const target = pendingDeactivation;
+    setDeactivationError(null);
+    setSubmittingDeactivation(true);
+    try {
+      const updated = await usersApi.deactivate(target.id, reason);
+      setResult((current) => ({
+        ...current,
+        items: current.items.map((item) => (item.id === target.id
+          ? { ...item, status: updated.status, roles: updated.roles }
+          : item)),
+      }));
+      showToast('Usuario dado de baja correctamente', 'success');
+      setPendingDeactivation(null);
+      setDeactivationReason('');
+    } catch (cause: unknown) {
+      showToast(cause instanceof Error ? cause.message : 'No se pudo dar de baja al usuario.', 'error');
+      setPendingDeactivation(null);
+      setDeactivationReason('');
+    } finally {
+      setSubmittingDeactivation(false);
     }
   }
 
@@ -324,7 +383,7 @@ export function UsersPage() {
                               <ViewUserIcon />
                             </button>
                           )}
-                          {canAssignRoles && (
+                          {canAssignRoles && user.status !== 'DEACTIVATED' && (
                             <Link
                               className="users-icon-btn users-icon-btn--roles"
                               to={`/users/${user.id}/roles`}
@@ -357,6 +416,18 @@ export function UsersPage() {
                               onClick={() => setPendingAction({ user, targetStatus: 'ACTIVE' })}
                             >
                               <ActivateUserIcon />
+                            </button>
+                          )}
+                          {canDeactivate && user.status !== 'DEACTIVATED' && (
+                            <button
+                              className="users-icon-btn users-icon-btn--deactivate"
+                              type="button"
+                              aria-label="Dar de baja"
+                              title="Dar de baja"
+                              data-tooltip="Dar de baja"
+                              onClick={() => openDeactivateModal(user)}
+                            >
+                              <DeactivateUserIcon />
                             </button>
                           )}
                         </div>
@@ -485,6 +556,99 @@ export function UsersPage() {
                 {submittingStatus ? 'Guardando…' : 'Confirmar'}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {pendingDeactivation && (
+        <div
+          className="users-modal-backdrop"
+          onClick={closeDeactivateModal}
+        >
+          <div
+            className="users-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="user-deactivate-dialog-title"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="users-modal__header">
+              <div className="users-modal__icon users-modal__icon--deactivate">
+                <DeactivateUserIcon />
+              </div>
+              <div className="users-modal__title-wrap">
+                <span className="users-modal__eyebrow">Baja definitiva</span>
+                <h3 id="user-deactivate-dialog-title">Dar de baja usuario</h3>
+              </div>
+              <button
+                className="users-modal__close"
+                type="button"
+                aria-label="Cerrar"
+                disabled={submittingDeactivation}
+                onClick={closeDeactivateModal}
+              >
+                ×
+              </button>
+            </div>
+
+            <form onSubmit={(event) => void confirmDeactivation(event)} noValidate>
+              <div className="users-modal__body">
+                <div className="users-modal__user-card">
+                  <div className="users-modal__user-info">
+                    <strong>{pendingDeactivation.firstName} {pendingDeactivation.lastName}</strong>
+                    <span>{pendingDeactivation.email}</span>
+                  </div>
+                  <div className="users-modal__transition">
+                    <span className={`status-badge status-badge--${statusClasses[pendingDeactivation.status]}`}>
+                      {statusLabels[pendingDeactivation.status]}
+                    </span>
+                    <span className="users-modal__arrow" aria-hidden="true">→</span>
+                    <span className="status-badge status-badge--deactivated">De baja</span>
+                  </div>
+                </div>
+
+                <p className="users-modal__description">
+                  Esta acción retira el acceso de personal de forma definitiva y cierra cualquier sesión abierta, conservando los registros históricos del usuario.
+                </p>
+
+                <label className="field users-modal__field">
+                  <span>Motivo de la baja *</span>
+                  <textarea
+                    rows={3}
+                    maxLength={500}
+                    value={deactivationReason}
+                    disabled={submittingDeactivation}
+                    placeholder="Ej. Renuncia, fin de contrato"
+                    aria-invalid={Boolean(deactivationError)}
+                    onChange={(event) => {
+                      setDeactivationReason(event.target.value);
+                      if (deactivationError) setDeactivationError(null);
+                    }}
+                  />
+                  {deactivationError && (
+                    <span className="users-modal__error" role="alert">{deactivationError}</span>
+                  )}
+                </label>
+              </div>
+
+              <div className="users-modal__actions">
+                <button
+                  className="button button--ghost"
+                  type="button"
+                  disabled={submittingDeactivation}
+                  onClick={closeDeactivateModal}
+                >
+                  Cancelar
+                </button>
+                <button
+                  className="button users-modal__confirm users-modal__confirm--deactivate"
+                  type="submit"
+                  disabled={submittingDeactivation}
+                >
+                  {submittingDeactivation ? 'Procesando…' : 'Confirmar'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

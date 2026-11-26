@@ -15,6 +15,12 @@ export type LoginResult = SessionProfile & { accessToken: string };
 
 export type LoginCredentials = { email: string; password: string };
 
+export type PasswordResetConfirmInput = {
+  token: string;
+  newPassword: string;
+  confirmPassword: string;
+};
+
 export type ChangePasswordInput = {
   currentPassword: string;
   newPassword: string;

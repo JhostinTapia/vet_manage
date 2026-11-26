@@ -63,6 +63,17 @@ describe('Catálogos de permisos y roles', () => {
     expect([...admin].some((key) => key.startsWith('clients:') || key.startsWith('pets:'))).toBe(false);
   });
 
+  it('el Administrador no tiene acceso a especies ni razas (matriz 2.4, HU-20)', () => {
+    const admin = keysOf('administrator');
+    expect([...admin].filter((key) => key.startsWith('breeds:') || key.startsWith('species:'))).toEqual([]);
+  });
+
+  it('solo Gerente, Veterinario, Técnico Veterinario y Recepcionista consultan razas (HU-20)', () => {
+    const withBreedRead = ['administrator', 'manager', 'veterinarian', 'veterinary_technician', 'receptionist', 'cashier', 'warehouse_keeper']
+      .filter((name) => keysOf(name).has('breeds:read'));
+    expect(withBreedRead).toEqual(['manager', 'veterinarian', 'veterinary_technician', 'receptionist']);
+  });
+
   it('el superadmin tiene todos los permisos y no es visible para administración normal', () => {
     const superadmin = ROLES.find((role) => role.name === 'superadmin');
 

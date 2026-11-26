@@ -13,6 +13,8 @@ import { PermissionsGuard } from './guards/permissions.guard.js';
 import { AccessService } from './services/access.service.js';
 import { AuthService } from './services/auth.service.js';
 import { ChangePasswordService } from './services/change-password.service.js';
+import { RecoverPasswordService } from './services/recover-password.service.js';
+import { PasswordResetTokenRepository } from './repositories/password-reset-token.repository.js';
 import { IdentityBootstrap } from './services/identity-bootstrap.service.js';
 import { InitialAdminService } from './services/initial-admin.service.js';
 import { PasswordHasher } from './services/password-hasher.service.js';
@@ -24,6 +26,7 @@ import { UserQueryService } from './services/user-query.service.js';
 import { UserRegistrationService } from './services/user-registration.service.js';
 import { ClientRegistrationService } from './services/client-registration.service.js';
 import { ChangeUserStatusService } from './services/change-user-status.service.js';
+import { DeactivateUserService } from './services/deactivate-user.service.js';
 import { UserRoleAssignmentService } from './services/user-role-assignment.service.js';
 import { UserDetailService } from './services/user-detail.service.js';
 import { UpdateUserService } from './services/update-user.service.js';
@@ -49,6 +52,8 @@ import { RolePermissionsService } from './services/role-permissions.service.js';
     AccessService,
     AuthService,
     ChangePasswordService,
+    RecoverPasswordService,
+    PasswordResetTokenRepository,
     SessionService,
     UserRegistrationService,
     ClientRegistrationService,
@@ -56,6 +61,7 @@ import { RolePermissionsService } from './services/role-permissions.service.js';
     UserQueryService,
     UserRoleAssignmentService,
     ChangeUserStatusService,
+    DeactivateUserService,
     UserDetailService,
     UpdateUserService,
     RolePermissionsService,

@@ -4,8 +4,12 @@ export const AUDIT_ACTIONS = {
   assignRoles: 'Asignar roles',
   inactivate: 'Inactivar',
   activate: 'Activar',
+  deactivate: 'Dar de baja',
   changePassword: 'Cambiar contraseña',
+  requestPasswordReset: 'Solicitar recuperación',
+  resetPassword: 'Restablecer contraseña',
   update: 'Actualizar',
+  deactivate: 'Dar de baja',
   managePermissions: 'Actualizar permisos',
 } as const;
 

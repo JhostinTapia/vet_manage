@@ -29,6 +29,14 @@ export type ChangedUserStatus = {
   status: ChangeableUserStatus;
 };
 
+export type DeactivatedUserResult = {
+  id: string;
+  status: UserStatus;
+  deactivatedAt: string | null;
+  deactivationReason: string | null;
+  roles: RoleRef[];
+};
+
 export type UserListItem = {
   id: string;
   identification: string;
@@ -48,6 +56,8 @@ export type UserDetail = {
   email: string;
   phone: string | null;
   status: UserStatus;
+  deactivatedAt?: string | null;
+  deactivationReason?: string | null;
   roles: RoleRef[];
 };
 

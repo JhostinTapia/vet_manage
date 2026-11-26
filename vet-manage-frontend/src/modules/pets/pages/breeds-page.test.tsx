@@ -12,11 +12,12 @@ vi.mock('../services/breed.service', () => ({
     listBreeds: vi.fn(),
     registerBreed: vi.fn(),
     updateBreed: vi.fn(),
+    getBreed: vi.fn(),
     inactivateBreed: vi.fn(),
     activateBreed: vi.fn(),
   },
 }));
-vi.mock('../services/species.service', () => ({ speciesApi: { listActiveSpecies: vi.fn() } }));
+vi.mock('../services/species.service', () => ({ speciesApi: { listActiveSpecies: vi.fn(), listSpecies: vi.fn() } }));
 
 let permissions = new Set<string>();
 vi.mock('../../auth/auth-context', () => ({
@@ -57,6 +58,11 @@ describe('BreedsPage', () => {
       { id: 'sp-1', name: 'Canino' },
       { id: 'sp-2', name: 'Felino' },
     ]);
+    vi.mocked(speciesApi.listSpecies).mockResolvedValue([
+      { id: 'sp-1', name: 'Canino', isActive: true, createdAt: '', updatedAt: '' },
+      { id: 'sp-2', name: 'Felino', isActive: true, createdAt: '', updatedAt: '' },
+      { id: 'sp-3', name: 'Reptil', isActive: false, createdAt: '', updatedAt: '' },
+    ]);
   });
 
   it('registra una raza, muestra la confirmación y cierra el formulario', async () => {
@@ -73,10 +79,11 @@ describe('BreedsPage', () => {
     await screen.findByText('Labrador');
 
     await userEvent.click(screen.getByRole('button', { name: /nueva raza/i }));
-    await screen.findByRole('option', { name: 'Canino' });
-    await userEvent.type(screen.getByLabelText(/nombre de la raza/i), 'Poodle');
-    await userEvent.selectOptions(screen.getByLabelText(/especie/i), 'sp-1');
-    await userEvent.click(screen.getByRole('button', { name: /guardar raza/i }));
+    const dialog = screen.getByRole('dialog');
+    await within(dialog).findByRole('option', { name: 'Canino' });
+    await userEvent.type(within(dialog).getByLabelText(/nombre de la raza/i), 'Poodle');
+    await userEvent.selectOptions(within(dialog).getByLabelText(/especie/i), 'sp-1');
+    await userEvent.click(within(dialog).getByRole('button', { name: /guardar raza/i }));
 
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
     expect(breedApi.registerBreed).toHaveBeenCalledWith({ name: 'Poodle', speciesId: 'sp-1', description: undefined });
@@ -89,10 +96,11 @@ describe('BreedsPage', () => {
     await screen.findByText('Labrador');
 
     await userEvent.click(screen.getByRole('button', { name: /nueva raza/i }));
-    await screen.findByRole('option', { name: 'Canino' });
-    await userEvent.type(screen.getByLabelText(/nombre de la raza/i), 'Labrador');
-    await userEvent.selectOptions(screen.getByLabelText(/especie/i), 'sp-1');
-    await userEvent.click(screen.getByRole('button', { name: /guardar raza/i }));
+    const dialog = screen.getByRole('dialog');
+    await within(dialog).findByRole('option', { name: 'Canino' });
+    await userEvent.type(within(dialog).getByLabelText(/nombre de la raza/i), 'Labrador');
+    await userEvent.selectOptions(within(dialog).getByLabelText(/especie/i), 'sp-1');
+    await userEvent.click(within(dialog).getByRole('button', { name: /guardar raza/i }));
 
     await waitFor(() => expect(showToast).toHaveBeenCalledWith('La especie seleccionada está inactiva', 'error'));
     expect(screen.getByRole('dialog')).toBeInTheDocument();
@@ -263,5 +271,142 @@ describe('BreedsPage', () => {
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     expect(breedApi.updateBreed).not.toHaveBeenCalled();
     expect(screen.getByText('Labrador')).toBeInTheDocument();
+  });
+});
+
+describe('BreedsPage – consultar raza (HU-20)', () => {
+  const siames: Breed = {
+    id: 'br-3',
+    name: 'Siamés',
+    description: null,
+    isActive: false,
+    speciesId: 'sp-2',
+    species: { id: 'sp-2', name: 'Felino' },
+    createdAt: '2026-11-18T00:00:00.000Z',
+    updatedAt: '2026-11-18T00:00:00.000Z',
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    permissions = new Set(['breeds:read', 'species:read']);
+    vi.mocked(breedApi.listBreeds).mockResolvedValue([...sampleBreeds, siames]);
+    vi.mocked(speciesApi.listSpecies).mockResolvedValue([
+      { id: 'sp-1', name: 'Canino', isActive: true, createdAt: '', updatedAt: '' },
+      { id: 'sp-2', name: 'Felino', isActive: true, createdAt: '', updatedAt: '' },
+      { id: 'sp-3', name: 'Reptil', isActive: false, createdAt: '', updatedAt: '' },
+    ]);
+  });
+
+  // Positivos
+  it('busca por nombre después de dejar de escribir', async () => {
+    renderPage();
+    await screen.findByText('Labrador');
+    vi.mocked(breedApi.listBreeds).mockResolvedValue(sampleBreeds);
+
+    await userEvent.type(screen.getByLabelText('Buscar raza por nombre'), 'labra');
+
+    await waitFor(() => expect(breedApi.listBreeds).toHaveBeenLastCalledWith({ search: 'labra', speciesId: undefined }));
+    await waitFor(() => expect(screen.queryByText('Siamés')).not.toBeInTheDocument());
+  });
+
+  it('vuelve al listado completo al limpiar la búsqueda', async () => {
+    renderPage();
+    await screen.findByText('Labrador');
+    const input = screen.getByLabelText('Buscar raza por nombre');
+    await userEvent.type(input, 'x');
+    await waitFor(() => expect(breedApi.listBreeds).toHaveBeenLastCalledWith({ search: 'x', speciesId: undefined }));
+
+    await userEvent.clear(input);
+    await waitFor(() => expect(breedApi.listBreeds).toHaveBeenLastCalledWith({ search: '', speciesId: undefined }));
+  });
+
+  it('filtra por especie y ofrece también especies inactivas', async () => {
+    renderPage();
+    await screen.findByText('Labrador');
+    const filter = screen.getByLabelText('Filtrar por especie');
+    expect(await within(filter).findByRole('option', { name: 'Reptil (inactiva)' })).toBeInTheDocument();
+
+    await userEvent.selectOptions(filter, 'sp-2');
+    await waitFor(() => expect(breedApi.listBreeds).toHaveBeenLastCalledWith({ search: '', speciesId: 'sp-2' }));
+  });
+
+  it('combina búsqueda y especie', async () => {
+    renderPage();
+    await screen.findByText('Labrador');
+    await userEvent.selectOptions(screen.getByLabelText('Filtrar por especie'), 'sp-1');
+    await userEvent.type(screen.getByLabelText('Buscar raza por nombre'), 'mestizo');
+
+    await waitFor(() => expect(breedApi.listBreeds).toHaveBeenLastCalledWith({ search: 'mestizo', speciesId: 'sp-1' }));
+  });
+
+  it('muestra el detalle de una raza en solo lectura', async () => {
+    renderPage();
+    await userEvent.click(await screen.findByRole('button', { name: 'Ver detalle de Labrador' }));
+
+    const dialog = screen.getByRole('dialog');
+    expect(within(dialog).getByRole('heading', { name: 'Labrador' })).toBeInTheDocument();
+    expect(within(dialog).getByText('Canino')).toBeInTheDocument();
+    expect(within(dialog).getByText('Perro amigable')).toBeInTheDocument();
+    expect(within(dialog).getByText('Activa')).toBeInTheDocument();
+    expect(within(dialog).queryByRole('textbox')).not.toBeInTheDocument();
+    expect(within(dialog).queryByRole('button', { name: /guardar/i })).not.toBeInTheDocument();
+  });
+
+  it('muestra «Sin descripción» y el estado Inactiva en el detalle', async () => {
+    renderPage();
+    await userEvent.click(await screen.findByRole('button', { name: 'Ver detalle de Siamés' }));
+
+    const dialog = screen.getByRole('dialog');
+    expect(within(dialog).getByText('Sin descripción')).toBeInTheDocument();
+    expect(within(dialog).getByText('Inactiva')).toBeInTheDocument();
+  });
+
+  // Negativos
+  it('muestra el mensaje cuando no hay razas que coincidan', async () => {
+    renderPage();
+    await screen.findByText('Labrador');
+    vi.mocked(breedApi.listBreeds).mockResolvedValue([]);
+
+    await userEvent.type(screen.getByLabelText('Buscar raza por nombre'), 'xyz');
+
+    expect(await screen.findByText('No se encontraron razas con el criterio ingresado')).toBeInTheDocument();
+  });
+
+  it('muestra el error de la API y conserva la búsqueda escrita', async () => {
+    renderPage();
+    await screen.findByText('Labrador');
+    vi.mocked(breedApi.listBreeds).mockRejectedValue(new Error('No se pudo conectar con el servidor'));
+
+    await userEvent.type(screen.getByLabelText('Buscar raza por nombre'), 'labra');
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('No se pudo conectar con el servidor');
+    expect(screen.getByLabelText('Buscar raza por nombre')).toHaveValue('labra');
+  });
+
+  it('cierra el detalle con Escape', async () => {
+    renderPage();
+    await userEvent.click(await screen.findByRole('button', { name: 'Ver detalle de Labrador' }));
+    await userEvent.keyboard('{Escape}');
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+
+  // Valor límite
+  it('limita la búsqueda a 100 caracteres', async () => {
+    renderPage();
+    await screen.findByText('Labrador');
+    const input = screen.getByLabelText('Buscar raza por nombre');
+
+    await userEvent.click(input);
+    await userEvent.paste('b'.repeat(101));
+
+    expect(input).toHaveValue('b'.repeat(100));
+  });
+
+  it('acepta una búsqueda de 1 carácter', async () => {
+    renderPage();
+    await screen.findByText('Labrador');
+    await userEvent.type(screen.getByLabelText('Buscar raza por nombre'), 'p');
+
+    await waitFor(() => expect(breedApi.listBreeds).toHaveBeenLastCalledWith({ search: 'p', speciesId: undefined }));
   });
 });

@@ -16,6 +16,8 @@ export type UserDetail = {
   email: string;
   phone: string | null;
   status: string;
+  deactivatedAt?: Date | null;
+  deactivationReason?: string | null;
   roles: { name: string; displayName: string }[];
 };
 
@@ -34,6 +36,8 @@ export async function findUserDetail(client: DetailClient, id: string): Promise<
     select: {
       id: true,
       status: true,
+      deactivatedAt: true,
+      deactivationReason: true,
       personId: true,
       person: { select: { identification: true, firstName: true, lastName: true, email: true, phone: true } },
       userRoles: {
@@ -49,6 +53,12 @@ export async function findUserDetail(client: DetailClient, id: string): Promise<
     personId: user.personId,
     ...user.person,
     status: user.status,
+    ...(user.status === 'DEACTIVATED'
+      ? {
+          deactivatedAt: user.deactivatedAt ?? null,
+          deactivationReason: user.deactivationReason ?? null,
+        }
+      : {}),
     roles: user.userRoles
       .map(({ role }) => role)
       .sort((a, b) => a.displayName.localeCompare(b.displayName, 'es')),
