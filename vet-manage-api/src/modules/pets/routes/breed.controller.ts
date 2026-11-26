@@ -8,6 +8,7 @@ import type { AuthenticatedRequest } from '../../identity/types/authenticated-re
 import { RegisterBreedDto } from '../dtos/breeds/register-breed.dto.js';
 import { UpdateBreedDto } from '../dtos/breeds/update-breed.dto.js';
 import { BreedRepository } from '../repositories/breed.repository.js';
+import { ChangeBreedStatusService } from '../services/breeds/change-breed-status.service.js';
 import { ListActiveBreedsService } from '../services/breeds/list-active-breeds.service.js';
 import { RegisterBreedService } from '../services/breeds/register-breed.service.js';
 import { UpdateBreedService } from '../services/breeds/update-breed.service.js';
@@ -18,6 +19,7 @@ export class BreedController {
     private readonly registerBreedService: RegisterBreedService,
     private readonly listActiveBreedsService: ListActiveBreedsService,
     private readonly updateBreedService: UpdateBreedService,
+    private readonly changeBreedStatusService: ChangeBreedStatusService,
     private readonly breedRepository: BreedRepository,
   ) {}
 
@@ -50,6 +52,24 @@ export class BreedController {
     if (!request.user) throw ApiException.unauthorized();
     const updated = await this.updateBreedService.execute(id, dto, request.user.id);
     return success(updated, 'Raza actualizada exitosamente');
+  }
+
+  @Patch('breeds/:id/inactivate')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @RequirePermissions('breeds:change-status')
+  async inactivateBreed(@Param('id', ParseUUIDPipe) id: string, @Req() request: AuthenticatedRequest) {
+    if (!request.user) throw ApiException.unauthorized();
+    const { message, breed } = await this.changeBreedStatusService.inactivate(id, request.user.id);
+    return success(breed, message);
+  }
+
+  @Patch('breeds/:id/activate')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @RequirePermissions('breeds:change-status')
+  async activateBreed(@Param('id', ParseUUIDPipe) id: string, @Req() request: AuthenticatedRequest) {
+    if (!request.user) throw ApiException.unauthorized();
+    const { message, breed } = await this.changeBreedStatusService.activate(id, request.user.id);
+    return success(breed, message);
   }
 
   // Razas activas de una especie para el selector de pacientes (HU-07).

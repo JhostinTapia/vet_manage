@@ -47,6 +47,11 @@ export class SpeciesRepository {
     });
   }
 
+  // Activa o inactiva la especie (HU-15).
+  async updateStatus(id: string, isActive: boolean, tx?: Prisma.TransactionClient): Promise<Species> {
+    return (tx ?? this.prisma).species.update({ where: { id }, data: { isActive } });
+  }
+
   async update(
     id: string,
     data: { name: string; description: string | null },

@@ -6,6 +6,7 @@ export const AUDIT_ACTIONS = {
   activate: 'Activar',
   changePassword: 'Cambiar contraseña',
   update: 'Actualizar',
+  managePermissions: 'Actualizar permisos',
 } as const;
 
 export const AUDIT_MODULES = {
@@ -14,6 +15,7 @@ export const AUDIT_MODULES = {
   patients: 'Pacientes',
   species: 'Especies',
   breeds: 'Razas',
+  roles: 'Permisos por rol',
 } as const;
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[keyof typeof AUDIT_ACTIONS];

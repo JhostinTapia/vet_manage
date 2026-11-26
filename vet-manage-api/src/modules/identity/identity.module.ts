@@ -6,6 +6,7 @@ import { AuditModule } from '../audit/audit.module.js';
 import { RedisModule } from '../../infrastructure/redis/redis.module.js';
 import { UsersController } from './users.controller.js';
 import { AuthController } from './auth.controller.js';
+import { RolePermissionsController } from './role-permissions.controller.js';
 import { ClientRegistrationController } from './routes/clients.controller.js';
 import { JwtAuthGuard } from './guards/jwt-auth.guard.js';
 import { PermissionsGuard } from './guards/permissions.guard.js';
@@ -26,6 +27,7 @@ import { ChangeUserStatusService } from './services/change-user-status.service.j
 import { UserRoleAssignmentService } from './services/user-role-assignment.service.js';
 import { UserDetailService } from './services/user-detail.service.js';
 import { UpdateUserService } from './services/update-user.service.js';
+import { RolePermissionsService } from './services/role-permissions.service.js';
 
 @Module({
   imports: [
@@ -37,7 +39,7 @@ import { UpdateUserService } from './services/update-user.service.js';
       useFactory: (config: ConfigService) => ({ secret: config.getOrThrow<string>('auth.jwtSecret') }),
     }),
   ],
-  controllers: [AuthController, UsersController, ClientRegistrationController],
+  controllers: [AuthController, UsersController, RolePermissionsController, ClientRegistrationController],
   providers: [
     RbacCatalogSynchronizer,
     InitialAdminService,
@@ -56,6 +58,7 @@ import { UpdateUserService } from './services/update-user.service.js';
     ChangeUserStatusService,
     UserDetailService,
     UpdateUserService,
+    RolePermissionsService,
     JwtAuthGuard,
     PermissionsGuard,
   ],

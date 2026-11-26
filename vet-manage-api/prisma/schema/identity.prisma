@@ -105,18 +105,19 @@ model UserSession {
 }
 
 model Role {
-  id             String       @id @default(uuid()) @db.Uuid
-  name           String       @unique @db.VarChar(50)
-  displayName    String       @map("display_name") @db.VarChar(150)
-  description    String?      @db.Text
-  isSystem       Boolean      @default(false) @map("is_system")
-  isActive       Boolean      @default(true) @map("is_active")
-  isVisible      Boolean      @default(true) @map("is_visible")
-  category       RoleCategory @default(STAFF) @map("role_category")
-  organizationId String?      @map("organization_id") @db.Uuid
-  createdById    String?      @map("created_by_id") @db.Uuid
-  createdAt      DateTime     @default(now()) @map("created_at")
-  updatedAt      DateTime     @updatedAt @map("updated_at")
+  id                    String       @id @default(uuid()) @db.Uuid
+  name                  String       @unique @db.VarChar(50)
+  displayName           String       @map("display_name") @db.VarChar(150)
+  description           String?      @db.Text
+  isSystem              Boolean      @default(false) @map("is_system")
+  isActive              Boolean      @default(true) @map("is_active")
+  isVisible             Boolean      @default(true) @map("is_visible")
+  permissionsCustomized Boolean      @default(false) @map("permissions_customized")
+  category              RoleCategory @default(STAFF) @map("role_category")
+  organizationId        String?      @map("organization_id") @db.Uuid
+  createdById           String?      @map("created_by_id") @db.Uuid
+  createdAt             DateTime     @default(now()) @map("created_at")
+  updatedAt             DateTime     @updatedAt @map("updated_at")
 
   createdBy       User?            @relation("RoleCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
   userRoles       UserRole[]

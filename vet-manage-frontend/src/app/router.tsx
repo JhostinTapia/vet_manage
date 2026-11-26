@@ -1,4 +1,4 @@
-import { Navigate, Route, Routes } from 'react-router-dom';
+import { createBrowserRouter, createRoutesFromElements, Navigate, Route, RouterProvider } from 'react-router-dom';
 import { AppShell } from '../common/layouts/app-shell';
 import { RequireAuth } from '../modules/auth/components/require-auth';
 import { RequirePermission } from '../modules/auth/components/require-permission';
@@ -16,6 +16,7 @@ import { CatalogPage } from '../modules/inventory/pages/catalog-page';
 import { ProductDetailPage } from '../modules/inventory/pages/product-detail-page';
 import { ProductFormPage } from '../modules/inventory/pages/product-form-page';
 import { ProductsPage } from '../modules/inventory/pages/products-page';
+import { RolePermissionsPage } from '../modules/roles/pages/role-permissions-page';
 import { schedulingRoutes } from '../modules/scheduling/routes';
 import { SupplierFormPage } from '../modules/suppliers/pages/supplier-form-page';
 import { SuppliersPage } from '../modules/suppliers/pages/suppliers-page';
@@ -27,11 +28,11 @@ function ComingSoonPage() {
   return <section className="empty-page"><span className="eyebrow">Módulo en preparación</span><h2>Esta sección será implementada por el equipo</h2><p>La arquitectura y el hot reload ya están listos para comenzar.</p></section>;
 }
 
-export function AppRouter() {
-  return (
-    <Routes>
-      <Route path="login" element={<LoginPage />} />
-      <Route element={<RequireAuth />}>
+const router = createBrowserRouter(
+  createRoutesFromElements(
+    <>
+      <Route path="/login" element={<LoginPage />} />
+      <Route path="/" element={<RequireAuth />}>
         <Route element={<AppShell />}>
           <Route index element={<DashboardPage />} />
           <Route path="change-password" element={<ChangePasswordPage />} />
@@ -55,9 +56,14 @@ export function AppRouter() {
           <Route path="users" element={<RequirePermission permission="users:read"><UsersPage /></RequirePermission>} />
           <Route path="users/new" element={<RequirePermission permission="users:create"><UserRegisterPage /></RequirePermission>} />
           <Route path="users/:id/roles" element={<RequirePermission permission="users:assign-roles"><UserRoleAssignmentPage /></RequirePermission>} />
+          <Route path="roles/permissions" element={<RequirePermission permission="roles:manage-permissions"><RolePermissionsPage /></RequirePermission>} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>
       </Route>
-    </Routes>
-  );
+    </>,
+  ),
+);
+
+export function AppRouter() {
+  return <RouterProvider router={router} />;
 }

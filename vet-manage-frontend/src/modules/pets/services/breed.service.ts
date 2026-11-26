@@ -1,5 +1,5 @@
 import { getJson, patchJson, postJson } from '../../../infrastructure/api/http-client';
-import type { Breed, RegisterBreedDraft, SpeciesOption } from '../types';
+import type { Breed, BreedStatusChange, RegisterBreedDraft, SpeciesOption } from '../types';
 
 export const breedApi = {
   listBreeds() {
@@ -10,6 +10,18 @@ export const breedApi = {
   },
   updateBreed(id: string, draft: RegisterBreedDraft) {
     return patchJson<Breed, RegisterBreedDraft>(`/pets/breeds/${encodeURIComponent(id)}`, draft);
+  },
+  inactivateBreed(id: string) {
+    return patchJson<BreedStatusChange, Record<string, never>>(
+      `/pets/breeds/${encodeURIComponent(id)}/inactivate`,
+      {},
+    );
+  },
+  activateBreed(id: string) {
+    return patchJson<BreedStatusChange, Record<string, never>>(
+      `/pets/breeds/${encodeURIComponent(id)}/activate`,
+      {},
+    );
   },
   // Razas activas de una especie, para el selector del registro de pacientes.
   listActiveBreeds(speciesId: string) {

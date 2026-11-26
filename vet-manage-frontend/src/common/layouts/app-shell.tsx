@@ -63,6 +63,7 @@ const inventoryNavigation: NavItem[] = [
 
 const administrationNavigation: NavItem[] = [
   { label: 'Usuarios', to: '/users', icon: IdCardIcon, permission: 'users:read' },
+  { label: 'Permisos por rol', to: '/roles/permissions', icon: ShieldIcon, permission: 'roles:manage-permissions' },
 ];
 
 const linkClass = (base: string) => ({ isActive }: { isActive: boolean }) =>

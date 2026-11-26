@@ -236,7 +236,8 @@ button { cursor: pointer; }
 .catalogs-page .status-badge::before { content: ''; width: 6px; height: 6px; border-radius: 999px; background: currentColor; }
 .catalogs-page .status-badge--active { color: #1f7a53; background: #e8f7f0; border-color: #bfead5; }
 .catalogs-page .status-badge--inactive { color: #c2414b; background: #fdecec; border-color: #f7c5ca; }
-.species-toolbar { display: flex; justify-content: flex-end; margin-bottom: 18px; }
+.species-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 18px; }
+.species-toolbar .search-field { min-width: 220px; }
 .species-card__title { display: flex; align-items: center; gap: 12px; }
 .species-card__icon { display: grid; place-items: center; width: 38px; height: 38px; border-radius: 11px; color: #416fe7; background: #edf2ff; flex-shrink: 0; }
 .species-count-badge { display: inline-flex; align-items: center; padding: 6px 12px; border-radius: 999px; color: #416fe7; background: #edf2ff; border: 1px solid #dbe7ff; font-size: 11px; font-weight: 750; white-space: nowrap; }
@@ -255,6 +256,12 @@ button { cursor: pointer; }
 .breeds-table__status { width: 10%; white-space: nowrap; }
 .breeds-table__actions { width: 10%; white-space: nowrap; text-align: right; }
 .species-name-cell { display: inline-flex; align-items: center; gap: 10px; }
+.species-detail-trigger { padding: 0; border: 0; color: #26323d; background: transparent; font-size: 12px; font-weight: 700; text-align: left; cursor: pointer; }
+.species-detail-trigger:hover, .species-detail-trigger:focus-visible { color: #1d4ed8; text-decoration: underline; }
+.species-detail-trigger:focus-visible { outline: 2px solid #bfdbfe; outline-offset: 3px; }
+.species-detail__grid { display: grid; gap: 18px; margin: 0; }
+.species-detail__grid dt { color: #8a96a3; font-size: 11px; font-weight: 700; }
+.species-detail__grid dd { margin: 5px 0 0; color: #26323d; font-size: 13px; }
 .species-row-icon { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 9px; color: #416fe7; background: #edf2ff; flex-shrink: 0; }
 .species-desc-cell { display: inline-flex; align-items: center; gap: 7px; color: #4b5a69; }
 .species-desc-cell svg { color: #8a96a3; flex-shrink: 0; }
