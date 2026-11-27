@@ -134,6 +134,7 @@ export const ROLES: readonly RoleDefinition[] = [
       'species:read', 'breeds:read',
       // Agenda: consulta recursos disponibles y tarifas.
       'branches:read', 'resources:read-availability', 'rates:read',
+      'appointments:read', 'appointments:cancel',
       'work-schedules:read', 'schedule-blocks:read',
     ],
   },

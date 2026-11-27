@@ -1,3 +1,4 @@
+import { AppointmentsPage } from './appointments/appointments-page';
 import type { ComponentType } from 'react';
 import { Route } from 'react-router-dom';
 import { RequirePermission } from '../auth/components/require-permission';
@@ -11,6 +12,7 @@ import { SaturdayShiftsPage } from './saturday-shifts/saturday-shifts-page';
 import { WorkSchedulesPage } from './work-schedules/work-schedules-page';
 
 const PAGES: Record<SchedulingPath, ComponentType> = {
+  appointments: AppointmentsPage,
   resources: ResourcesPage,
   'work-schedules': WorkSchedulesPage,
   'saturday-shifts': SaturdayShiftsPage,
