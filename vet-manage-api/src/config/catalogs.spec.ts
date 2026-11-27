@@ -149,7 +149,7 @@ describe('Catálogos de permisos y roles', () => {
     expect(veterinarian.has('rates:manage')).toBe(false);
   });
 
-  it('el Recepcionista consulta recursos disponibles pero no gestiona bloqueos ni tarifas', () => {
+  it('el Recepcionista consulta recursos sin gestionar bloqueos ni tarifas', () => {
     const receptionist = keysOf('receptionist');
 
     expect(receptionist.has('resources:read-availability')).toBe(true);
