@@ -46,6 +46,7 @@ function createHarness(options: {
   conflicts?: MockAppointment[];
   sharedAppointments?: MockAppointment[];
   serializeLocks?: boolean;
+  outsideWorkingHours?: boolean;
 } = {}) {
   const sharedAppointments = options.sharedAppointments ?? options.conflicts ?? [];
   const lockTails = new Map<string, Promise<void>>();
@@ -84,6 +85,16 @@ function createHarness(options: {
       },
       user: { findFirst: vi.fn().mockResolvedValue({ id: ids.vet }) },
       tarifa: { findFirst: vi.fn().mockResolvedValue({ importe: 20 }) },
+      // Jornada del veterinario: miércoles de 08:00 a 16:00, sin disponibilidad diaria registrada.
+      horarioBase: {
+        findMany: vi.fn().mockResolvedValue(options.outsideWorkingHours ? [] : [{
+          id: 'schedule-1',
+          horaInicio: new Date('1970-01-01T08:00:00.000Z'),
+          horaFin: new Date('1970-01-01T16:00:00.000Z'),
+        }]),
+      },
+      turnoSabado: { findUnique: vi.fn().mockResolvedValue(null) },
+      disponibilidadDiaria: { findMany: vi.fn().mockResolvedValue([]) },
       bloqueoHorario: {
         findFirst: vi.fn().mockResolvedValue(options.blocked ? { id: 'block' } : null),
       },
@@ -181,6 +192,23 @@ describe('AppointmentsRepository - HU-003', () => {
       .rejects.toMatchObject({ message: APPOINTMENT_MESSAGES.invalidDuration });
   });
 
+  it('rechaza duraciones y horas fuera de los períodos de 30 minutos', async () => {
+    const { repository } = createHarness({ serviceMaxDuration: 60 });
+
+    await expect(repository.register({ ...request, duracionMin: 45 }, ids.actor))
+      .rejects.toMatchObject({ message: APPOINTMENT_MESSAGES.invalidDuration });
+    await expect(repository.register({ ...request, horaInicio: '10:15' }, ids.actor))
+      .rejects.toMatchObject({ message: APPOINTMENT_MESSAGES.notOnSlot });
+  });
+
+  it('rechaza un horario fuera de la jornada del veterinario con un mensaje que lo indica', async () => {
+    const { repository } = createHarness({ outsideWorkingHours: true });
+
+    await expect(repository.register(request, ids.actor)).rejects.toMatchObject({
+      message: APPOINTMENT_MESSAGES.outsideWorkingHours,
+    });
+  });
+
   it('CP-003-05 rechaza un intervalo con bloqueo activo', async () => {
     const { repository } = createHarness({ blocked: true });
 
@@ -194,8 +222,8 @@ describe('AppointmentsRepository - HU-003', () => {
       conflicts: [{
         veterinarioId: ids.vet,
         salaId: 'other-room',
-        fechaHora: new Date('2030-01-02T15:00:00.000Z'),
-        fechaHoraFin: new Date('2030-01-02T15:30:00.000Z'),
+        fechaHora: new Date('2030-01-02T10:00:00.000Z'),
+        fechaHoraFin: new Date('2030-01-02T10:30:00.000Z'),
         estado: 'PROGRAMADA',
       }],
     });
@@ -210,8 +238,8 @@ describe('AppointmentsRepository - HU-003', () => {
       conflicts: [{
         veterinarioId: 'other-vet',
         salaId: ids.room,
-        fechaHora: new Date('2030-01-02T15:00:00.000Z'),
-        fechaHoraFin: new Date('2030-01-02T15:30:00.000Z'),
+        fechaHora: new Date('2030-01-02T10:00:00.000Z'),
+        fechaHoraFin: new Date('2030-01-02T10:30:00.000Z'),
         estado: 'PROGRAMADA',
       }],
     });
@@ -247,8 +275,8 @@ describe('AppointmentsRepository - HU-003', () => {
       numero: 100,
       estado: 'PROGRAMADA',
       importeReserva: 20,
-      fechaHora: new Date('2030-01-02T15:00:00.000Z'),
-      fechaHoraFin: new Date('2030-01-02T15:30:00.000Z'),
+      fechaHora: new Date('2030-01-02T10:00:00.000Z'),
+      fechaHoraFin: new Date('2030-01-02T10:30:00.000Z'),
     });
   });
 });

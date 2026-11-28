@@ -2,7 +2,9 @@ import { Injectable } from '@nestjs/common';
 import type { Prisma } from '../../../../generated/prisma/client.js';
 import { ApiException } from '../../../../common/errors/api-exception.js';
 import { PrismaService } from '../../../../infrastructure/database/prisma/prisma.service.js';
-import { minutesToDbTime, parseTime } from '../../common/time-slots.js';
+import { localNow, toStoredDateTime } from '../../common/local-time.js';
+import { isOnSlot, minutesToDbTime, parseTime, SLOT_MINUTES } from '../../common/time-slots.js';
+import { isWithinWorkingHours } from '../../common/working-hours.js';
 import { APPOINTMENT_MESSAGES } from '../appointment-messages.js';
 import type { RegisterAppointmentDto } from '../dtos/register-appointment.dto.js';
 
@@ -35,9 +37,12 @@ function parseAppointmentStart(dto: RegisterAppointmentDto): {
   if (!dateIsValid || startMinutes === null) {
     throw ApiException.badRequest('La fecha y hora no son válidas');
   }
+  if (!isOnSlot(startMinutes)) {
+    throw ApiException.badRequest(APPOINTMENT_MESSAGES.notOnSlot);
+  }
 
-  // El calendario de la agenda usa la hora local de Ecuador continental.
-  const start = new Date(`${dto.fecha}T${dto.horaInicio}:00-05:00`);
+  // La agenda guarda la hora local de Ecuador continental como UTC.
+  const start = toStoredDateTime(dto.fecha, dto.horaInicio);
   if (Number.isNaN(start.getTime())) {
     throw ApiException.badRequest('La fecha y hora no son válidas');
   }
@@ -50,7 +55,11 @@ export class AppointmentsRepository {
   constructor(private readonly prisma: PrismaService) {}
 
   async register(dto: RegisterAppointmentDto, registradaPorId: string) {
-    if (!Number.isInteger(dto.duracionMin) || dto.duracionMin < 30) {
+    if (
+      !Number.isInteger(dto.duracionMin) ||
+      dto.duracionMin < SLOT_MINUTES ||
+      dto.duracionMin % SLOT_MINUTES !== 0
+    ) {
       throw ApiException.badRequest(APPOINTMENT_MESSAGES.invalidDuration);
     }
 
@@ -66,7 +75,7 @@ export class AppointmentsRepository {
         await tx.$queryRaw`SELECT 1 WHERE pg_advisory_xact_lock(hashtextextended(${key}, 0)) IS NULL`;
       }
 
-      if (start.getTime() <= Date.now()) {
+      if (start.getTime() <= localNow().getTime()) {
         throw ApiException.badRequest(APPOINTMENT_MESSAGES.mustBeFuture);
       }
 
@@ -140,6 +149,19 @@ export class AppointmentsRepository {
       }
 
       const end = new Date(start.getTime() + dto.duracionMin * 60_000);
+
+      // El veterinario debe atender todo el intervalo dentro de su jornada en la sucursal.
+      const withinWorkingHours = await isWithinWorkingHours(tx, {
+        veterinarioId: dto.veterinarioId,
+        sucursalId: dto.sucursalId,
+        date,
+        startMinutes,
+        endMinutes,
+      });
+      if (!withinWorkingHours) {
+        throw ApiException.conflict(APPOINTMENT_MESSAGES.outsideWorkingHours);
+      }
+
       const block = await tx.bloqueoHorario.findFirst({
         where: {
           sucursalId: dto.sucursalId,

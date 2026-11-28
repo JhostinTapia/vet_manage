@@ -40,7 +40,7 @@ export function validateAppointmentForm(
   if (Object.keys(errors).length > 0) return errors;
 
   const duration = Number(values.duracionMin);
-  if (!Number.isInteger(duration) || duration < 30 || duration > maxDuration) {
+  if (!Number.isInteger(duration) || duration < 30 || duration % 30 !== 0 || duration > maxDuration) {
     errors.duracionMin = APPOINTMENT_MESSAGES.duration;
   }
 

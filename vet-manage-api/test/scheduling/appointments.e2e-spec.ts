@@ -10,14 +10,14 @@ import { PrismaService } from '../../src/infrastructure/database/prisma/prisma.s
 import { PrismaModule } from '../../src/infrastructure/database/prisma/prisma.module.js';
 import { IdentityModule } from '../../src/modules/identity/identity.module.js';
 import { TokenService } from '../../src/modules/identity/services/token.service.js';
-import { ResourcesModule } from '../../src/modules/scheduling/resources/resources.module.js';
+import { AppointmentsModule } from '../../src/modules/scheduling/appointments/appointments.module.js';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true, load: [configuration] }),
     PrismaModule,
     IdentityModule,
-    ResourcesModule,
+    AppointmentsModule,
   ],
 })
 class AppointmentsE2eModule {}
@@ -44,6 +44,7 @@ describe('HU-003 registrar cita presencial (e2e PostgreSQL)', () => {
   const roleIds: string[] = [];
   const appointmentIds: string[] = [];
   const blockIds: string[] = [];
+  const scheduleIds: string[] = [];
   const tariffIds: string[] = [];
   const permissionIds: string[] = [];
   let speciesId = '';
@@ -125,9 +126,16 @@ describe('HU-003 registrar cita presencial (e2e PostgreSQL)', () => {
     };
   }
 
-  function slotAt(hour: number, daysAhead = 5) {
-    const date = localDateTime(new Date(Date.now() + daysAhead * 24 * 60 * 60_000));
-    return { ...date, horaInicio: `${String(hour).padStart(2, '0')}:00` };
+  // Día hábil número `workdaysAhead` desde hoy (de lunes a viernes, dentro de la jornada de prueba).
+  function slotAt(hour: number, workdaysAhead = 5) {
+    const today = localDateTime(new Date()).fecha;
+    const day = new Date(`${today}T00:00:00.000Z`);
+    let counted = 0;
+    while (counted < workdaysAhead) {
+      day.setUTCDate(day.getUTCDate() + 1);
+      if (day.getUTCDay() !== 0 && day.getUTCDay() !== 6) counted += 1;
+    }
+    return { fecha: day.toISOString().slice(0, 10), horaInicio: `${String(hour).padStart(2, '0')}:00` };
   }
 
   function bodyFor(
@@ -153,7 +161,7 @@ describe('HU-003 registrar cita presencial (e2e PostgreSQL)', () => {
     veterinarianId: string,
     room = roomId,
   ) {
-    const start = new Date(`${horario.fecha}T${horario.horaInicio}:00-05:00`);
+    const start = new Date(`${horario.fecha}T${horario.horaInicio}:00.000Z`);
     const record = await prisma.cita.create({
       data: {
         estado: 'PROGRAMADA',
@@ -202,7 +210,7 @@ describe('HU-003 registrar cita presencial (e2e PostgreSQL)', () => {
     databaseReady = true;
     tokens = app.get(TokenService);
 
-    const receptionistRole = await createRole('test_receptionist', ['resources:read-availability']);
+    const receptionistRole = await createRole('test_receptionist', ['appointments:create']);
     const deniedRole = await createRole('test_without_availability', ['rates:read']);
     actorId = await createUser(receptionistRole.id, 'Recepcionista');
     const secondReceptionistId = await createUser(receptionistRole.id, 'SegundaRecepcionista');
@@ -279,6 +287,22 @@ describe('HU-003 registrar cita presencial (e2e PostgreSQL)', () => {
 
     vetId = await createUser(vetRoleId, 'Veterinario');
     otherVetId = await createUser(vetRoleId, 'OtroVeterinario');
+
+    // Jornada de lunes a viernes de 08:00 a 20:00 para los dos veterinarios en la sucursal de prueba.
+    for (const veterinarioId of [vetId, otherVetId]) {
+      for (const diaSemana of ['LUNES', 'MARTES', 'MIERCOLES', 'JUEVES', 'VIERNES'] as const) {
+        const schedule = await prisma.horarioBase.create({
+          data: {
+            veterinarioId,
+            sucursalId: branchId,
+            diaSemana,
+            horaInicio: new Date('1970-01-01T08:00:00.000Z'),
+            horaFin: new Date('1970-01-01T20:00:00.000Z'),
+          },
+        });
+        scheduleIds.push(schedule.id);
+      }
+    }
   });
 
   afterAll(async () => {
@@ -292,6 +316,7 @@ describe('HU-003 registrar cita presencial (e2e PostgreSQL)', () => {
     }
     await prisma.cita.deleteMany({ where: { id: { in: appointmentIds } } });
     await prisma.bloqueoHorario.deleteMany({ where: { id: { in: blockIds } } });
+    await prisma.horarioBase.deleteMany({ where: { id: { in: scheduleIds } } });
     await prisma.tarifa.deleteMany({ where: { id: { in: tariffIds } } });
     const patientIds = [patientId, otherPatientId].filter((id): id is string => Boolean(id));
     if (patientIds.length > 0) {
@@ -325,9 +350,9 @@ describe('HU-003 registrar cita presencial (e2e PostgreSQL)', () => {
       importeReserva: '20',
     });
     expect(new Date(response.body.data.fechaHora).getTime())
-      .toBe(new Date(`${horario.fecha}T10:00:00-05:00`).getTime());
+      .toBe(new Date(`${horario.fecha}T10:00:00.000Z`).getTime());
     expect(new Date(response.body.data.fechaHoraFin).getTime())
-      .toBe(new Date(`${horario.fecha}T11:00:00-05:00`).getTime());
+      .toBe(new Date(`${horario.fecha}T11:00:00.000Z`).getTime());
     expect(new Date(response.body.data.fechaHoraFin).getTime() -
       new Date(response.body.data.fechaHora).getTime()).toBe(60 * 60_000);
     expect(response.body.data.numero).toBeGreaterThan(0);
@@ -393,7 +418,8 @@ describe('HU-003 registrar cita presencial (e2e PostgreSQL)', () => {
   });
 
   it('CP-003-06 rechaza fecha y hora iguales o anteriores al momento actual', async () => {
-    const past = localDateTime(new Date(Date.now() - 60_000));
+    // Como en la HU: un día anterior a las 10:00.
+    const past = { fecha: localDateTime(new Date(Date.now() - 24 * 60 * 60_000)).fecha, horaInicio: '10:00' };
     const response = await register(bodyFor(past)).expect(400);
 
     expect(response.body.message).toBe('La fecha y hora deben ser posteriores al momento actual');
@@ -415,7 +441,7 @@ describe('HU-003 registrar cita presencial (e2e PostgreSQL)', () => {
     expect(await prisma.cita.count({
       where: {
         veterinarioId: vetId,
-        fechaHora: new Date(`${horario.fecha}T${horario.horaInicio}:00-05:00`),
+        fechaHora: new Date(`${horario.fecha}T${horario.horaInicio}:00.000Z`),
       },
     })).toBe(1);
   });
@@ -440,7 +466,7 @@ describe('HU-003 registrar cita presencial (e2e PostgreSQL)', () => {
     );
   });
 
-  it('responde 401 sin sesión y 403 sin resources:read-availability', async () => {
+  it('responde 401 sin sesión y 403 sin appointments:create', async () => {
     const body = bodyFor(slotAt(17));
     await request(app.getHttpServer()).post('/scheduling/appointments').send(body).expect(401);
     const denied = await register(body, deniedToken).expect(403);

@@ -20,7 +20,7 @@ export const SCHEDULING_SECTIONS: SchedulingSection[] = [
     label: 'Citas',
     path: 'appointments',
     permission: 'appointments:read',
-    description: 'Consulta y cancelación de citas registradas.',
+    description: 'Consulta, modificación y cancelación de citas registradas.',
   },
   {
     label: 'Recursos disponibles',

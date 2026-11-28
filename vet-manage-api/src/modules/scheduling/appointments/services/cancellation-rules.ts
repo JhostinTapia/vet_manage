@@ -9,6 +9,8 @@ export const CANCELLATION_MESSAGES = {
 
 const MINIMUM_ADVANCE_MS = 24 * 60 * 60 * 1000;
 
+const PAYABLE_STATUSES = ['PROGRAMADA', 'CONFIRMADA'] as const;
+
 export type CancellationInput = {
   estado: string;
   fechaHora: Date;
@@ -20,21 +22,25 @@ export function validateCancellation(
   input: CancellationInput,
   now = new Date(),
 ): string {
+  // Una cita pagada (Programada o Confirmada) solo se cancela con autorización del Administrador o Gerente.
+  if (
+    input.tienePagoAprobado &&
+    (PAYABLE_STATUSES as readonly string[]).includes(input.estado)
+  ) {
+    throw new ApiException(
+      CANCELLATION_MESSAGES.approvedPayment,
+      409,
+      [],
+      'APPOINTMENT_APPROVED_PAYMENT',
+    );
+  }
+
   if (input.estado !== 'PROGRAMADA') {
     throw new ApiException(
       CANCELLATION_MESSAGES.invalidStatus,
       409,
       [],
       'APPOINTMENT_INVALID_STATUS',
-    );
-  }
-
-  if (input.tienePagoAprobado) {
-    throw new ApiException(
-      CANCELLATION_MESSAGES.approvedPayment,
-      409,
-      [],
-      'APPOINTMENT_APPROVED_PAYMENT',
     );
   }
 

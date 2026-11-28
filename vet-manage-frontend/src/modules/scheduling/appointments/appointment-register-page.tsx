@@ -11,7 +11,9 @@ import {
   type AppointmentFieldErrors,
   type AppointmentFormValues,
 } from './appointment-form-validation';
+import { SLOT_OPTIONS } from './modify/modify-appointment-form';
 import type { RegisteredAppointment } from './types';
+import { WorkingHoursHint } from './working-hours-hint';
 import './appointment-register-page.css';
 
 const EMPTY: AppointmentFormValues = {
@@ -60,15 +62,27 @@ function formatCurrency(value: number | string): string {
   return new Intl.NumberFormat('es-EC', { style: 'currency', currency: 'USD' }).format(Number(value));
 }
 
+// Duraciones en períodos de 30 minutos hasta el máximo del servicio.
+function durationOptions(maxMinutes: number): number[] {
+  return Array.from({ length: Math.floor(maxMinutes / 30) }, (_, index) => (index + 1) * 30);
+}
+
 function formatAppointmentTime(value: string): string {
   return new Intl.DateTimeFormat('es-EC', {
-    timeZone: 'America/Guayaquil',
+    // La agenda guarda la hora local de Ecuador como UTC.
+    timeZone: 'UTC',
     dateStyle: 'medium',
     timeStyle: 'short',
   }).format(new Date(value));
 }
 
-export function AppointmentRegisterPage({ onBack }: { onBack: () => void }) {
+export function AppointmentRegisterPage({
+  onBack,
+  backLabel = 'Volver a citas',
+}: {
+  onBack: () => void;
+  backLabel?: string;
+}) {
   const [values, setValues] = useState<AppointmentFormValues>(EMPTY);
   const [errors, setErrors] = useState<AppointmentFieldErrors>({});
   const [branches, setBranches] = useState<Branch[]>([]);
@@ -199,7 +213,7 @@ export function AppointmentRegisterPage({ onBack }: { onBack: () => void }) {
 
   return (
     <section className="inventory-page inventory-form-page">
-      <button className="back-link" type="button" onClick={onBack}>← Volver a recursos disponibles</button>
+      <button className="back-link" type="button" onClick={onBack}>← {backLabel}</button>
       <header className="page-heading">
         <div>
           <span className="eyebrow">Agenda · Citas</span>
@@ -305,16 +319,25 @@ export function AppointmentRegisterPage({ onBack }: { onBack: () => void }) {
                 <input type="date" min={getToday()} value={values.fecha} onChange={(event) => update('fecha', event.target.value)} />
               </Field>
               <Field label="Hora de inicio" field="horaInicio" errors={errors}>
-                <input type="time" value={values.horaInicio} onChange={(event) => update('horaInicio', event.target.value)} />
+                <select value={values.horaInicio} onChange={(event) => update('horaInicio', event.target.value)}>
+                  <option value="">--:--</option>
+                  {SLOT_OPTIONS.map((slot) => <option key={slot} value={slot}>{slot}</option>)}
+                </select>
               </Field>
               <Field label="Duración (minutos)" field="duracionMin" errors={errors}>
-                <input type="number" min={30} max={selectedService?.duracionMaximaMin} step={1} value={values.duracionMin} onChange={(event) => update('duracionMin', event.target.value)} />
+                <select value={values.duracionMin} onChange={(event) => update('duracionMin', event.target.value)} disabled={!selectedService}>
+                  <option value="">{selectedService ? 'Seleccione la duración' : 'Seleccione primero el servicio'}</option>
+                  {durationOptions(selectedService?.duracionMaximaMin ?? 0).map((minutes) => (
+                    <option key={minutes} value={String(minutes)}>{`${minutes} minutos`}</option>
+                  ))}
+                </select>
               </Field>
               {selectedService && (
                 <p className="form-grid__full">
                   Duración mínima: 30 minutos · Máxima para este servicio: {selectedService.duracionMaximaMin} minutos.
                 </p>
               )}
+              <WorkingHoursHint sucursalId={values.sucursalId} veterinarioId={values.veterinarioId} fecha={values.fecha} />
             </div>
           </div>
 

@@ -55,6 +55,35 @@ describe('HU-005 - Reglas de cancelación de citas', () => {
     ).toThrow(M.approvedPayment);
   });
 
+  it('CP-005-05: una cita Confirmada con pago aprobado pide autorización', () => {
+    expect(() =>
+      validateCancellation(
+        appointment({ estado: 'CONFIRMADA', tienePagoAprobado: true }),
+        NOW,
+      ),
+    ).toThrow(M.approvedPayment);
+  });
+
+  it('CP-005-05: el mensaje de autorización aparece antes que el de plazo', () => {
+    const now = new Date('2026-11-02T09:00:00-05:00'); // una hora antes de la cita
+
+    expect(() =>
+      validateCancellation(
+        appointment({ estado: 'CONFIRMADA', tienePagoAprobado: true }),
+        now,
+      ),
+    ).toThrow(M.approvedPayment);
+  });
+
+  it('una cita Confirmada sin pago aprobado no admite la cancelación ordinaria', () => {
+    expect(() =>
+      validateCancellation(
+        appointment({ estado: 'CONFIRMADA' }),
+        NOW,
+      ),
+    ).toThrow(M.invalidStatus);
+  });
+
   it('CP-005-06: rechaza una cita en curso', () => {
     expect(() =>
       validateCancellation(

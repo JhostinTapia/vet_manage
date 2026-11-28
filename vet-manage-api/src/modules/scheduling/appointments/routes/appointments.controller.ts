@@ -61,7 +61,7 @@ export class AppointmentsController {
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  @RequirePermissions('resources:read-availability')
+  @RequirePermissions('appointments:create')
   async register(
     @Body() dto: RegisterAppointmentDto,
     @Req() request: AuthenticatedRequest,

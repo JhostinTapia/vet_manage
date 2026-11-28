@@ -1,9 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react';
-import { useAuth } from '../../auth/auth-context';
-import { RequirePermission } from '../../auth/components/require-permission';
 import { schedulingApi } from '../services/scheduling-api';
 import type { AvailableResources, Branch } from '../types';
-import { AppointmentRegisterPage } from '../appointments/appointment-register-page';
 
 function getToday(): string {
   const parts = new Intl.DateTimeFormat('en-CA', {
@@ -56,8 +53,6 @@ const panelStyle = {
 };
 
 export function ResourcesPage() {
-  const { hasPermission } = useAuth();
-  const [registeringAppointment, setRegisteringAppointment] = useState(false);
   const [branches, setBranches] = useState<Branch[]>([]);
   const [sucursalId, setSucursalId] = useState('');
   const [fecha, setFecha] = useState(getToday);
@@ -147,14 +142,6 @@ export function ResourcesPage() {
     }
   }
 
-  if (registeringAppointment) {
-    return (
-      <RequirePermission permission="resources:read-availability">
-        <AppointmentRegisterPage onBack={() => setRegisteringAppointment(false)} />
-      </RequirePermission>
-    );
-  }
-
   return (
     <div className="inventory-page hu006-resources">
       <header className="page-heading">
@@ -166,17 +153,6 @@ export function ResourcesPage() {
             fecha y horario de atención.
           </p>
         </div>
-        {hasPermission('resources:read-availability') && (
-          <RequirePermission permission="resources:read-availability">
-            <button
-              className="button button--primary"
-              type="button"
-              onClick={() => setRegisteringAppointment(true)}
-            >
-              Registrar cita presencial
-            </button>
-          </RequirePermission>
-        )}
       </header>
 
       <section className="catalog-card" style={{ padding: "28px" }}>
