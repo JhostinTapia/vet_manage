@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useToast } from '../../../common/components/toast-context';
 import { useAuth } from '../../auth/auth-context';
 import { appointmentsApi } from './appointments-api';
@@ -13,6 +14,8 @@ export function AppointmentsPage() {
   const { showToast } = useToast();
 
   const canCancel = hasPermission('appointments:cancel');
+  const canModify = hasPermission('appointments:update');
+  const canRegister = hasPermission('appointments:create');
 
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
@@ -95,10 +98,16 @@ export function AppointmentsPage() {
           <h2>Gestión de citas</h2>
 
           <p>
-            Consulta las citas registradas y gestiona
-            su cancelación.
+            Consulta las citas registradas, modifica su
+            horario o recursos y gestiona su cancelación.
           </p>
         </div>
+
+        {canRegister && (
+          <Link className="button button--primary" to="/appointments/appointments/new">
+            Registrar cita presencial
+          </Link>
+        )}
       </div>
 
       <div className="catalog-card">
@@ -165,6 +174,7 @@ export function AppointmentsPage() {
           <AppointmentsTable
             appointments={filtered}
             canCancel={canCancel}
+            canModify={canModify}
             onCancel={setSelected}
           />
         )}

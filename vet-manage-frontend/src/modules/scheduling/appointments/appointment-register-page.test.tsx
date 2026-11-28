@@ -15,6 +15,7 @@ vi.mock('../services/scheduling-api', () => ({
     listBranches: vi.fn(),
     listServices: vi.fn(),
     listVeterinarians: vi.fn(),
+    listWorkSchedules: vi.fn(),
     registerAppointment: vi.fn(),
   },
 }));
@@ -54,6 +55,7 @@ const validAppointment = {
 };
 
 function configureValidForm() {
+  vi.mocked(schedulingApi.listWorkSchedules).mockResolvedValue([]);
   vi.mocked(schedulingApi.listBranches).mockResolvedValue([validAppointment.branch]);
   vi.mocked(schedulingApi.listServices).mockResolvedValue([validAppointment.service]);
   vi.mocked(schedulingApi.listVeterinarians).mockResolvedValue([validAppointment.veterinarian]);
@@ -158,7 +160,7 @@ describe('AppointmentRegisterPage', () => {
     });
   });
 
-  it('usa el selector de hora nativo del navegador', async () => {
+  it('ofrece horas y duraciones en períodos de 30 minutos', async () => {
     configureValidForm();
     render(
       <MemoryRouter>
@@ -166,7 +168,15 @@ describe('AppointmentRegisterPage', () => {
       </MemoryRouter>,
     );
 
-    expect(await screen.findByLabelText('Hora de inicio *')).toHaveProperty('type', 'time');
+    const hour = await screen.findByLabelText('Hora de inicio *');
+    expect(hour.tagName).toBe('SELECT');
+    expect(screen.getByRole('option', { name: '10:30' })).toBeInTheDocument();
+    expect(screen.queryByRole('option', { name: '10:15' })).not.toBeInTheDocument();
+
+    await userEvent.selectOptions(await screen.findByLabelText('Servicio *'), validAppointment.service.id);
+    expect(screen.getByRole('option', { name: '30 minutos' })).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: '60 minutos' })).toBeInTheDocument();
+    expect(screen.queryByRole('option', { name: '90 minutos' })).not.toBeInTheDocument();
   });
 
   it.each([

@@ -158,6 +158,13 @@ describe('Catálogos de permisos y roles', () => {
     expect(receptionist.has('rates:manage')).toBe(false);
   });
 
+  it('solo la Recepcionista registra citas presenciales', () => {
+    expect(keysOf('receptionist').has('appointments:create')).toBe(true);
+    for (const name of ['administrator', 'manager', 'veterinarian', 'veterinary_technician', 'cashier']) {
+      expect(keysOf(name).has('appointments:create'), name).toBe(false);
+    }
+  });
+
   it('el Bodeguero también registra entradas de lote (HU-02)', () => {
     expect(keysOf('warehouse_keeper').has('inventory:register-entry')).toBe(true);
     expect(keysOf('manager').has('inventory:register-entry')).toBe(false);

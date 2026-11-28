@@ -49,4 +49,23 @@ describe('validación del formulario de citas', () => {
     });
   });
 
+
+  it('exige que la duración sea en períodos de 30 minutos', () => {
+    const values: AppointmentFormValues = {
+      ...emptyValues,
+      sucursalId: 'branch',
+      clienteId: 'client',
+      pacienteId: 'patient',
+      servicioId: 'service',
+      veterinarioId: 'vet',
+      salaId: 'room',
+      fecha: '2030-01-02',
+      horaInicio: '10:00',
+      duracionMin: '45',
+    };
+
+    expect(validateAppointmentForm(values, 60, new Date('2026-01-01T10:00:00-05:00'))).toEqual({
+      duracionMin: APPOINTMENT_MESSAGES.duration,
+    });
+  });
 });
