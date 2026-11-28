@@ -2,6 +2,7 @@ import { useEffect, useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { useToast } from '../../../common/components/toast-context';
 import { useAuth } from '../../auth/auth-context';
+import { ClientDeactivateModal } from '../components/client-deactivate-modal';
 import { ClientEditModal } from '../components/client-edit-modal';
 import { UPDATED } from '../form-rules';
 import { clientsApi } from '../services/clients-api';
@@ -69,6 +70,27 @@ const STATUS_ACTIONS: Record<StatusTarget, {
   },
 };
 
+function DeactivateClientIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M3 6h18" />
+      <path d="M8 6V4h8v2" />
+      <path d="M19 6l-1 14H6L5 6" />
+      <line x1="10" y1="11" x2="10" y2="17" />
+      <line x1="14" y1="11" x2="14" y2="17" />
+    </svg>
+  );
+}
+
+const DEACTIVATED_OK = 'Cliente dado de baja correctamente';
+
+function formatDate(iso: string | null | undefined): string {
+  if (!iso) return '—';
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return '—';
+  return new Intl.DateTimeFormat('es-EC', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }).format(date);
+}
+
 function EditClientIcon() {
   return (
     <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -88,8 +110,9 @@ export function ClientsPage() {
   const canInactivate = hasPermission('clients:inactivate');
   const canActivate = hasPermission('clients:activate');
   const canUpdate = hasPermission('clients:update');
+  const canDeactivate = hasPermission('clients:deactivate');
   const { showToast } = useToast();
-  const showActions = canInactivate || canActivate || canUpdate;
+  const showActions = canInactivate || canActivate || canUpdate || canDeactivate;
   const [search, setSearch] = useState('');
   const [query, setQuery] = useState<ClientQuery>({ page: 1, pageSize: 20 });
   const [result, setResult] = useState<ClientPage>(emptyPage(1, 20));
@@ -98,6 +121,7 @@ export function ClientsPage() {
   const [validationError, setValidationError] = useState<string | null>(null);
   const [pendingAction, setPendingAction] = useState<{ client: ClientListItem; targetStatus: StatusTarget } | null>(null);
   const [editingClient, setEditingClient] = useState<ClientListItem | null>(null);
+  const [deactivatingClient, setDeactivatingClient] = useState<ClientListItem | null>(null);
   const [submittingStatus, setSubmittingStatus] = useState(false);
   const [expandedClient, setExpandedClient] = useState<string | null>(null);
   const [petsByClient, setPetsByClient] = useState<Record<string, ClientPet[]>>({});
@@ -234,6 +258,26 @@ export function ClientsPage() {
     showToast(UPDATED, 'success');
   }
 
+  // Baja definitiva (HU-03). Si la API la rechaza, el error se muestra en el modal, que sigue abierto.
+  async function deactivateClient(reason: string) {
+    if (!deactivatingClient) return;
+    const target = deactivatingClient;
+    const deactivated = await clientsApi.deactivate(target.id, reason);
+    // Se recarga la página para traer el responsable de la baja; si falla, se actualiza la fila.
+    try {
+      setResult(await clientsApi.list(query));
+    } catch {
+      setResult((current) => ({
+        ...current,
+        items: current.items.map((item) => (item.id === target.id
+          ? { ...item, status: 'DEACTIVATED', deactivatedAt: deactivated.deactivatedAt, deactivationReason: deactivated.deactivationReason }
+          : item)),
+      }));
+    }
+    setDeactivatingClient(null);
+    showToast(DEACTIVATED_OK, 'success');
+  }
+
   const activating = pendingAction?.targetStatus === 'ACTIVE';
   const pendingTexts = pendingAction ? STATUS_ACTIONS[pendingAction.targetStatus] : null;
 
@@ -321,6 +365,7 @@ export function ClientsPage() {
                     canInactivate={canInactivate}
                     canActivate={canActivate}
                     canUpdate={canUpdate}
+                    canDeactivate={canDeactivate}
                     expanded={expandedClient === client.id}
                     pets={petsByClient[client.id]}
                     petsLoading={petsLoading && expandedClient === client.id}
@@ -329,6 +374,7 @@ export function ClientsPage() {
                     onInactivate={() => setPendingAction({ client, targetStatus: 'INACTIVE' })}
                     onActivate={() => setPendingAction({ client, targetStatus: 'ACTIVE' })}
                     onEdit={() => setEditingClient(client)}
+                    onDeactivate={() => setDeactivatingClient(client)}
                   />
                 ))}
               </tbody>
@@ -362,6 +408,14 @@ export function ClientsPage() {
 
       {editingClient && (
         <ClientEditModal client={editingClient} onSubmit={saveClient} onCancel={() => setEditingClient(null)} />
+      )}
+
+      {deactivatingClient && (
+        <ClientDeactivateModal
+          client={deactivatingClient}
+          onConfirm={deactivateClient}
+          onCancel={() => setDeactivatingClient(null)}
+        />
       )}
 
       {pendingAction && (
@@ -443,6 +497,7 @@ type FragmentRowProps = {
   canInactivate: boolean;
   canActivate: boolean;
   canUpdate: boolean;
+  canDeactivate: boolean;
   expanded: boolean;
   pets: ClientPet[] | undefined;
   petsLoading: boolean;
@@ -451,6 +506,7 @@ type FragmentRowProps = {
   onInactivate: () => void;
   onActivate: () => void;
   onEdit: () => void;
+  onDeactivate: () => void;
 };
 
 function StatusBadge({ status }: { status: ClientStatus }) {
@@ -462,6 +518,7 @@ function FragmentRow({
   canInactivate,
   canActivate,
   canUpdate,
+  canDeactivate,
   expanded,
   pets,
   petsLoading,
@@ -470,8 +527,9 @@ function FragmentRow({
   onInactivate,
   onActivate,
   onEdit,
+  onDeactivate,
 }: FragmentRowProps) {
-  const showActions = canInactivate || canActivate || canUpdate;
+  const showActions = canInactivate || canActivate || canUpdate || canDeactivate;
   return (
     <>
       <tr>
@@ -532,12 +590,31 @@ function FragmentRow({
                 <ActivateClientIcon />
               </button>
             )}
+            {canDeactivate && client.status !== 'DEACTIVATED' && (
+              <button
+                className="clients-icon-btn clients-icon-btn--deactivate"
+                type="button"
+                aria-label={`Dar de baja a ${client.firstName} ${client.lastName}`}
+                title="Dar de baja"
+                data-tooltip="Dar de baja"
+                onClick={onDeactivate}
+              >
+                <DeactivateClientIcon />
+              </button>
+            )}
           </td>
         )}
       </tr>
       {expanded && (
         <tr className="clients-pets-row">
           <td colSpan={showActions ? 6 : 5}>
+            {client.status === 'DEACTIVATED' && (
+              <dl className="clients-deactivation" aria-label="Datos de la baja">
+                <div><dt>Dado de baja</dt><dd>{formatDate(client.deactivatedAt)}</dd></div>
+                <div><dt>Responsable</dt><dd>{client.deactivatedBy ?? '—'}</dd></div>
+                <div><dt>Motivo</dt><dd>{client.deactivationReason ?? '—'}</dd></div>
+              </dl>
+            )}
             {petsLoading ? (
               <span>Cargando mascotas…</span>
             ) : petsError ? (

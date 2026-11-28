@@ -239,3 +239,14 @@
   .clients-filter-actions { flex-direction: column; }
   .clients-pagination { align-items: flex-start; flex-direction: column; }
 }
+
+/* HU-03: dar de baja un cliente */
+.clients-icon-btn--deactivate { color: #64748b; }
+.clients-icon-btn--deactivate:hover { color: #475569; background: #f1f5f9; }
+.clients-modal__icon.clients-modal__icon--deactivate { color: #475569; background: #f1f5f9; border-color: #cbd5e1; }
+.clients-deactivate-reason { margin-top: 14px; }
+.clients-deactivate-reason textarea[aria-invalid="true"] { border-color: #de7c82; }
+.clients-deactivation { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 0 0 12px; padding: 12px 14px; border: 1px solid #e2e8f0; border-radius: 10px; background: #f8fafc; }
+.clients-deactivation dt { color: #94a3b8; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; }
+.clients-deactivation dd { margin: 4px 0 0; color: #334155; font-size: 12px; overflow-wrap: anywhere; }
+@media (max-width: 640px) { .clients-deactivation { grid-template-columns: 1fr; } }

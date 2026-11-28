@@ -101,3 +101,20 @@ describe('clientsApi.update', () => {
     expect(result).toMatchObject({ id: 'c1', phone: '0992222222' });
   });
 });
+
+describe('clientsApi.deactivate (HU-03)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('envía PATCH al endpoint de baja con el motivo', async () => {
+    const { patchJson } = await import('../../../infrastructure/api/http-client');
+    const deactivated = { id: 'c1', status: 'DEACTIVATED', deactivatedAt: '2026-11-24T15:00:00.000Z', deactivationReason: 'Se mudó' };
+    vi.mocked(patchJson).mockResolvedValue(deactivated);
+
+    const result = await clientsApi.deactivate('c1', 'Se mudó');
+
+    expect(patchJson).toHaveBeenCalledWith('/clients/c1/deactivate', { reason: 'Se mudó' });
+    expect(result).toEqual(deactivated);
+  });
+});

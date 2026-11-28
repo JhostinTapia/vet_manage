@@ -63,6 +63,17 @@ describe('Catálogos de permisos y roles', () => {
     expect([...admin].some((key) => key.startsWith('clients:') || key.startsWith('pets:'))).toBe(false);
   });
 
+  it('el Administrador no tiene acceso a especies ni razas (matriz 2.4, HU-20)', () => {
+    const admin = keysOf('administrator');
+    expect([...admin].filter((key) => key.startsWith('breeds:') || key.startsWith('species:'))).toEqual([]);
+  });
+
+  it('solo Gerente, Veterinario, Técnico Veterinario y Recepcionista consultan razas (HU-20)', () => {
+    const withBreedRead = ['administrator', 'manager', 'veterinarian', 'veterinary_technician', 'receptionist', 'cashier', 'warehouse_keeper']
+      .filter((name) => keysOf(name).has('breeds:read'));
+    expect(withBreedRead).toEqual(['manager', 'veterinarian', 'veterinary_technician', 'receptionist']);
+  });
+
   it('el superadmin tiene todos los permisos y no es visible para administración normal', () => {
     const superadmin = ROLES.find((role) => role.name === 'superadmin');
 
@@ -138,13 +149,20 @@ describe('Catálogos de permisos y roles', () => {
     expect(veterinarian.has('rates:manage')).toBe(false);
   });
 
-  it('el Recepcionista consulta recursos disponibles pero no gestiona bloqueos ni tarifas', () => {
+  it('el Recepcionista consulta recursos sin gestionar bloqueos ni tarifas', () => {
     const receptionist = keysOf('receptionist');
 
     expect(receptionist.has('resources:read-availability')).toBe(true);
     expect(receptionist.has('rates:read')).toBe(true);
     expect(receptionist.has('schedule-blocks:create')).toBe(false);
     expect(receptionist.has('rates:manage')).toBe(false);
+  });
+
+  it('solo la Recepcionista registra citas presenciales', () => {
+    expect(keysOf('receptionist').has('appointments:create')).toBe(true);
+    for (const name of ['administrator', 'manager', 'veterinarian', 'veterinary_technician', 'cashier']) {
+      expect(keysOf(name).has('appointments:create'), name).toBe(false);
+    }
   });
 
   it('el Bodeguero también registra entradas de lote (HU-02)', () => {

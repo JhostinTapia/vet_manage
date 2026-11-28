@@ -17,4 +17,8 @@ export const SCHEDULING_PERMISSIONS = define([
   ['rates:read', 'Consultar tarifas'],
   ['rates:manage', 'Mantener el catálogo de tarifas'],
   ['resources:read-availability', 'Consultar recursos disponibles'],
+  ['appointments:read', 'Consultar citas'],
+  ['appointments:create', 'Registrar citas presenciales'],
+  ['appointments:cancel', 'Cancelar citas sin pagos aprobados'],
+  ['appointments:update', 'Modificar fecha, hora, veterinario o consultorio de una cita'],
 ]);

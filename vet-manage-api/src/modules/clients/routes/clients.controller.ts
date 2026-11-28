@@ -3,6 +3,7 @@ import { ApiException } from '../../../common/errors/api-exception.js';
 import { success } from '../../../common/errors/api-response.js';
 import { RequirePermissions } from '../../identity/decorators/require-permissions.decorator.js';
 import type { AuthenticatedRequest } from '../../identity/types/authenticated-request.js';
+import { DeactivateClientDto } from '../dtos/deactivate-client.dto.js';
 import { ListClientsQueryDto } from '../dtos/list-clients-query.dto.js';
 import { UpdateClientDto } from '../dtos/update-client.dto.js';
 import { ChangeClientStatusService } from '../services/change-client-status.service.js';
@@ -49,6 +50,19 @@ export class ClientsController {
   ) {
     if (!request.user) throw ApiException.unauthorized();
     const { message, client } = await this.statusChange.activate(clientId, request.user.id);
+    return success(client, message);
+  }
+
+  // Baja definitiva del cliente (HU-03): solo Gerente y Veterinario (clients:deactivate).
+  @Patch(':clientId/deactivate')
+  @RequirePermissions('clients:deactivate')
+  async deactivate(
+    @Param('clientId', ParseUUIDPipe) clientId: string,
+    @Body() dto: DeactivateClientDto,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    if (!request.user) throw ApiException.unauthorized();
+    const { message, client } = await this.statusChange.deactivate(clientId, dto.reason, request.user.id);
     return success(client, message);
   }
 

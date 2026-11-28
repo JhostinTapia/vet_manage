@@ -4,8 +4,12 @@ export const AUDIT_ACTIONS = {
   assignRoles: 'Asignar roles',
   inactivate: 'Inactivar',
   activate: 'Activar',
+  deactivate: 'Dar de baja',
   changePassword: 'Cambiar contraseña',
+  requestPasswordReset: 'Solicitar recuperación',
+  resetPassword: 'Restablecer contraseña',
   update: 'Actualizar',
+  managePermissions: 'Actualizar permisos',
 } as const;
 
 export const AUDIT_MODULES = {
@@ -14,6 +18,7 @@ export const AUDIT_MODULES = {
   patients: 'Pacientes',
   species: 'Especies',
   breeds: 'Razas',
+  roles: 'Permisos por rol',
 } as const;
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[keyof typeof AUDIT_ACTIONS];

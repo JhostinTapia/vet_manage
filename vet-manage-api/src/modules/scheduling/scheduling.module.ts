@@ -1,3 +1,4 @@
+import { AppointmentsModule } from './appointments/appointments.module.js';
 import { Module } from '@nestjs/common';
 import { BranchesModule } from './branches/branches.module.js';
 import { DailyAvailabilityModule } from './daily-availability/daily-availability.module.js';
@@ -13,6 +14,7 @@ import { CalendarModule } from './calendar/calendar.module.js';
 @Module({
   imports: [
     CalendarModule,
+    AppointmentsModule,
     BranchesModule,
     WorkSchedulesModule,
     SaturdayShiftsModule,

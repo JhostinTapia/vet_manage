@@ -465,9 +465,9 @@ export function CalendarPage() {
             {timeLabel(selection.inicio)}–{timeLabel(selection.fin)}
           </strong>
           <p>
-            El flujo de reserva aún no está implementado. No se ha creado ni
-            reservado una cita. La disponibilidad deberá comprobarse nuevamente
-            al reservar.
+            Esta selección no crea ni reserva una cita. Para registrar una cita,
+            abre la sección Citas. La disponibilidad se comprueba nuevamente
+            al guardar.
           </p>
           <button onClick={() => setSelection(null)}>Cerrar aviso</button>
         </aside>

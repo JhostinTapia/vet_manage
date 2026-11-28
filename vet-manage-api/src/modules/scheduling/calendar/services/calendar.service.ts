@@ -4,6 +4,10 @@ import {
   formatTime,
   overlaps,
 } from '../../common/time-slots.js';
+import {
+  storedDateTimeToInstant,
+  toStoredDateTime,
+} from '../../common/local-time.js';
 import { CalendarRepository } from '../repositories/calendar.repository.js';
 import type { CalendarQueryDto } from '../dtos/calendar-query.dto.js';
 import { calendarPeriod } from './calendar-period.js';
@@ -25,8 +29,8 @@ function summary(cita: Snapshot['appointments'][number]) {
   return {
     id: cita.id,
     numero: cita.numero,
-    inicio: cita.fechaHora.toISOString(),
-    fin: cita.fechaHoraFin.toISOString(),
+    inicio: storedDateTimeToInstant(cita.fechaHora).toISOString(),
+    fin: storedDateTimeToInstant(cita.fechaHoraFin).toISOString(),
     estado: cita.estado,
     paciente: cita.paciente.name,
     veterinario: name(cita.veterinario.person),
@@ -49,7 +53,8 @@ export function calendarSlots(data: Snapshot, days: string[]) {
     const blocks = data.blocks.filter((b) => dateKey(b.fecha) === fecha);
     return Array.from({ length: 48 }, (_, index) => {
       const minute = index * 30;
-      const inicio = new Date(`${fecha}T${formatTime(minute)}:00-05:00`);
+      // Comparar en la representación de persistencia; convertir a instante solo al responder.
+      const inicio = toStoredDateTime(fecha, formatTime(minute));
       const fin = new Date(inicio.getTime() + 1800000);
       const candidates = schedules.filter((s) => {
         if (
@@ -104,8 +109,8 @@ export function calendarSlots(data: Snapshot, days: string[]) {
         estado = 'Disponible';
       else estado = 'Ocupado';
       return {
-        inicio: inicio.toISOString(),
-        fin: fin.toISOString(),
+        inicio: storedDateTimeToInstant(inicio).toISOString(),
+        fin: storedDateTimeToInstant(fin).toISOString(),
         fecha,
         hora: formatTime(minute),
         estado,

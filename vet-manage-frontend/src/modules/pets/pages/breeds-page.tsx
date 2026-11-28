@@ -5,13 +5,26 @@ import { useAuth } from '../../auth/auth-context';
 import { BreedForm } from '../components/breed-form';
 import { breedApi } from '../services/breed.service';
 import { speciesApi } from '../services/species.service';
-import type { Breed, RegisterBreedDraft, SpeciesOption } from '../types';
+import type { Breed, RegisterBreedDraft, Species, SpeciesOption } from '../types';
+
+const SEARCH_DELAY_MS = 300;
+const SEARCH_MAX = 100;
+export const NO_BREEDS_FOUND = 'No se encontraron razas con el criterio ingresado';
 
 function EditIcon() {
   return (
     <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <path d="M12 20h9" />
       <path d="M16.5 3.5a2.12 2.12 0 1 1 3 3L7 19l-4 1 1-4 12.5-12.5z" />
+    </svg>
+  );
+}
+
+function StatusIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M12 2v10" />
+      <path d="M18.4 6.6a8 8 0 1 1-12.8 0" />
     </svg>
   );
 }
@@ -51,18 +64,50 @@ export function BreedsPage() {
   const [isCreateOpen, setCreateOpen] = useState(false);
   const [editingBreed, setEditingBreed] = useState<Breed | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [changingBreedId, setChangingBreedId] = useState<string | null>(null);
   const [species, setSpecies] = useState<SpeciesOption[]>([]);
   const [speciesLoading, setSpeciesLoading] = useState(false);
-  const { showToast } = useToast();
+  const { showToast, confirm } = useToast();
   const { hasPermission } = useAuth();
+
+  // HU-20: búsqueda por nombre, filtro por especie y detalle en solo lectura.
+  const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [speciesFilter, setSpeciesFilter] = useState('');
+  const [filterSpecies, setFilterSpecies] = useState<Species[]>([]);
+  const [selectedBreed, setSelectedBreed] = useState<Breed | null>(null);
 
   const canCreate = hasPermission('breeds:create');
   const canUpdate = hasPermission('breeds:update');
+  const canChangeStatus = hasPermission('breeds:change-status');
+  const showActions = canUpdate || canChangeStatus;
   const modalOpen = isCreateOpen || editingBreed !== null;
+  const hasFilters = debouncedSearch.trim() !== '' || speciesFilter !== '';
+
+  // Espera 300 ms sin escribir antes de consultar.
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(search), SEARCH_DELAY_MS);
+    return () => clearTimeout(timer);
+  }, [search]);
+
+  // Todas las especies (también inactivas) para poder consultar sus razas.
+  useEffect(() => {
+    let cancelled = false;
+    speciesApi.listSpecies()
+      .then((items) => {
+        if (!cancelled) setFilterSpecies([...items].sort((a, b) => a.name.localeCompare(b.name, 'es')));
+      })
+      .catch(() => {
+        if (!cancelled) setFilterSpecies([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
-    breedApi.listBreeds()
+    breedApi.listBreeds({ search: debouncedSearch, speciesId: speciesFilter || undefined })
       .then((items) => {
         if (!cancelled) {
           setBreeds(items);
@@ -81,7 +126,7 @@ export function BreedsPage() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [debouncedSearch, speciesFilter]);
 
   const loadSpecies = useCallback(async () => {
     setSpeciesLoading(true);
@@ -114,18 +159,19 @@ export function BreedsPage() {
   };
 
   useEffect(() => {
-    if (!modalOpen) return;
+    if (!modalOpen && !selectedBreed) return;
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape' && !submitting) {
         setCreateOpen(false);
         setEditingBreed(null);
+        setSelectedBreed(null);
       }
     };
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [modalOpen, submitting]);
+  }, [modalOpen, selectedBreed, submitting]);
 
   // Incluye la especie actual de la raza si estuviera inactiva, para no perder la selección al editar.
   const modalSpeciesOptions = useMemo(() => {
@@ -173,6 +219,34 @@ export function BreedsPage() {
     }
   };
 
+  const handleChangeStatus = async (breed: Breed) => {
+    const activating = !breed.isActive;
+    const action = activating ? 'activar' : 'inactivar';
+    const accepted = await confirm(
+      `¿Confirmas que deseas ${action} la raza "${breed.name}"?`,
+      `Sí, ${action}`,
+      activating ? 'success' : 'danger',
+    );
+    if (!accepted) return;
+
+    setChangingBreedId(breed.id);
+    try {
+      const updated = activating
+        ? await breedApi.activateBreed(breed.id)
+        : await breedApi.inactivateBreed(breed.id);
+      setBreeds((current) =>
+        current.map((item) =>
+          item.id === updated.id ? { ...item, isActive: updated.isActive, updatedAt: updated.updatedAt } : item,
+        ),
+      );
+      showToast(activating ? 'Raza activada correctamente' : 'Raza inactivada correctamente', 'success');
+    } catch (cause) {
+      showToast(cause instanceof Error ? cause.message : 'No se pudo cambiar el estado de la raza', 'error');
+    } finally {
+      setChangingBreedId(null);
+    }
+  };
+
   return (
     <div>
       {canCreate && (
@@ -184,10 +258,45 @@ export function BreedsPage() {
         </div>
       )}
 
+      <div className="catalog-toolbar breeds-filters">
+        <label className="search-field">
+          <PawIcon size={15} />
+          <input
+            type="search"
+            aria-label="Buscar raza por nombre"
+            placeholder="Buscar raza por nombre"
+            maxLength={SEARCH_MAX}
+            value={search}
+            onChange={(event) => setSearch(event.target.value.slice(0, SEARCH_MAX))}
+          />
+        </label>
+        <select
+          className="breeds-filters__species"
+          aria-label="Filtrar por especie"
+          value={speciesFilter}
+          onChange={(event) => setSpeciesFilter(event.target.value)}
+        >
+          <option value="">Todas las especies</option>
+          {filterSpecies.map((option) => (
+            <option key={option.id} value={option.id}>
+              {option.isActive ? option.name : `${option.name} (inactiva)`}
+            </option>
+          ))}
+        </select>
+      </div>
+
       {listLoading ? (
         <div className="empty-state">Cargando razas…</div>
       ) : listError ? (
         <div className="inline-notice inline-notice--error" role="alert">{listError}</div>
+      ) : breeds.length === 0 && hasFilters ? (
+        <div className="catalog-empty" role="status">
+          <span className="catalog-empty__icon">
+            <PawIcon size={22} />
+          </span>
+          <strong>{NO_BREEDS_FOUND}</strong>
+          <p>Prueba con otro nombre o selecciona otra especie.</p>
+        </div>
       ) : breeds.length === 0 ? (
         <div className="catalog-empty" role="status">
           <span className="catalog-empty__icon">
@@ -221,7 +330,7 @@ export function BreedsPage() {
                   <th className="breeds-table__description">Descripción</th>
                   <th className="breeds-table__date">Actualizada</th>
                   <th className="breeds-table__status">Estado</th>
-                  {canUpdate && <th className="breeds-table__actions">Acciones</th>}
+                  {showActions && <th className="breeds-table__actions">Acciones</th>}
                 </tr>
               </thead>
               <tbody>
@@ -232,7 +341,14 @@ export function BreedsPage() {
                         <span className="species-row-icon" aria-hidden="true">
                           <PawIcon size={15} />
                         </span>
-                        <strong>{item.name}</strong>
+                        <button
+                          type="button"
+                          className="breeds-name-link"
+                          aria-label={`Ver detalle de ${item.name}`}
+                          onClick={() => setSelectedBreed(item)}
+                        >
+                          <strong>{item.name}</strong>
+                        </button>
                       </div>
                     </td>
                     <td className="breeds-table__species">
@@ -259,18 +375,33 @@ export function BreedsPage() {
                         {item.isActive ? 'Activa' : 'Inactiva'}
                       </span>
                     </td>
-                    {canUpdate && (
+                    {showActions && (
                       <td className="breeds-table__actions">
-                        <button
-                          type="button"
-                          className="species-icon-btn"
-                          aria-label={`Editar ${item.name}`}
-                          title="Editar raza"
-                          data-tooltip="Editar raza"
-                          onClick={() => openEditModal(item)}
-                        >
-                          <EditIcon />
-                        </button>
+                        {canUpdate && (
+                          <button
+                            type="button"
+                            className="species-icon-btn"
+                            aria-label={`Editar ${item.name}`}
+                            title="Editar raza"
+                            data-tooltip="Editar raza"
+                            onClick={() => openEditModal(item)}
+                          >
+                            <EditIcon />
+                          </button>
+                        )}
+                        {canChangeStatus && (
+                          <button
+                            type="button"
+                            className="species-icon-btn"
+                            aria-label={`${item.isActive ? 'Inactivar' : 'Activar'} ${item.name}`}
+                            title={`${item.isActive ? 'Inactivar' : 'Activar'} raza`}
+                            data-tooltip={`${item.isActive ? 'Inactivar' : 'Activar'} raza`}
+                            disabled={changingBreedId === item.id}
+                            onClick={() => void handleChangeStatus(item)}
+                          >
+                            <StatusIcon />
+                          </button>
+                        )}
                       </td>
                     )}
                   </tr>
@@ -335,6 +466,53 @@ export function BreedsPage() {
                   isLoading={submitting}
                 />
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {selectedBreed && (
+        <div
+          className="modal-overlay"
+          role="presentation"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) setSelectedBreed(null);
+          }}
+        >
+          <div className="modal-card" role="dialog" aria-modal="true" aria-labelledby="breed-detail-title">
+            <div className="modal-card__heading">
+              <div>
+                <span className="eyebrow">Detalle de raza</span>
+                <h3 id="breed-detail-title">{selectedBreed.name}</h3>
+                <p>Información registrada de la raza (solo lectura).</p>
+              </div>
+              <button type="button" className="modal-card__close" aria-label="Cerrar" onClick={() => setSelectedBreed(null)}>
+                ×
+              </button>
+            </div>
+            <div className="modal-card__body">
+              <dl className="breed-detail">
+                <div>
+                  <dt>Nombre</dt>
+                  <dd>{selectedBreed.name}</dd>
+                </div>
+                <div>
+                  <dt>Especie</dt>
+                  <dd>{selectedBreed.species?.name ?? '—'}</dd>
+                </div>
+                <div>
+                  <dt>Descripción</dt>
+                  <dd>{selectedBreed.description || 'Sin descripción'}</dd>
+                </div>
+                <div>
+                  <dt>Estado</dt>
+                  <dd>
+                    <span className={`status-badge status-badge--${selectedBreed.isActive ? 'active' : 'inactive'}`}>
+                      {selectedBreed.isActive ? 'Activa' : 'Inactiva'}
+                    </span>
+                  </dd>
+                </div>
+              </dl>
             </div>
           </div>
         </div>

@@ -157,11 +157,19 @@ describe('RegisterPatientService', () => {
   });
 
   describe('Escenario 5: cliente no disponible', () => {
-    it.each(['DEACTIVATED', 'INACTIVE'])('responde 409 si el cliente está %s', async (status) => {
+    // HU-03: el cliente dado de baja se identifica como desactivado; el inactivo mantiene el mensaje de HU-07.
+    it.each([
+      ['DEACTIVATED', PATIENT_MESSAGES.clientDeactivated],
+      ['INACTIVE', PATIENT_MESSAGES.clientUnavailable],
+    ])('responde 409 si el cliente está %s', async (status, message) => {
       ctx.findClient.mockResolvedValueOnce({ id: CLIENT_ID, status });
 
-      await expectError(ctx.service.execute(validInput(), ACTOR_ID), PATIENT_MESSAGES.clientUnavailable, 409, ['clientId']);
+      await expectError(ctx.service.execute(validInput(), ACTOR_ID), message, 409, ['clientId']);
       expect(ctx.create).not.toHaveBeenCalled();
+    });
+
+    it('el mensaje para un cliente de baja es «El cliente está desactivado» (HU-03)', () => {
+      expect(PATIENT_MESSAGES.clientDeactivated).toBe('El cliente está desactivado');
     });
   });
 

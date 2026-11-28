@@ -135,6 +135,7 @@ export const ROLES: readonly RoleDefinition[] = [
       // Agenda: consulta recursos disponibles y tarifas.
       'calendar:read',
       'branches:read', 'resources:read-availability', 'rates:read',
+      'appointments:read', 'appointments:create', 'appointments:cancel', 'appointments:update',
       'work-schedules:read', 'schedule-blocks:read',
     ],
   },

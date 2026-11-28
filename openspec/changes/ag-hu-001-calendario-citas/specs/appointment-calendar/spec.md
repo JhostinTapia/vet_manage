@@ -35,7 +35,7 @@ El sistema MUST calcular franjas sin filtro de estado considerando jornadas, dis
 - **GIVEN** jornada 08:00–12:00, 09:00 libre y bloqueo 11:00–11:30
 - **WHEN** consulta las franjas
 - **THEN** 09:00 es Disponible, 11:00 Bloqueado y 13:00 Fuera de atención
-- **AND** seleccionar Disponible informa integración de reserva pendiente sin escribir citas
+- **AND** seleccionar Disponible informa que la selección no reserva una cita y que el registro se realiza en la sección Citas, sin escribir datos
 
 ### Requirement: Filtro y accesibilidad
 El sistema MUST mostrar nombre legible junto al color: Programada gris, Confirmada azul, En curso naranja, Finalizada verde, Cancelada rojo y No asistió morado.
@@ -45,3 +45,13 @@ El sistema MUST mostrar nombre legible junto al color: Programada gris, Confirma
 - **WHEN** filtra CONFIRMADA
 - **THEN** solo las confirmadas son visibles
 - **AND** los datos persistidos, bloqueos y disponibilidad permanecen iguales
+
+### Requirement: Coherencia temporal con registro y modificación
+El sistema MUST conservar la hora de pared de Ecuador de las citas guardadas por HU-003/HU-004 y convertirla a instantes reales solo en la respuesta del calendario.
+
+#### Scenario: Coherencia con citas registradas y modificadas
+- **GIVEN** HU-003 o HU-004 guarda una cita de las 10:00 de Ecuador como 10:00Z según el contrato actual de persistencia
+- **WHEN** consulta el calendario, las franjas y el detalle desde cualquier zona del navegador
+- **THEN** la cita aparece a las 10:00 en el día correcto y ocupa esa misma franja
+- **AND** el calendario responde el instante ISO real 15:00Z sin modificar el dato guardado
+- **AND** una cita de las 23:30 del 31 de diciembre permanece en ese día aunque su instante ISO sea del 1 de enero

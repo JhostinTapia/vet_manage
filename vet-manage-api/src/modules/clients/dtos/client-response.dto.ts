@@ -14,6 +14,10 @@ export class ClientResponseDto {
   status: ClientStatus;
   roles: ClientRole[];
   createdAt: string;
+  // Datos de la baja (HU-03); nulos si el cliente no está de baja.
+  deactivatedAt: string | null;
+  deactivationReason: string | null;
+  deactivatedBy: string | null;
 }
 
 export class ClientListResponseDto {

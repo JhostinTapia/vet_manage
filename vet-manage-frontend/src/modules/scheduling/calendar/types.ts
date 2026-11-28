@@ -9,6 +9,7 @@ export type AppointmentStatus =
 export type CalendarAppointment = {
   id: string;
   numero: number;
+  /** Instante ISO real; formatear en America/Guayaquil. */
   inicio: string;
   fin: string;
   paciente: string;
@@ -24,6 +25,7 @@ export type AppointmentDetail = CalendarAppointment & {
 export type CalendarSlot = {
   fecha: string;
   hora: string;
+  /** Instante ISO real; formatear en America/Guayaquil. */
   inicio: string;
   fin: string;
   estado:
@@ -42,9 +44,10 @@ export type CalendarData = {
   citas: CalendarAppointment[];
   franjas: CalendarSlot[];
 };
-/** Punto de integración para la futura HU de reserva; no implica reserva ni persistencia. */
+/** Punto de integración con el registro de citas; no implica reserva ni persistencia. */
 export type ReservationSelection = {
   sucursalId: string;
+  /** Instante ISO real; formatear en America/Guayaquil. */
   inicio: string;
   fin: string;
 };

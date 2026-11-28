@@ -16,6 +16,7 @@ vi.mock('../services/clients-api', () => ({
     pets: vi.fn(),
     inactivate: vi.fn(),
     activate: vi.fn(),
+    deactivate: vi.fn(),
     update: vi.fn(),
   },
 }));
@@ -498,5 +499,97 @@ describe('ClientsPage', () => {
 
       expect(badges).toEqual(['Activo', 'Inactivo']);
     });
+  });
+});
+
+describe('ClientsPage – dar de baja un cliente (HU-03)', () => {
+  const pageWith = (...items: ClientListItem[]): ClientPage => ({ items, total: items.length, page: 1, pageSize: 20, totalPages: 1 });
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(clientsApi.pets).mockResolvedValue([]);
+  });
+
+  // Positivos
+  it('muestra «Dar de baja» a quien tiene clients:deactivate en clientes Activo e Inactivo', async () => {
+    vi.mocked(clientsApi.list).mockResolvedValue(pageWith(
+      makeClient('a1', 'Ana', 'Activa', 'ACTIVE'),
+      makeClient('i1', 'Iván', 'Inactivo', 'INACTIVE'),
+    ));
+    renderPage({ hasPermission: (permission) => ['clients:read', 'clients:deactivate'].includes(permission) });
+
+    expect(await screen.findByRole('button', { name: 'Dar de baja a Ana Activa' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Dar de baja a Iván Inactivo' })).toBeInTheDocument();
+  });
+
+  it('da de baja con motivo, recarga la lista y muestra la confirmación', async () => {
+    const active = makeClient('a1', 'Ana', 'Activa', 'ACTIVE');
+    vi.mocked(clientsApi.list)
+      .mockResolvedValueOnce(pageWith(active))
+      .mockResolvedValueOnce(pageWith({ ...active, status: 'DEACTIVATED', deactivatedAt: '2026-11-24T15:00:00.000Z', deactivationReason: 'Se mudó', deactivatedBy: 'Gabriel Gerente' }));
+    vi.mocked(clientsApi.deactivate).mockResolvedValue({ id: 'a1', status: 'DEACTIVATED', deactivatedAt: '2026-11-24T15:00:00.000Z', deactivationReason: 'Se mudó' });
+    renderPage();
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Dar de baja a Ana Activa' }));
+    await userEvent.type(screen.getByLabelText(/motivo de la baja/i), 'Se mudó');
+    await userEvent.click(screen.getByRole('button', { name: 'Confirmar baja' }));
+
+    await waitFor(() => expect(clientsApi.deactivate).toHaveBeenCalledWith('a1', 'Se mudó'));
+    expect(await screen.findByText('Cliente dado de baja correctamente')).toBeInTheDocument();
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    const table = screen.getByRole('table', { name: 'Clientes' });
+    expect(within(table).getByText('De baja')).toBeInTheDocument();
+    expect(within(table).queryByRole('button', { name: /dar de baja/i })).not.toBeInTheDocument();
+  });
+
+  it('muestra en solo lectura la fecha, el responsable y el motivo de un cliente de baja', async () => {
+    vi.mocked(clientsApi.list).mockResolvedValue(pageWith({
+      ...makeClient('d1', 'Hugo', 'Vivanco', 'DEACTIVATED'),
+      deactivatedAt: '2026-11-24T15:00:00.000Z',
+      deactivationReason: 'Solicitud del cliente',
+      deactivatedBy: 'Valeria Veterinaria',
+    }));
+    renderPage();
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Ver mascotas de Hugo Vivanco' }));
+    const data = await screen.findByLabelText('Datos de la baja');
+    expect(data).toHaveTextContent('Valeria Veterinaria');
+    expect(data).toHaveTextContent('Solicitud del cliente');
+    expect(screen.queryByRole('button', { name: /editar a hugo/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /dar de baja a hugo/i })).not.toBeInTheDocument();
+  });
+
+  // Negativos
+  it('no muestra «Dar de baja» sin el permiso clients:deactivate (Recepcionista)', async () => {
+    vi.mocked(clientsApi.list).mockResolvedValue(pageWith(makeClient('a1', 'Ana', 'Activa', 'ACTIVE')));
+    renderPage({ hasPermission: (permission) => ['clients:read', 'clients:inactivate', 'clients:update'].includes(permission) });
+
+    await screen.findByText('Ana Activa');
+    expect(screen.queryByRole('button', { name: /dar de baja/i })).not.toBeInTheDocument();
+  });
+
+  it('Cancelar no llama a la API ni cambia el estado', async () => {
+    vi.mocked(clientsApi.list).mockResolvedValue(pageWith(makeClient('i1', 'Iván', 'Inactivo', 'INACTIVE')));
+    renderPage();
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Dar de baja a Iván Inactivo' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Cancelar' }));
+
+    expect(clientsApi.deactivate).not.toHaveBeenCalled();
+    expect(within(screen.getByRole('table', { name: 'Clientes' })).getByText('Inactivo')).toBeInTheDocument();
+  });
+
+  it('si la API rechaza la baja, el modal muestra el mensaje y el cliente no cambia', async () => {
+    vi.mocked(clientsApi.list).mockResolvedValue(pageWith(makeClient('a1', 'Ana', 'Activa', 'ACTIVE')));
+    vi.mocked(clientsApi.deactivate).mockRejectedValue(new ApiError('El cliente está desactivado', 409));
+    renderPage();
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Dar de baja a Ana Activa' }));
+    await userEvent.type(screen.getByLabelText(/motivo de la baja/i), 'Motivo');
+    await userEvent.click(screen.getByRole('button', { name: 'Confirmar baja' }));
+
+    const dialog = screen.getByRole('dialog');
+    expect(await within(dialog).findByRole('alert')).toHaveTextContent('El cliente está desactivado');
+    expect(clientsApi.list).toHaveBeenCalledTimes(1);
   });
 });

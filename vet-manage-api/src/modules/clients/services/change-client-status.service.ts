@@ -11,7 +11,24 @@ export const CLIENT_STATUS_MESSAGES = {
   inactivated: 'Cliente inactivado correctamente',
   activateDeactivated: 'No se puede activar un cliente dado de baja',
   activated: 'Cliente activado correctamente',
+  // HU-03 Dar de baja un cliente.
+  reasonRequired: 'Ingrese el motivo de la baja',
+  reasonTooLong: 'El motivo no puede superar 500 caracteres',
+  alreadyDeactivated: 'El cliente está desactivado',
+  deactivatedOk: 'Cliente dado de baja correctamente',
 } as const;
+
+export const DEACTIVATION_REASON_MAX = 500;
+
+export type DeactivatedClientResult = {
+  message: string;
+  client: {
+    id: string;
+    status: 'DEACTIVATED';
+    deactivatedAt: string;
+    deactivationReason: string;
+  };
+};
 
 type ReversibleStatus = 'ACTIVE' | 'INACTIVE';
 
@@ -52,7 +69,7 @@ const ACTIVATE: Transition<'ACTIVE'> = {
   successMessage: CLIENT_STATUS_MESSAGES.activated,
 };
 
-// Cambios de estado reversibles del cliente: inactivar (HU-04) y activar (HU-05). Dar de baja (HU-03) irá aparte.
+// Cambios de estado del cliente: inactivar (HU-04), activar (HU-05) y dar de baja (HU-03, definitivo).
 @Injectable()
 export class ChangeClientStatusService {
   constructor(
@@ -66,6 +83,55 @@ export class ChangeClientStatusService {
 
   activate(clientId: string, actorId: string): Promise<ActivatedClientResult> {
     return this.change(clientId, actorId, ACTIVATE);
+  }
+
+  // Baja definitiva (HU-03): Activo o Inactivo → De baja, con motivo obligatorio. Conserva el cliente,
+  // sus datos y sus pacientes; guarda fecha, responsable y motivo, y audita en la misma transacción.
+  // La verificación de citas futuras pendientes (Esc. 2) queda pendiente de la aprobación del Módulo 2.
+  async deactivate(clientId: string, reason: string | undefined, actorId: string): Promise<DeactivatedClientResult> {
+    const trimmed = (reason ?? '').trim();
+    if (!trimmed) {
+      throw new ApiException(CLIENT_STATUS_MESSAGES.reasonRequired, 400, ['reason'], 'CLIENT_DEACTIVATION_REASON_REQUIRED');
+    }
+    if (trimmed.length > DEACTIVATION_REASON_MAX) {
+      throw new ApiException(CLIENT_STATUS_MESSAGES.reasonTooLong, 400, ['reason'], 'CLIENT_DEACTIVATION_REASON_TOO_LONG');
+    }
+
+    const deactivatedAt = new Date();
+    await this.prisma.$transaction(async (tx) => {
+      const client = await tx.client.findUnique({
+        where: { id: clientId },
+        select: {
+          id: true,
+          status: true,
+          person: { select: { identification: true, firstName: true, lastName: true } },
+        },
+      });
+
+      if (!client) throw ApiException.notFound(CLIENT_STATUS_MESSAGES.notFound);
+      if (client.status === 'DEACTIVATED') {
+        throw new ApiException(CLIENT_STATUS_MESSAGES.alreadyDeactivated, 409, [], 'CLIENT_ALREADY_DEACTIVATED');
+      }
+
+      await tx.client.update({
+        where: { id: clientId },
+        data: { status: 'DEACTIVATED', deactivatedAt, deactivatedById: actorId, deactivationReason: trimmed },
+      });
+
+      await this.audit.record(tx, {
+        actorId,
+        action: AUDIT_ACTIONS.deactivate,
+        module: AUDIT_MODULES.clients,
+        affectedRecord: describePerson(client.person),
+        previousValue: { status: STATUS_LABELS[client.status] },
+        newValue: { status: 'De baja', reason: trimmed },
+      });
+    });
+
+    return {
+      message: CLIENT_STATUS_MESSAGES.deactivatedOk,
+      client: { id: clientId, status: 'DEACTIVATED', deactivatedAt: deactivatedAt.toISOString(), deactivationReason: trimmed },
+    };
   }
 
   private async change<S extends ReversibleStatus>(

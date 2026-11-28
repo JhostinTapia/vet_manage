@@ -147,7 +147,7 @@ describe("HU-001 calendario", () => {
     ).toBeDisabled();
     fireEvent.click(available);
     expect(
-      screen.getByText(/El flujo de reserva aún no está implementado/),
+      screen.getByText(/Esta selección no crea ni reserva una cita/),
     ).toBeVisible();
   });
   it("CP-001-02 navega semana y mes desde fecha seleccionada", async () => {

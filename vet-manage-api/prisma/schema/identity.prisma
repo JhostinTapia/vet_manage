@@ -38,8 +38,14 @@ model Client {
   createdAt DateTime     @default(now()) @map("created_at")
   updatedAt DateTime     @updatedAt @map("updated_at")
 
-  person   Person    @relation(fields: [personId], references: [id], onDelete: Restrict)
-  patients Patient[]
+  // Baja definitiva (HU-03): cuándo, quién y por qué. Nulos mientras el cliente no esté de baja.
+  deactivatedAt      DateTime? @map("deactivated_at")
+  deactivatedById    String?   @map("deactivated_by_id") @db.Uuid
+  deactivationReason String?   @map("deactivation_reason") @db.VarChar(500)
+
+  person        Person    @relation(fields: [personId], references: [id], onDelete: Restrict)
+  deactivatedBy User?     @relation("ClientDeactivatedBy", fields: [deactivatedById], references: [id], onDelete: Restrict)
+  patients      Patient[]
 
   @@index([status])
   @@map("clients")
@@ -62,10 +68,12 @@ model User {
 
   person            Person        @relation(fields: [personId], references: [id], onDelete: Restrict)
   sessions          UserSession[]
+  passwordResetTokens PasswordResetToken[]
   userRoles         UserRole[]
   createdRoles      Role[]        @relation("RoleCreatedBy")
   assignedUserRoles UserRole[]    @relation("UserRoleAssignedBy")
   auditLogs         AuditLog[]
+  deactivatedClients Client[]     @relation("ClientDeactivatedBy")
 
   // agendamiento de Citas
   horariosBase           HorarioBase[]      @relation("HorarioBaseVeterinario")
@@ -104,19 +112,37 @@ model UserSession {
   @@map("user_sessions")
 }
 
+// Enlaces de recuperación de contraseña (HU-58): solo se guarda el hash del token.
+model PasswordResetToken {
+  id         String    @id @default(uuid()) @db.Uuid
+  userId     String    @map("user_id") @db.Uuid
+  tokenHash  String    @unique @map("token_hash") @db.VarChar(128)
+  expiresAt  DateTime  @map("expires_at")
+  usedAt     DateTime? @map("used_at")
+  replacedAt DateTime? @map("replaced_at")
+  createdAt  DateTime  @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("password_reset_tokens")
+}
+
 model Role {
-  id             String       @id @default(uuid()) @db.Uuid
-  name           String       @unique @db.VarChar(50)
-  displayName    String       @map("display_name") @db.VarChar(150)
-  description    String?      @db.Text
-  isSystem       Boolean      @default(false) @map("is_system")
-  isActive       Boolean      @default(true) @map("is_active")
-  isVisible      Boolean      @default(true) @map("is_visible")
-  category       RoleCategory @default(STAFF) @map("role_category")
-  organizationId String?      @map("organization_id") @db.Uuid
-  createdById    String?      @map("created_by_id") @db.Uuid
-  createdAt      DateTime     @default(now()) @map("created_at")
-  updatedAt      DateTime     @updatedAt @map("updated_at")
+  id                    String       @id @default(uuid()) @db.Uuid
+  name                  String       @unique @db.VarChar(50)
+  displayName           String       @map("display_name") @db.VarChar(150)
+  description           String?      @db.Text
+  isSystem              Boolean      @default(false) @map("is_system")
+  isActive              Boolean      @default(true) @map("is_active")
+  isVisible             Boolean      @default(true) @map("is_visible")
+  permissionsCustomized Boolean      @default(false) @map("permissions_customized")
+  category              RoleCategory @default(STAFF) @map("role_category")
+  organizationId        String?      @map("organization_id") @db.Uuid
+  createdById           String?      @map("created_by_id") @db.Uuid
+  createdAt             DateTime     @default(now()) @map("created_at")
+  updatedAt             DateTime     @updatedAt @map("updated_at")
 
   createdBy       User?            @relation("RoleCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
   userRoles       UserRole[]

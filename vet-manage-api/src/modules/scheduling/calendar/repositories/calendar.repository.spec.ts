@@ -63,6 +63,32 @@ describe('CalendarRepository aislamiento y ocupación', () => {
       });
     },
   );
+  it('excluye jornadas con rol de veterinario vencido como el registro de citas', async () => {
+    const { repo, tx } = build();
+    vi.useFakeTimers();
+    try {
+      vi.setSystemTime(new Date('2026-11-27T15:00:00Z'));
+      const p = calendarPeriod('2026-11-02', 'dia');
+      await repo.snapshot('loja', p.inicio, p.fin, p.desde, p.hastaExclusiva);
+      expect(tx.horarioBase.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            veterinario: {
+              status: 'ACTIVE',
+              userRoles: {
+                some: {
+                  role: { name: 'veterinarian', isActive: true },
+                  OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
+                },
+              },
+            },
+          }),
+        }),
+      );
+    } finally {
+      vi.useRealTimers();
+    }
+  });
   it('detalle limita sucursal e incluye solo datos requeridos de cliente', async () => {
     const { repo, tx } = build();
     await repo.detail('c1', 'vilcabamba');

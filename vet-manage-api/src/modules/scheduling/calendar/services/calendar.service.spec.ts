@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { CalendarService, calendarSlots } from './calendar.service.js';
 import { calendarPeriod } from './calendar-period.js';
 import type { CalendarRepository } from '../repositories/calendar.repository.js';
+import { toStoredDateTime } from '../../common/local-time.js';
 import { minutesToDbTime as time } from '../../common/time-slots.js';
 
 type Snapshot = Awaited<ReturnType<CalendarRepository['snapshot']>>;
@@ -9,8 +10,8 @@ const fecha = new Date('2026-11-02T00:00:00Z');
 const appointment = {
   id: 'c1',
   numero: 101,
-  fechaHora: new Date('2026-11-02T15:00:00Z'),
-  fechaHoraFin: new Date('2026-11-02T15:30:00Z'),
+  fechaHora: new Date('2026-11-02T10:00:00Z'),
+  fechaHoraFin: new Date('2026-11-02T10:30:00Z'),
   estado: 'CONFIRMADA' as const,
   paciente: { name: 'Luna' },
   veterinario: { person: { firstName: 'Ana', lastName: 'Vega' } },
@@ -66,8 +67,8 @@ describe('HU-001 períodos', () => {
       const period = calendarPeriod(fecha, vista);
       expect(period).toMatchObject({ desde, hastaExclusiva });
       expect(period.days).toHaveLength(length);
-      expect(period.inicio.toISOString()).toBe(`${desde}T05:00:00.000Z`);
-      expect(period.fin.toISOString()).toBe(`${hastaExclusiva}T05:00:00.000Z`);
+      expect(period.inicio.toISOString()).toBe(`${desde}T00:00:00.000Z`);
+      expect(period.fin.toISOString()).toBe(`${hastaExclusiva}T00:00:00.000Z`);
     },
   );
   it.each(['2026-02-29', '2026-11-31', 'no-fecha', '2026-13-01'])(
@@ -81,22 +82,20 @@ describe('HU-001 consulta y disponibilidad', () => {
     const data = fixture();
     const repo = {
       snapshot: vi.fn().mockResolvedValue(data),
-      detail: vi
-        .fn()
-        .mockResolvedValue({
-          ...appointment,
-          paciente: {
-            name: 'Luna',
-            client: {
-              person: {
-                firstName: 'Luis',
-                lastName: 'Paz',
-                identification: '1100000000',
-              },
+      detail: vi.fn().mockResolvedValue({
+        ...appointment,
+        paciente: {
+          name: 'Luna',
+          client: {
+            person: {
+              firstName: 'Luis',
+              lastName: 'Paz',
+              identification: '1100000000',
             },
           },
-          sala: { nombre: 'Consultorio 1', sucursal: { nombre: 'Loja' } },
-        }),
+        },
+        sala: { nombre: 'Consultorio 1', sucursal: { nombre: 'Loja' } },
+      }),
     };
     const service = new CalendarService(repo as never);
     const result = await service.read({
@@ -120,6 +119,74 @@ describe('HU-001 consulta y disponibilidad', () => {
     });
     expect(repo.detail).toHaveBeenCalledWith('c1', 'loja');
   });
+  it.each([
+    ['2026-11-02', '00:00', '2026-11-02T05:00:00.000Z'],
+    ['2026-11-02', '10:00', '2026-11-02T15:00:00.000Z'],
+    ['2026-12-31', '23:00', '2027-01-01T04:00:00.000Z'],
+  ])(
+    'hora registrada %s %s conserva fecha y franja de Ecuador',
+    async (date, hour, instant) => {
+      // Mismo constructor que HU-003/HU-004 al persistir una cita.
+      const start = toStoredDateTime(date, hour);
+      const end = new Date(start.getTime() + 30 * 60000);
+      const data = fixture();
+      data.schedules[0].diaSemana = date === '2026-12-31' ? 'JUEVES' : 'LUNES';
+      data.schedules[0].horaInicio = time(0);
+      data.schedules[0].horaFin = time(1439);
+      data.blocks = [];
+      data.appointments = [
+        { ...appointment, fechaHora: start, fechaHoraFin: end },
+      ];
+      data.occupancy = [
+        {
+          fechaHora: start,
+          fechaHoraFin: end,
+          veterinarioId: 'v1',
+          salaId: 'r1',
+        },
+      ];
+      const repo = {
+        snapshot: vi.fn().mockResolvedValue(data),
+        detail: vi.fn().mockResolvedValue({
+          ...data.appointments[0],
+          paciente: {
+            name: 'Luna',
+            client: {
+              person: {
+                firstName: 'Luis',
+                lastName: 'Paz',
+                identification: '1100000000',
+              },
+            },
+          },
+          sala: { nombre: 'Consultorio 1', sucursal: { nombre: 'Loja' } },
+        }),
+      };
+      const service = new CalendarService(repo as never);
+      const result = await service.read({
+        sucursalId: 'loja',
+        fecha: date,
+        vista: 'dia',
+      });
+      expect(repo.snapshot).toHaveBeenCalledWith(
+        'loja',
+        toStoredDateTime(date, '00:00'),
+        new Date(toStoredDateTime(date, '00:00').getTime() + 86400000),
+        date,
+        calendarPeriod(date, 'dia').hastaExclusiva,
+      );
+      expect(result.citas[0].inicio).toBe(instant);
+      expect((await service.detail('c1', 'loja')).inicio).toBe(instant);
+      expect(result.franjas.find((s) => s.hora === hour)).toMatchObject({
+        fecha: date,
+        inicio: instant,
+        estado: 'Ocupado',
+      });
+      expect(result.franjas.filter((s) => s.estado === 'Ocupado')).toHaveLength(
+        1,
+      );
+    },
+  );
   it('CP-001-03 clasifica libre, bloqueo, fuera de atención y ocupado', () => {
     const data = fixture();
     expect(slot(data, '09:00')).toBe('Disponible');
@@ -239,8 +306,8 @@ describe('HU-001 consulta y disponibilidad', () => {
     data.schedules[0].horaInicio = time(0);
     data.occupancy = [
       {
-        fechaHora: new Date('2026-11-02T04:45:00Z'),
-        fechaHoraFin: new Date('2026-11-02T05:15:00Z'),
+        fechaHora: new Date('2026-11-01T23:45:00Z'),
+        fechaHoraFin: new Date('2026-11-02T00:15:00Z'),
         veterinarioId: 'v1',
         salaId: 'r1',
       },

@@ -1,4 +1,5 @@
 import { BadRequestException } from '@nestjs/common';
+import { toStoredDateTime } from '../../common/local-time.js';
 
 export function calendarPeriod(fecha: string, vista: 'dia' | 'semana' | 'mes') {
   const date = new Date(`${fecha}T00:00:00Z`);
@@ -23,7 +24,8 @@ export function calendarPeriod(fecha: string, vista: 'dia' | 'semana' | 'mes') {
     desde: days[0],
     hastaExclusiva: date.toISOString().slice(0, 10),
     days,
-    inicio: new Date(`${days[0]}T00:00:00-05:00`),
-    fin: new Date(`${date.toISOString().slice(0, 10)}T00:00:00-05:00`),
+    // Límites para consultar la representación de hora local guardada por HU-003/HU-004.
+    inicio: toStoredDateTime(days[0], '00:00'),
+    fin: toStoredDateTime(date.toISOString().slice(0, 10), '00:00'),
   };
 }

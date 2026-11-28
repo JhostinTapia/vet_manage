@@ -11,6 +11,10 @@ export const speciesApi = {
   updateSpecies(id: string, draft: RegisterSpeciesDraft) {
     return patchJson<Species, RegisterSpeciesDraft>(`/pets/species/${id}`, draft);
   },
+  // Activa o inactiva la especie (HU-15).
+  changeStatus(id: string, isActive: boolean) {
+    return patchJson<Species, { isActive: boolean }>(`/pets/species/${id}/status`, { isActive });
+  },
   listActiveSpecies() {
     return getJson<SpeciesOption[]>('/pets/species/active');
   },

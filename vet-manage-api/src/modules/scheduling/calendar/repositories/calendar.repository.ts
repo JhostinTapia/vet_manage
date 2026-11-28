@@ -80,7 +80,10 @@ export class CalendarRepository {
             veterinario: {
               status: 'ACTIVE',
               userRoles: {
-                some: { role: { name: 'veterinarian', isActive: true } },
+                some: {
+                  role: { name: 'veterinarian', isActive: true },
+                  OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
+                },
               },
             },
           },
