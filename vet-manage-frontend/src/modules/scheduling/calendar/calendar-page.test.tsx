@@ -144,6 +144,10 @@ describe("HU-001 calendario", () => {
     ).toBeDisabled();
     expect(
       screen.getByRole("button", { name: "13:00 · Fuera de atención" }),
+    ).not.toBeVisible();
+    fireEvent.click(screen.getByText("Ver horarios fuera de atención (1)"));
+    expect(
+      screen.getByRole("button", { name: "13:00 · Fuera de atención" }),
     ).toBeDisabled();
     fireEvent.click(available);
     expect(
@@ -196,9 +200,7 @@ describe("HU-001 calendario", () => {
     fireEvent.change(screen.getByLabelText("Sucursal"), {
       target: { value: "vilcabamba" },
     });
-    expect(
-      await screen.findByText("No hay citas para los filtros seleccionados."),
-    ).toBeVisible();
+    expect(await screen.findByText("No hay citas para este día")).toBeVisible();
     expect(
       screen.queryByRole("button", { name: /Cita #101/ }),
     ).not.toBeInTheDocument();
@@ -211,9 +213,7 @@ describe("HU-001 calendario", () => {
   it("vacío conserva franjas y leyenda accesible con todos los nombres", async () => {
     vi.mocked(calendarApi.read).mockResolvedValue({ ...fixture(), citas: [] });
     render(<CalendarPage />);
-    expect(
-      await screen.findByText("No hay citas para los filtros seleccionados."),
-    ).toBeVisible();
+    expect(await screen.findByText("No hay citas para este día")).toBeVisible();
     const legend = screen.getByLabelText("Leyenda de estados");
     for (const label of [
       "Programada",

@@ -344,7 +344,7 @@ export function CalendarPage() {
       )}
       {data && (
         <>
-          {!visible.length && (
+          {!visible.length && view !== "dia" && (
             <p className="calendar-message" role="status">
               No hay citas para los filtros seleccionados.
             </p>
@@ -376,13 +376,45 @@ export function CalendarPage() {
                   new Date(c.inicio).getTime() < start + 86400000 &&
                   new Date(c.fin).getTime() > start,
               );
-              const daySlots = data.franjas.filter((slot) => slot.fecha === day);
+              const daySlots = data.franjas.filter(
+                (slot) => slot.fecha === day,
+              );
               const availableSlots = daySlots.filter(
                 (slot) => slot.estado === "Disponible",
               ).length;
+              const activeSlots = daySlots.filter(
+                (slot) => slot.estado !== "Fuera de atención",
+              );
+              const closedSlots = daySlots.filter(
+                (slot) => slot.estado === "Fuera de atención",
+              );
+              const slotList = (slots: typeof daySlots) => (
+                <ul className="calendar-slots">
+                  {slots.map((slot) => (
+                    <li key={slot.inicio}>
+                      <button
+                        className={`calendar-slot calendar-slot--${SLOT_TONES[slot.estado]}`}
+                        disabled={slot.estado !== "Disponible"}
+                        onClick={() =>
+                          setSelection({
+                            sucursalId: branch,
+                            inicio: slot.inicio,
+                            fin: slot.fin,
+                          })
+                        }
+                      >
+                        <time className="calendar-time">{slot.hora}</time>{" "}
+                        <span className="calendar-slot-label">
+                          · {slot.estado}
+                        </span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              );
               return (
                 <section
-                  className="calendar-day"
+                  className={`calendar-day${!appointments.length ? " calendar-day--empty" : ""}`}
                   key={day}
                   aria-label={dateLabel(day)}
                 >
@@ -410,7 +442,26 @@ export function CalendarPage() {
                       />
                     ))}
                     {!appointments.length && (
-                      <p className="calendar-empty">Sin citas visibles</p>
+                      <div className="calendar-empty-state">
+                        <span
+                          className="calendar-empty-icon"
+                          aria-hidden="true"
+                        >
+                          ▦
+                        </span>
+                        <div>
+                          <strong>
+                            {filter
+                              ? "Sin citas para este estado"
+                              : "No hay citas para este día"}
+                          </strong>
+                          <p>
+                            {filter
+                              ? "Prueba con otro estado para consultar las citas."
+                              : "Puedes consultar la disponibilidad de la sucursal a continuación."}
+                          </p>
+                        </div>
+                      </div>
                     )}
                   </div>
                   <details
@@ -422,34 +473,43 @@ export function CalendarPage() {
                         ? `Disponibilidad: ${availableSlots} disponible${availableSlots === 1 ? "" : "s"} de ${daySlots.length} franjas`
                         : "Sin franjas configuradas"}
                     </summary>
-                    {view === "dia" && (
-                      <p className="calendar-availability-help">
-                        Cada franja dura 30 minutos. Solo las franjas
-                        disponibles se pueden seleccionar.
+                    {activeSlots.length > 0 ? (
+                      <>
+                        <p className="calendar-availability-help">
+                          Franjas de 30 minutos. Selecciona un horario
+                          disponible.
+                        </p>
+                        {slotList(activeSlots)}
+                      </>
+                    ) : daySlots.length > 0 ? (
+                      <div className="calendar-closed-state">
+                        <span
+                          className="calendar-closed-icon"
+                          aria-hidden="true"
+                        >
+                          ◷
+                        </span>
+                        <div>
+                          <strong>Sin horario de atención</strong>
+                          <p>
+                            No hay franjas de atención habilitadas para esta
+                            sucursal en este día. Prueba con otra fecha.
+                          </p>
+                        </div>
+                      </div>
+                    ) : (
+                      <p className="calendar-empty">
+                        No hay horarios configurados para esta fecha.
                       </p>
                     )}
-                    <ul className="calendar-slots">
-                      {daySlots.map((slot) => (
-                          <li key={slot.inicio}>
-                            <button
-                              className={`calendar-slot calendar-slot--${SLOT_TONES[slot.estado]}`}
-                              disabled={slot.estado !== "Disponible"}
-                              onClick={() =>
-                                setSelection({
-                                  sucursalId: branch,
-                                  inicio: slot.inicio,
-                                  fin: slot.fin,
-                                })
-                              }
-                            >
-                              <time className="calendar-time">{slot.hora}</time>{" "}
-                              <span className="calendar-slot-label">
-                                · {slot.estado}
-                              </span>
-                            </button>
-                          </li>
-                        ))}
-                    </ul>
+                    {closedSlots.length > 0 && (
+                      <details className="calendar-closed-hours">
+                        <summary>
+                          Ver horarios fuera de atención ({closedSlots.length})
+                        </summary>
+                        {slotList(closedSlots)}
+                      </details>
+                    )}
                   </details>
                 </section>
               );
@@ -466,8 +526,8 @@ export function CalendarPage() {
           </strong>
           <p>
             Esta selección no crea ni reserva una cita. Para registrar una cita,
-            abre la sección Citas. La disponibilidad se comprueba nuevamente
-            al guardar.
+            abre la sección Citas. La disponibilidad se comprueba nuevamente al
+            guardar.
           </p>
           <button onClick={() => setSelection(null)}>Cerrar aviso</button>
         </aside>

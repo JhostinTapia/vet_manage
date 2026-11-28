@@ -357,7 +357,8 @@
 .calendar-days--dia .calendar-day {
   display: grid;
   gap: 12px 20px;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1.35fr);
+  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.4fr);
+  align-items: start;
   padding: 16px;
 }
 .calendar-days--dia .calendar-day-heading {
@@ -376,7 +377,7 @@
 }
 .calendar-days--dia .calendar-slots {
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr));
-  max-height: none;
+  max-height: 360px;
 }
 
 .calendar-scroll-hint {
@@ -469,4 +470,76 @@
     border-top: 1px solid var(--cal-border);
     padding-top: 10px;
   }
+}
+
+/* Mantener el día compacto cuando no hay citas ni jornada habilitada. */
+.calendar-days--dia .calendar-day--empty .calendar-day-appointments,
+.calendar-days--dia .calendar-day--empty .calendar-availability {
+  grid-column: 1 / -1;
+}
+.calendar-day-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.calendar-empty-state,
+.calendar-closed-state {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 18px;
+  border: 1px solid var(--cal-border);
+  border-radius: 12px;
+  background: var(--cal-surface);
+  color: var(--cal-text);
+  font-size: 0.85rem;
+}
+.calendar-empty-state p,
+.calendar-closed-state p {
+  margin: 4px 0 0;
+  color: var(--cal-muted);
+  line-height: 1.5;
+  max-width: 65ch;
+}
+.calendar-empty-icon,
+.calendar-closed-icon {
+  display: grid;
+  place-items: center;
+  flex: 0 0 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: white;
+  color: var(--cal-muted);
+  font-size: 1.5rem;
+}
+.calendar-closed-state {
+  border-style: dashed;
+  background: #fafbfd;
+}
+.calendar-closed-hours {
+  margin-top: 12px;
+}
+.calendar-page .calendar-closed-hours > summary {
+  color: var(--cal-muted);
+  font-size: 0.78rem;
+  font-weight: 500;
+  padding: 8px 0;
+}
+.calendar-days--dia .calendar-closed-hours .calendar-slots {
+  max-height: 240px;
+}
+.calendar-days--semana .calendar-empty-state,
+.calendar-days--mes .calendar-empty-state {
+  padding: 10px;
+  font-size: 0.75rem;
+}
+.calendar-days--semana .calendar-empty-icon,
+.calendar-days--mes .calendar-empty-icon,
+.calendar-days--mes .calendar-empty-state p {
+  display: none;
+}
+.calendar-days--mes .calendar-closed-state {
+  padding: 10px;
+  flex-direction: column;
+  align-items: flex-start;
 }
