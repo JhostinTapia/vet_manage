@@ -79,11 +79,13 @@ function formatAppointmentTime(value: string): string {
 export function AppointmentRegisterPage({
   onBack,
   backLabel = 'Volver a citas',
+  initialSelection,
 }: {
   onBack: () => void;
   backLabel?: string;
+  initialSelection?: Pick<AppointmentFormValues, 'sucursalId' | 'fecha' | 'horaInicio'>;
 }) {
-  const [values, setValues] = useState<AppointmentFormValues>(EMPTY);
+  const [values, setValues] = useState<AppointmentFormValues>(() => ({ ...EMPTY, ...initialSelection }));
   const [errors, setErrors] = useState<AppointmentFieldErrors>({});
   const [branches, setBranches] = useState<Branch[]>([]);
   const [clients, setClients] = useState<ClientListItem[]>([]);

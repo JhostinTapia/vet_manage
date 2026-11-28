@@ -6,6 +6,7 @@ import { clientsApi } from '../../clients/services/clients-api';
 import { schedulingApi } from '../services/scheduling-api';
 import { ratesApi } from '../rates/rates-api';
 import { AppointmentRegisterPage } from './appointment-register-page';
+import { AppointmentRegisterRoute } from './appointment-register-route';
 
 vi.mock('../../clients/services/clients-api', () => ({
   clientsApi: { list: vi.fn(), pets: vi.fn() },
@@ -107,6 +108,23 @@ describe('AppointmentRegisterPage', () => {
     });
     vi.mocked(ratesApi.list).mockResolvedValue([]);
     vi.mocked(schedulingApi.registerAppointment).mockReset();
+  });
+
+  it('CP-001-03 recibe sucursal, fecha y hora del calendario sin registrar automaticamente', async () => {
+    configureValidForm();
+    render(
+      <MemoryRouter initialEntries={['/appointments/appointments/new?sucursalId=branch-1&fecha=2030-01-02&horaInicio=09%3A00']}>
+        <AppointmentRegisterRoute />
+      </MemoryRouter>,
+    );
+    expect(await screen.findByLabelText('Sucursal *')).toHaveValue('branch-1');
+    expect(screen.getByLabelText('Fecha *')).toHaveValue('2030-01-02');
+    expect(screen.getByLabelText('Hora de inicio *')).toHaveValue('09:00');
+    expect(screen.getByLabelText('Cliente *')).toHaveValue('');
+    expect(schedulingApi.registerAppointment).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'Registrar cita' }));
+    expect(schedulingApi.registerAppointment).not.toHaveBeenCalled();
+    expect(screen.getAllByRole('alert').length).toBeGreaterThan(0);
   });
 
   it('bloquea el registro y señala cada campo obligatorio vacío', async () => {

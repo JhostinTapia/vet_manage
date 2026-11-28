@@ -28,14 +28,16 @@ El sistema MUST soportar día, semana lunes–domingo y mes completo en America/
 - **THEN** aparece sin alterar sus horas reales
 - **AND** sin citas se muestra un mensaje vacío y se conservan las franjas
 
-### Requirement: Disponibilidad independiente y reserva pendiente
-El sistema MUST calcular franjas sin filtro de estado considerando jornadas, disponibilidades, sábados, bloqueos, recursos y ocupación entre sucursales. MUST habilitar selección solo en Disponible sin persistir reservas.
+### Requirement: Disponibilidad independiente e inicio del registro
+El sistema MUST calcular franjas sin filtro de estado considerando jornadas, disponibilidades, sábados, bloqueos, recursos y ocupación entre sucursales. MUST habilitar selección solo en Disponible sin persistir reservas. La selección MUST permitir continuar al formulario existente de HU-003 con sucursal, fecha y hora inicial precargadas; guardar MUST revalidar disponibilidad y autorización.
 
 #### Scenario: CP-001-03 Causas de franja
 - **GIVEN** jornada 08:00–12:00, 09:00 libre y bloqueo 11:00–11:30
 - **WHEN** consulta las franjas
 - **THEN** 09:00 es Disponible, 11:00 Bloqueado y 13:00 Fuera de atención
-- **AND** seleccionar Disponible informa que la selección no reserva una cita y que el registro se realiza en la sección Citas, sin escribir datos
+- **AND** seleccionar Disponible muestra la acción Registrar cita, que abre el formulario protegido de HU-003 con sucursal, fecha y hora de Ecuador precargadas, sin escribir datos automáticamente
+- **AND** las franjas Bloqueado, Ocupado y Fuera de atención no permiten iniciar el registro
+- **AND** el formulario conserva sus validaciones y vuelve a comprobar disponibilidad al guardar
 
 ### Requirement: Filtro y accesibilidad
 El sistema MUST mostrar nombre legible junto al color: Programada gris, Confirmada azul, En curso naranja, Finalizada verde, Cancelada rojo y No asistió morado.

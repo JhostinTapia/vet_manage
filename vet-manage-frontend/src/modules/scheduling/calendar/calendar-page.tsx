@@ -525,10 +525,20 @@ export function CalendarPage() {
             {timeLabel(selection.inicio)}–{timeLabel(selection.fin)}
           </strong>
           <p>
-            Esta selección no crea ni reserva una cita. Para registrar una cita,
-            abre la sección Citas. La disponibilidad se comprueba nuevamente al
-            guardar.
+            Esta selección no crea ni reserva una cita. Continúa al registro
+            para completar los datos. La disponibilidad se comprueba nuevamente
+            al guardar.
           </p>
+          <a
+            className="button button--primary"
+            href={`/appointments/appointments/new?${new URLSearchParams({
+              sucursalId: branch,
+              fecha: localDate(new Date(selection.inicio)),
+              horaInicio: timeLabel(selection.inicio),
+            })}`}
+          >
+            Registrar cita
+          </a>
           <button onClick={() => setSelection(null)}>Cerrar aviso</button>
         </aside>
       )}
