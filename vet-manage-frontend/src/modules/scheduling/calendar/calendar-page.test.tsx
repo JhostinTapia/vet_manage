@@ -124,6 +124,9 @@ describe("HU-001 calendario", () => {
     ).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Cita #101/ })).toBeVisible();
     expect(
+      screen.getByText("Disponibilidad: 1 disponible de 3 franjas"),
+    ).toBeVisible();
+    expect(
       screen.getByRole("button", { name: "09:00 · Disponible" }),
     ).toBeEnabled();
     expect(
