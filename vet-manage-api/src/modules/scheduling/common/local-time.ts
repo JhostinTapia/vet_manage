@@ -11,7 +11,16 @@ export function toStoredDateTime(fecha: string, hora: string): Date {
 }
 
 // Valor guardado en la base a fecha y hora locales.
-export function fromStoredDateTime(value: Date): { fecha: string; hora: string } {
+export function fromStoredDateTime(value: Date): {
+  fecha: string;
+  hora: string;
+} {
   const iso = value.toISOString();
   return { fecha: iso.slice(0, 10), hora: iso.slice(11, 16) };
+}
+
+// Convierte la hora de pared almacenada a un instante real para contratos ISO externos.
+// No aplicar a auditorías u otros timestamps que ya representan instantes UTC reales.
+export function storedDateTimeToInstant(value: Date): Date {
+  return new Date(value.getTime() + ECUADOR_OFFSET_MS);
 }
